@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.cache/
+.vite/
+.env*
+*.tsbuildinfo
+vite.config.*.timestamp-*
+*-debug.log*
+logs/
+*.log
+.DS_Store
