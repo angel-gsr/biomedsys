@@ -1,4 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  createReport,
+  getCurrentProfile,
+  isSupabaseConfigured,
+  listReports,
+  signInWithInstitutionalId,
+  supabase,
+  type CreateReportInput,
+  type Role,
+} from "./lib/supabase";
 import {
   Activity,
   AlertTriangle,
@@ -29,15 +39,15 @@ import {
   Settings,
   ShieldCheck,
   Stethoscope,
-  UserRound,
   Users,
   Wifi,
   Wrench,
   X,
   Zap,
 } from "lucide-react";
+import { MaintenanceCalendar, NoticesView } from "./components/TrainingViews";
+import { AuditView, QuotationsView, UserPermissionsView } from "./components/AdminViews";
 
-type Role = "jefe" | "tecnico" | "usuario";
 type View =
   | "dashboard"
   | "reportes"
@@ -45,12 +55,16 @@ type View =
   | "equipo"
   | "orden"
   | "checklist"
-  | "calendario";
+  | "calendario"
+  | "avisos"
+  | "cotizaciones"
+  | "usuarios"
+  | "trazabilidad";
 
 const roleMeta = {
   jefe: { label: "Jefe de Ingeniería Clínica", short: "Jefe", initials: "AM" },
-  tecnico: { label: "Técnico biomédico", short: "Técnico", initials: "JR" },
-  usuario: { label: "Personal hospitalario", short: "Usuario", initials: "LM" },
+  tecnico: { label: "Ingeniero biomédico", short: "Ingeniero", initials: "JR" },
+  usuario: { label: "Enfermería / Médico", short: "Clínico", initials: "LM" },
 };
 
 const statusTone: Record<string, string> = {
@@ -134,12 +148,31 @@ const navigation: Record<
   usuario: [
     { label: "Inicio", view: "dashboard", icon: LayoutDashboard },
     { label: "Mis reportes", view: "reportes", icon: ClipboardList },
-    { label: "Buscar equipo", view: "inventario", icon: Search },
+    { label: "Solicitud de equipo", view: "inventario", icon: Search },
+    { label: "Avisos", view: "avisos", icon: Bell },
   ],
 };
 
 function Login({ onLogin }: { onLogin: (role: Role) => void }) {
-  const [role, setRole] = useState<Role>("jefe");
+  const [id, setId] = useState("00123456");
+  const [password, setPassword] = useState("biomedgest");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const profile = await signInWithInstitutionalId(id, password);
+      onLogin(profile.role);
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "No fue posible iniciar sesión.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main className="login-page">
       <section className="login-story">
@@ -164,39 +197,21 @@ function Login({ onLogin }: { onLogin: (role: Role) => void }) {
           <div className="mobile-brand"><Brand /></div>
           <div className="eyebrow">Acceso institucional</div>
           <h2>Te damos la bienvenida</h2>
-          <p className="muted">Selecciona tu perfil para continuar.</p>
-          <div className="role-grid">
-            {([
-              ["usuario", UserRound, "Reporta y consulta"],
-              ["tecnico", Wrench, "Atiende órdenes"],
-              ["jefe", Gauge, "Administra operación"],
-            ] as const).map(([key, Icon, desc]) => (
-              <button
-                className={`role-card ${role === key ? "selected" : ""}`}
-                key={key}
-                onClick={() => setRole(key)}
-              >
-                <span className="role-icon"><Icon size={21} /></span>
-                <span><strong>{roleMeta[key].short}</strong><small>{desc}</small></span>
-                <span className="radio">{role === key && <span />}</span>
-              </button>
-            ))}
-          </div>
-          <label className="field">
-            <span>ID Institucional</span>
-            <input defaultValue="00123456" type="text" />
-          </label>
-          <label className="field">
-            <span>Contraseña</span>
-            <input defaultValue="biomedgest" type="password" />
-          </label>
-          <div className="login-actions">
-            <label className="check-inline"><input type="checkbox" defaultChecked /> Recordarme</label>
-            <button className="link-btn">Recuperar contraseña</button>
-          </div>
-          <Button onClick={() => onLogin(role)} className="full-width">
-            Ingresar como {roleMeta[role].short}
-          </Button>
+          <p className="muted">Ingresa tu ID institucional de 8 dígitos y contraseña.</p>
+          {!isSupabaseConfigured && <p className="form-error" role="alert">Falta configurar Supabase. Copia `.env.example` a `.env.local` y agrega las credenciales públicas del proyecto.</p>}
+          <form onSubmit={submit}>
+            <label className="field">
+              <span>ID Institucional</span>
+              <input value={id} onChange={(event) => setId(event.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" maxLength={8} placeholder="00XXXXXX" />
+              <small className="field-help">00 jefe · 01 ingeniero biomédico · 02 enfermería / médico</small>
+            </label>
+            <label className="field">
+              <span>Contraseña</span>
+              <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" />
+            </label>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <Button type="submit" className="full-width">{loading ? "Validando..." : "Iniciar sesión"}</Button>
+          </form>
           <p className="privacy">Acceso exclusivo para personal autorizado · v2.4</p>
         </div>
       </section>
@@ -233,8 +248,9 @@ function Sidebar({
         {role === "jefe" && (
           <>
             <span className="nav-label">ADMINISTRACIÓN</span>
-            <button><Users size={19} /><span>Usuarios y permisos</span></button>
-            <button><History size={19} /><span>Trazabilidad</span></button>
+            <button onClick={() => setView("usuarios")}><Users size={19} /><span>Usuarios y permisos</span></button>
+            <button onClick={() => setView("trazabilidad")}><History size={19} /><span>Trazabilidad</span></button>
+            <button onClick={() => setView("cotizaciones")}><FileText size={19} /><span>Cotizaciones</span></button>
             <button><Settings size={19} /><span>Configuración</span></button>
           </>
         )}
@@ -443,37 +459,13 @@ function UserDashboard({ setView, openReport }: { setView: (view: View) => void;
 }
 
 function Inventory({ role, setView }: { role: Role; setView: (view: View) => void }) {
-  const equipment = [
-    ["EQ-000184", "Ventilador Servo-i", "Maquet", "UCI Adultos", "Alto", "En reparación", "12 ago 2024"],
-    ["EQ-000293", "Monitor IntelliVue MX450", "Philips", "Urgencias", "Alto", "Operativo", "02 ago 2024"],
-    ["EQ-000417", "Bomba Plum 360", "ICU Medical", "Hospitalización 2", "Medio", "Operativo", "28 jul 2024"],
-    ["EQ-000526", "Desfibrilador R Series", "Zoll", "Urgencias", "Alto", "Operativo", "15 jul 2024"],
-    ["EQ-000631", "Incubadora Giraffe", "GE Healthcare", "UCIN", "Alto", "Fuera de servicio", "03 jul 2024"],
-  ];
   return (
     <>
-      <PageIntro title={role === "usuario" ? "Consultar equipo" : "Inventario de activos"} description={role === "usuario" ? "Consulta disponibilidad, ubicación y último mantenimiento." : "1,284 equipos registrados · Actualizado hace 5 minutos"} action={role === "jefe" ? <Button icon={Plus}>Alta de equipo</Button> : undefined} />
-      <section className="panel inventory-panel">
-        <div className="filter-bar">
-          <label className="search-box"><Search size={18} /><input placeholder="Buscar por equipo, serie o inventario..." /></label>
-          <button className="filter-btn">Servicio <ChevronDown size={15} /></button>
-          <button className="filter-btn">Estado <ChevronDown size={15} /></button>
-          {role !== "usuario" && <button className="filter-btn">Riesgo <ChevronDown size={15} /></button>}
-          <Button variant="secondary" icon={QrCode}>Escanear QR</Button>
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>ID</th><th>Equipo</th><th>Ubicación</th>{role !== "usuario" && <th>Riesgo</th>}<th>Estado</th><th>Último mant.</th><th /></tr></thead>
-            <tbody>{equipment.map((item) => (
-              <tr key={item[0]} onClick={() => setView("equipo")}>
-                <td><strong className="order-id">{item[0]}</strong></td>
-                <td><strong>{item[1]}</strong><small>{item[2]}</small></td>
-                <td>{item[3]}</td>{role !== "usuario" && <td><Badge tone={item[4] === "Alto" ? "warning" : "neutral"}>{item[4]}</Badge></td>}<td><Badge>{item[5]}</Badge></td><td>{item[6]}</td><td><ChevronRight size={17} /></td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-        <div className="pagination"><span>Mostrando 1–5 de 1,284</span><div><button disabled>Anterior</button><button className="current">1</button><button>2</button><button>3</button><button>Siguiente</button></div></div>
+      <PageIntro title={role === "usuario" ? "Consultar equipo" : "Inventario de activos"} description="El inventario se habilitará cuando se reciba y valide el documento fuente." />
+      <section className="panel empty-state">
+        <PackageOpen size={38} />
+        <h3>Inventario pendiente de integración</h3>
+        <p>No se muestran equipos ni identificadores para evitar registrar información que todavía no ha sido validada.</p>
       </section>
     </>
   );
@@ -579,9 +571,26 @@ function ElectricalChecklist({ setView }: { setView: (view: View) => void }) {
 
 function CalendarView() {
   const days = ["Lun 12", "Mar 13", "Mié 14", "Jue 15", "Vie 16"];
+  const maintenanceTypes = [
+    ["MP", "Preventivo", "Revisión programada para conservar el desempeño del equipo.", "46"],
+    ["IN", "Inspección", "Verificación visual, funcional y de seguridad.", "18"],
+    ["MC", "Correctivo", "Atención de una falla reportada y documentada.", "12"],
+  ];
   return (
     <>
-      <PageIntro title="Calendario de mantenimiento" description="Programa preventivos según periodicidad y nivel de riesgo." action={<Button icon={Plus}>Programar mantenimiento</Button>} />
+      <PageIntro title="Mantenimiento" description="Catálogo e identificadores para preventivo, inspección y correctivo." action={<Button icon={Plus}>Programar mantenimiento</Button>} />
+      <section className="maintenance-catalog">
+        {maintenanceTypes.map(([prefix, name, description, count]) => (
+          <article className="panel maintenance-type" key={prefix}>
+            <div className="maintenance-code">{prefix}</div>
+            <div><span className="eyebrow">Tipo de mantenimiento</span><h3>{name}</h3><p>{description}</p></div>
+            <strong>{count}<small>programados</small></strong>
+          </article>
+        ))}
+      </section>
+      <section className="panel maintenance-key">
+        <div><div><span className="eyebrow">Identificador de mantenimiento</span><h3>Formato: MT-{new Date().getFullYear()}-TIPO-0000</h3></div><p>Los folios se generan automáticamente por tipo: <strong>MP</strong> preventivo, <strong>IN</strong> inspección y <strong>MC</strong> correctivo.</p></div>
+      </section>
       <section className="panel calendar-panel">
         <div className="calendar-toolbar"><Button variant="secondary">Hoy</Button><div><button><ArrowLeft size={17} /></button><strong>12 – 16 agosto 2024</strong><button><ChevronRight size={17} /></button></div><div className="view-toggle"><button>Mes</button><button className="active">Semana</button></div></div>
         <div className="week-grid">{days.map((day, i) => <div key={day} className={i === 0 ? "today" : ""}><strong>{day}</strong>{i === 0 && <><article className="event blue">09:00 · Máquina de anestesia<small>Quirófano 2 · Jorge Ruiz</small></article><article className="event amber">14:00 · Incubadora Giraffe<small>UCIN · Riesgo alto</small></article></>}{i === 1 && <article className="event green">10:30 · Bomba Plum 360<small>Hospitalización 2</small></article>}{i === 3 && <article className="event violet">12:00 · Desfibrilador R Series<small>Urgencias</small></article>}</div>)}</div>
@@ -590,13 +599,21 @@ function CalendarView() {
   );
 }
 
-function ReportTray({ role, setView }: { role: Role; setView: (v: View) => void }) {
+function ReportTray({ role, setView, openReport }: { role: Role; setView: (v: View) => void; openReport: () => void }) {
+  const [reports, setReports] = useState<Awaited<ReturnType<typeof listReports>>>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    listReports().then(setReports).catch((reportError) => {
+      setError(reportError instanceof Error ? reportError.message : "No fue posible cargar los reportes.");
+    });
+  }, []);
   return (
     <>
-      <PageIntro title={role === "usuario" ? "Mis reportes" : "Mesa de ayuda"} description={role === "usuario" ? "Seguimiento de solicitudes y fallas reportadas." : "Clasifica, prioriza y asigna reportes de equipamiento médico."} action={role === "usuario" ? <Button icon={Plus}>Reportar falla</Button> : <Button icon={Plus}>Registrar reporte</Button>} />
+      <PageIntro title={role === "usuario" ? "Mis reportes" : "Mesa de ayuda"} description={role === "usuario" ? "Seguimiento de solicitudes y fallas reportadas." : "Clasifica, prioriza y asigna reportes de equipamiento médico."} action={<Button icon={Plus} onClick={openReport}>{role === "usuario" ? "Reportar falla" : "Registrar reporte"}</Button>} />
       <section className="panel orders-panel">
         <div className="filter-bar"><label className="search-box"><Search size={18} /><input placeholder="Buscar folio, equipo o servicio..." /></label><button className="filter-btn">Prioridad <ChevronDown size={15} /></button><button className="filter-btn">Estado <ChevronDown size={15} /></button></div>
-        <div className="ticket-list">{orders.map((o, i) => <article key={o.id}><i className={`ticket-signal ${o.priority === "Crítica" ? "red" : o.priority === "Alta" ? "amber" : "green"}`} /><div className="ticket-main"><span>{o.id} · {o.time}</span><strong>{o.issue}</strong><small>{o.equipment} · {o.area}</small></div><Badge>{o.priority}</Badge><Badge>{i === 0 ? "En atención" : i === 1 ? "Recibido" : "Asignado"}</Badge>{role === "jefe" && <Button variant="secondary" onClick={() => setView("orden")}>{i === 1 ? "Asignar técnico" : "Ver caso"}</Button>}<ChevronRight size={18} /></article>)}</div>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        <div className="ticket-list">{reports.map((report) => <article key={report.report_number}><i className={`ticket-signal ${report.priority === "Crítica" ? "red" : report.priority === "Alta" ? "amber" : "green"}`} /><div className="ticket-main"><span>{report.report_number} · {new Date(report.created_at).toLocaleString("es-MX")}</span><strong>{report.description}</strong><small>{report.equipment_identifier} · {report.service}</small></div><Badge>{report.priority}</Badge><Badge>{report.status}</Badge>{role === "jefe" && <Button variant="secondary" onClick={() => setView("orden")}>Ver caso</Button>}<ChevronRight size={18} /></article>)}</div>
       </section>
     </>
   );
@@ -604,21 +621,62 @@ function ReportTray({ role, setView }: { role: Role; setView: (v: View) => void 
 
 function ReportModal({ onClose }: { onClose: () => void }) {
   const [sent, setSent] = useState(false);
-  if (sent) return <div className="modal-layer"><div className="modal success-modal"><div className="success-mark"><Check size={30} /></div><h2>Reporte recibido</h2><p>El folio <strong>REP-1052</strong> fue enviado a Ingeniería Clínica. Te notificaremos cada avance.</p><Button onClick={onClose}>Entendido</Button></div></div>;
+  const [reportNumber, setReportNumber] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<CreateReportInput>({
+    equipmentIdentifier: "",
+    eventDate: new Date().toISOString().slice(0, 10),
+    eventType: "Falla",
+    service: "Urgencias",
+    location: "",
+    manufacturer: "",
+    modelSerial: "",
+    description: "",
+    patientOutcome: "Sin lesión",
+    actionTaken: "",
+  });
+
+  function updateField(field: keyof CreateReportInput, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+    try {
+      setReportNumber(await createReport(form));
+      setSent(true);
+    } catch (reportError) {
+      setError(reportError instanceof Error ? reportError.message : "No fue posible guardar el reporte.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (sent) return <div className="modal-layer"><div className="modal success-modal"><div className="success-mark"><Check size={30} /></div><h2>Reporte recibido</h2><p>El folio <strong>{reportNumber}</strong> fue enviado a Ingeniería Clínica. Te notificaremos cada avance.</p><Button onClick={onClose}>Entendido</Button></div></div>;
   return (
     <div className="modal-layer">
-      <div className="modal report-modal">
+      <form className="modal report-modal" onSubmit={submit}>
         <div className="modal-head"><div><span className="eyebrow">Nuevo reporte</span><h2>Reportar falla de equipo</h2><p>Cuéntanos qué sucede. Los campos con * son obligatorios.</p></div><button className="icon-btn" onClick={onClose}><X size={21} /></button></div>
         <div className="form-grid">
-          <label className="field span-2"><span>Equipo o número de inventario *</span><div className="input-action"><input placeholder="Ej. EQ-000293 o Monitor IntelliVue" /><button><QrCode size={19} /> Escanear</button></div></label>
-          <label className="field"><span>Servicio *</span><select><option>Urgencias</option><option>Hospitalización</option><option>UCI Adultos</option></select></label>
-          <label className="field"><span>Ubicación</span><input placeholder="Ej. Cubículo 3" /></label>
-          <label className="field span-2"><span>¿Qué está pasando? *</span><textarea placeholder="Describe la falla y cuándo comenzó..." /></label>
+          <label className="field span-2"><span>Equipo o número de inventario *</span><div className="input-action"><input required value={form.equipmentIdentifier} onChange={(event) => updateField("equipmentIdentifier", event.target.value)} placeholder="Ej. EQ-000293 o Monitor IntelliVue" /><button type="button"><QrCode size={19} /> Escanear</button></div></label>
+          <label className="field"><span>Fecha del evento *</span><input required type="date" value={form.eventDate} onChange={(event) => updateField("eventDate", event.target.value)} /></label>
+          <label className="field"><span>Tipo de evento *</span><select value={form.eventType} onChange={(event) => updateField("eventType", event.target.value)}><option>Falla</option><option>Incidente</option><option>Mal funcionamiento</option><option>Lesión asociada</option></select></label>
+          <label className="field"><span>Servicio *</span><select required value={form.service} onChange={(event) => updateField("service", event.target.value)}><option>Urgencias</option><option>Hospitalización</option><option>UCI Adultos</option></select></label>
+          <label className="field"><span>Ubicación</span><input value={form.location} onChange={(event) => updateField("location", event.target.value)} placeholder="Ej. Cubículo 3" /></label>
+          <label className="field"><span>Fabricante</span><input value={form.manufacturer} onChange={(event) => updateField("manufacturer", event.target.value)} placeholder="Fabricante del equipo" /></label>
+          <label className="field"><span>Modelo / serie</span><input value={form.modelSerial} onChange={(event) => updateField("modelSerial", event.target.value)} placeholder="Modelo y número de serie" /></label>
+          <label className="field span-2"><span>Descripción del evento *</span><textarea required value={form.description} onChange={(event) => updateField("description", event.target.value)} placeholder="Describe qué ocurrió, cuándo comenzó y las condiciones del equipo..." /></label>
+          <label className="field"><span>Resultado para el paciente</span><select value={form.patientOutcome} onChange={(event) => updateField("patientOutcome", event.target.value)}><option>Sin lesión</option><option>Lesión temporal</option><option>Lesión grave</option><option>Fallecimiento</option><option>No aplica</option></select></label>
+          <label className="field"><span>Acción tomada</span><input value={form.actionTaken} onChange={(event) => updateField("actionTaken", event.target.value)} placeholder="Equipo retirado, atención inmediata..." /></label>
         </div>
+        {error && <p className="form-error" role="alert">{error}</p>}
         <div className="priority-suggest"><AlertTriangle size={20} /><div><strong>La prioridad se calculará automáticamente</strong><span>Consideraremos el riesgo del equipo y el impacto en la atención.</span></div></div>
         <div className="photo-upload"><Plus size={20} /><span><strong>Agregar foto o video</strong><small>Ayuda al técnico a preparar la atención</small></span></div>
-        <div className="modal-footer"><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button onClick={() => setSent(true)}>Enviar reporte</Button></div>
-      </div>
+        <div className="modal-footer"><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button type="submit">{saving ? "Guardando..." : "Enviar reporte"}</Button></div>
+      </form>
     </div>
   );
 }
@@ -631,6 +689,13 @@ export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const [view, setView] = useState<View>("dashboard");
   const [reportOpen, setReportOpen] = useState(false);
+  const [loadingSession, setLoadingSession] = useState(true);
+  useEffect(() => {
+    getCurrentProfile()
+      .then((profile) => setRole(profile?.role ?? null))
+      .catch(() => setRole(null))
+      .finally(() => setLoadingSession(false));
+  }, []);
   const title = useMemo(() => ({
     dashboard: role === "jefe" ? "Panel de control" : role === "tecnico" ? "Mi jornada" : "Inicio",
     reportes: role === "usuario" ? "Mis reportes" : "Mesa de ayuda",
@@ -639,13 +704,18 @@ export default function App() {
     orden: "Orden de servicio",
     checklist: "Checklist eléctrico",
     calendario: "Mantenimiento",
+    avisos: "Avisos",
+    cotizaciones: "Cotizaciones",
+    usuarios: "Usuarios y permisos",
+    trazabilidad: "Trazabilidad",
   }[view]), [role, view]);
 
+  if (loadingSession) return <main className="session-loading">Cargando sesión...</main>;
   if (!role) return <Login onLogin={(newRole) => { setRole(newRole); setView("dashboard"); }} />;
 
   return (
     <div className="app-shell">
-      <Sidebar role={role} view={view} setView={setView} onLogout={() => setRole(null)} />
+      <Sidebar role={role} view={view} setView={setView} onLogout={() => { void supabase?.auth.signOut(); setRole(null); }} />
       <div className="app-main">
         <AppHeader role={role} title={title} />
         <main className="content">
@@ -656,8 +726,12 @@ export default function App() {
           {view === "equipo" && <EquipmentDetail role={role} setView={setView} />}
           {view === "orden" && <ServiceOrder setView={setView} />}
           {view === "checklist" && <ElectricalChecklist setView={setView} />}
-          {view === "calendario" && <CalendarView />}
-          {view === "reportes" && <ReportTray role={role} setView={setView} />}
+          {view === "calendario" && <MaintenanceCalendar role={role} />}
+          {view === "avisos" && <NoticesView />}
+          {view === "cotizaciones" && <QuotationsView />}
+          {view === "usuarios" && <UserPermissionsView />}
+          {view === "trazabilidad" && <AuditView />}
+          {view === "reportes" && <ReportTray role={role} setView={setView} openReport={() => setReportOpen(true)} />}
         </main>
       </div>
       <BottomNav role={role} view={view} setView={setView} />

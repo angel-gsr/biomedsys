@@ -1,0 +1,6 @@
+-- Inventory is intentionally pending until the source document is received
+-- and validated. Do not create equipment tables or seed inventory data yet.
+--
+-- Future module contract:
+--   equipment.identifier will become the canonical identifier referenced by
+--   maintenance and report records.

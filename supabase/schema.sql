@@ -1,0 +1,17 @@
+-- BioMedGest database modules
+--
+-- The schema is intentionally split into independently maintained SQL files.
+-- Execute them in this order from the Supabase SQL Editor:
+--
+-- 00_core.sql
+-- 01_users.sql
+-- 02_inventory_pending.sql (documentation only; inventory is not created yet)
+-- 03_maintenance.sql
+-- 04_reports.sql
+-- 07_training.sql
+-- 08_quotes.sql
+-- 09_audit.sql
+-- 10_access_requests.sql
+-- 05_security.sql (execute after all module tables)
+--
+-- Do not add inventory tables until the source inventory document is validated.
