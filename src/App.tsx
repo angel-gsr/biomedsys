@@ -1,3 +1,4 @@
+import { DocumentsBrowser } from "./components/DocumentsBrowser"
 import { useEffect, useMemo, useState } from "react"
 
 import {
@@ -72,7 +73,6 @@ import { EquipmentReportSelector } from "./components/EquipmentReportSelector"
 import { Dashboard } from "./components/DashboardViews"
 
 import {
-  DocumentsView,
   MaintenanceView,
   ServiceOrdersView,
 } from "./components/OperationalViews"
@@ -1196,7 +1196,7 @@ export default function App() {
           {view === "cotizaciones" && <QuotationsView />}
           {view === "usuarios" && <UserPermissionsView />}
           {view === "trazabilidad" && <AuditView />}
-          {view === "documentos" && <DocumentsView />}
+          {view === "documentos" && <DocumentsBrowser role={role} />}
           {view === "reportes" && (
             <ReportTray
               role={role}

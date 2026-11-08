@@ -2,8 +2,6 @@ import { Fragment, useEffect, useMemo, useState } from "react"
 import {
   AlertTriangle,
   CalendarDays,
-  ExternalLink,
-  FileText,
   RefreshCw,
   Upload,
   Wrench,
@@ -12,7 +10,6 @@ import {
   createAttachmentDownloadUrl,
   deletePrivateAttachment,
   isOperationalCompletionEnabled,
-  listDocumentLibrary,
   listMaintenanceOverview,
   saveCorrectiveIntervention,
   savePreventiveIntervention,
@@ -21,7 +18,6 @@ import {
   validateCorrectiveClosure,
   validatePreventiveClosure,
   type FileAttachment,
-  type DocumentLibraryItem,
   type MaintenanceCatalogItem,
   type MaintenanceSummary,
   type Role,
@@ -513,88 +509,4 @@ function AttachmentPanel({ maintenanceId, attachments, onChanged }: { maintenanc
   }
 
   return <div className="attachment-panel"><strong>Evidencias privadas</strong><div className="attachment-upload"><input aria-label="Archivo de evidencia" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.doc,.docx" onChange={(event) => setFile(event.target.files?.[0] || null)} /><input aria-label="Descripción de evidencia" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Descripción" /><button type="button" className="row-action" disabled={!file || busy} onClick={upload}><Upload size={15} /> {busy ? "Subiendo..." : "Subir"}</button></div>{attachments.map((attachment) => <div className="attachment-row" key={attachment.id}><button type="button" className="attachment-link" onClick={() => download(attachment)}>{attachment.original_name} · {(attachment.size_bytes / 1024).toFixed(1)} KB</button><button type="button" className="row-action" disabled={busy} onClick={() => remove(attachment)}>Eliminar</button></div>)}{error && <small className="form-error" role="alert">{error}</small>}</div>
-}
-
-export function DocumentsView() {
-  const [documents, setDocuments] = useState<DocumentLibraryItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-  const [reload, setReload] = useState(0)
-  useEffect(() => {
-    let active = true
-    setLoading(true)
-    setError("")
-    listDocumentLibrary()
-      .then((items) => {
-        if (active) setDocuments(items)
-      })
-      .catch((cause: unknown) => {
-        if (active)
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "Error de consulta no identificado.",
-          )
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-    return () => {
-      active = false
-    }
-  }, [reload])
-  if (loading) return <Loading label="Consultando documentos..." />
-  if (error)
-    return (
-      <Failure error={error} retry={() => setReload((value) => value + 1)} />
-    )
-  return (
-    <>
-      <PageIntro
-        title="Documentos"
-        description="Vínculos registrados para manuales y referencias. Su registro no garantiza que el archivo externo siga disponible."
-      />
-      <section className="panel">
-        <div className="document-list">
-          {documents.map((document) => {
-            const href = safeUrl(document.url)
-            return (
-              <article key={document.id}>
-                <FileText size={20} />
-                <div>
-                  <strong>
-                    {document.title ||
-                      (document.document_type === "manual_usuario"
-                        ? "Manual de usuario"
-                        : "Manual de servicio")}
-                  </strong>
-                  <span>
-                    {document.document_type.replace(/_/g, " ")} ·{" "}
-                    {document.linkedEquipment} equipo
-                    {document.linkedEquipment === 1 ? "" : "s"} ·{" "}
-                    Vínculo registrado · {document.review_status}
-                  </span>
-                </div>
-                {href ? (
-                  <a href={href} target="_blank" rel="noreferrer">
-                    Abrir vínculo <ExternalLink size={14} />
-                  </a>
-                ) : (
-                  <span className="badge badge-warning">
-                    Enlace por revisar
-                  </span>
-                )}
-              </article>
-            )
-          })}
-        </div>
-        {documents.length === 0 && (
-          <div className="empty-state">
-            <FileText size={34} />
-            <h3>No hay documentos visibles</h3>
-          </div>
-        )}
-      </section>
-    </>
-  )
 }

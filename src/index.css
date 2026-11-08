@@ -659,3 +659,10 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
   .input-action button { font-size: 0; }
   .input-action button svg { width: 20px; }
 }
+.document-equipment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; padding: 18px; max-height: 480px; overflow-y: auto; }
+.document-area h4 { margin: 0 0 10px; }
+.document-equipment { display: flex; flex-direction: column; gap: 5px; width: 100%; text-align: left; font: inherit; color: inherit; background: var(--surface, #fff); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+.document-equipment:hover, .document-equipment[aria-pressed="true"] { border-color: #2563eb; background: #eff6ff; }
+.document-equipment:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.document-equipment span, .document-equipment small, .document-link-note { color: #64748b; }
+.document-link-note { padding: 0 18px 18px; font-size: 13px; }

@@ -388,6 +388,7 @@ export type DashboardData = {
 
 export type DocumentLibraryItem = EquipmentDocument & {
   linkedEquipment: number
+  equipmentIds: string[]
 }
 
 export function getInventoryCapabilities(role: Role): InventoryCapabilities {
@@ -898,7 +899,7 @@ export async function listDocumentLibrary() {
     .from("equipment_documents")
 
     .select(
-      "id, document_type, title, url, review_status, equipment_document_links(count)",
+      "id, document_type, title, url, review_status, equipment_document_links(equipment_id)",
     )
 
     .order("title", { ascending: true, nullsFirst: false })
@@ -907,7 +908,7 @@ export async function listDocumentLibrary() {
 
   return (data || []).map((row) => {
     const relation = row.equipment_document_links as unknown as {
-      count: number
+      equipment_id: string
     }[] | null
 
     return {
@@ -921,7 +922,8 @@ export async function listDocumentLibrary() {
 
       review_status: row.review_status,
 
-      linkedEquipment: relation?.[0]?.count ?? 0,
+      linkedEquipment: relation?.length ?? 0,
+      equipmentIds: (relation || []).map((link) => link.equipment_id),
     } as DocumentLibraryItem
   })
 }
