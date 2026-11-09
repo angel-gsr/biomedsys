@@ -14,6 +14,7 @@ function equipmentDescription(item: EquipmentInventoryDetail) {
 
 export function EquipmentReportSelector({
   role,
+  readOnly = false,
   value,
   selected,
   onInputChange,
@@ -21,6 +22,7 @@ export function EquipmentReportSelector({
   search = listEquipmentInventory,
 }: {
   role: Role
+  readOnly?: boolean
   value: string
   selected: EquipmentInventoryDetail | null
   onInputChange: (value: string) => void
@@ -80,6 +82,7 @@ export function EquipmentReportSelector({
         <Search size={17} aria-hidden="true" />
         <input
           required
+          readOnly={readOnly}
           role="combobox"
           aria-label="Buscar equipo registrado"
           aria-autocomplete="list"

@@ -23,3 +23,5 @@
 -- 18_final_integration.sql (file lifecycle, Auth support, relations and timelines)
 --
 -- Import data only after reviewing the generated inventory issue report.
+
+-- 19_reports_technovigilance.sql (identity snapshots, 10-minute corrections and biomedical review)

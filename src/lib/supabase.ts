@@ -562,6 +562,8 @@ export async function createReport(
 }
 
 export type ReportSummary = {
+  equipment_snapshot?: import("./reportManagement").ReportEquipmentIdentity
+  edited_at?: string | null
   id: number
 
   report_number: string
@@ -600,7 +602,7 @@ export type ReportSummary = {
 }
 
 const reportSummarySelection =
-  "id, report_number, reporter_id, equipment_id, maintenance_id, equipment_identifier, description, service, priority, status, created_at, event_date, event_type, location, manufacturer, model_serial, patient_outcome, action_taken"
+  "id, report_number, reporter_id, equipment_id, maintenance_id, equipment_identifier, description, service, priority, status, created_at, event_date, event_type, location, manufacturer, model_serial, patient_outcome, action_taken, equipment_snapshot, edited_at"
 
 export async function listReports(client: SupabaseClient | null = supabase) {
   const configuredClient = requireSupabase(client)

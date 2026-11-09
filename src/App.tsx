@@ -1,6 +1,9 @@
 import { EquipmentQrScanner } from "./components/EquipmentQrScanner"
 import { DocumentsBrowser } from "./components/DocumentsBrowser"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { ReportPreview } from "./components/ReportPreview"
+import { TechnovigilanceView } from "./components/TechnovigilanceView"
+import { getReportEquipmentIdentity } from "./lib/reportManagement"
 
 import {
   createCorrectiveOrderFromReport,
@@ -78,7 +81,7 @@ import {
   ServiceOrdersView,
 } from "./components/OperationalViews"
 
-type View = "dashboard" | "reportes" | "inventario" | "equipo" | "orden" | "calendario" | "avisos" | "cotizaciones" | "usuarios" | "trazabilidad" | "documentos" | "capacitaciones" | "notificaciones" | "configuracion" | "perfil"
+type View = "tecnovigilancia" | "dashboard" | "reportes" | "inventario" | "equipo" | "orden" | "calendario" | "avisos" | "cotizaciones" | "usuarios" | "trazabilidad" | "documentos" | "capacitaciones" | "notificaciones" | "configuracion" | "perfil"
 
 const roleMeta = {
   jefe: { label: "Jefe de Ingeniería Clínica", short: "Jefe", initials: "AM" },
@@ -184,6 +187,7 @@ const navigation: Record<Role, {
     { label: "Resumen", view: "dashboard", icon: LayoutDashboard },
 
     { label: "Mesa de ayuda", view: "reportes", icon: Headphones },
+    { label: "Tecnovigilancia", view: "tecnovigilancia", icon: ShieldCheck },
 
     { label: "Inventario", view: "inventario", icon: MonitorCog },
 
@@ -195,6 +199,8 @@ const navigation: Record<Role, {
   ],
 
   tecnico: [
+    { label: "Reportes", view: "reportes", icon: Headphones },
+    { label: "Tecnovigilancia", view: "tecnovigilancia", icon: ShieldCheck },
     { label: "Mi jornada", view: "dashboard", icon: LayoutDashboard },
 
     { label: "Mis órdenes", view: "orden", icon: ClipboardList },
@@ -533,6 +539,7 @@ function ReportTray({
 }) {
   const [reports, setReports] =
     useState<Awaited<ReturnType<typeof listReports>>>([])
+  const [previewId, setPreviewId] = useState<number | null>(null)
 
   const [technicians, setTechnicians] = useState<Profile[]>([])
 
@@ -569,7 +576,9 @@ function ReportTray({
     }
     load()
     window.addEventListener("biomedgest:reports-changed", load)
-    return () => window.removeEventListener("biomedgest:reports-changed", load)
+    window.addEventListener("focus", load)
+    const timer = window.setInterval(load, 15000)
+    return () => { window.removeEventListener("biomedgest:reports-changed", load); window.removeEventListener("focus", load); window.clearInterval(timer) }
   }, [role])
 
   const filteredReports = useMemo(
@@ -702,12 +711,13 @@ function ReportTray({
                 {role === "jefe" && <ReportWorkflowEditor report={report} technicians={technicians} onCreated={() => listReports().then(setReports).catch(() => undefined)} />}
                 {role !== "jefe" && <><Badge>{report.priority}</Badge><Badge>{report.status}</Badge></>}
                 {role === "jefe" && <Button variant="secondary" onClick={() => setView("orden")}>Ver órdenes</Button>}
-                <ChevronRight size={18} />
+                <button type="button" className="icon-btn" aria-label={`Ver reporte ${report.report_number}`} onClick={() => setPreviewId(report.id)}><ChevronRight size={18} /></button>
               </article>
             ))}
           </div>
         )}
       </section>
+      {previewId !== null && <ReportPreview reportId={previewId} onClose={() => setPreviewId(null)} onChanged={() => { void listReports().then(setReports).catch(() => undefined) }} />}
     </>
   )
 }
@@ -751,6 +761,25 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
 
     actionTaken: "",
   })
+
+  const selectionRequest = useRef(0)
+  const [identityLoading, setIdentityLoading] = useState(false)
+  async function selectReportEquipment(equipment: EquipmentInventoryDetail) {
+    const request = ++selectionRequest.current
+    setIdentityLoading(true)
+    setSelectedEquipment(null)
+    setForm((current) => ({ ...current, equipmentId: null, equipmentIdentifier: equipment.inventory_code, service: "", location: "", manufacturer: "", modelSerial: "" }))
+    setError("")
+    try {
+      const identity = await getReportEquipmentIdentity(equipment.id)
+      if (request !== selectionRequest.current) return
+      setSelectedEquipment({ ...equipment, ...identity })
+      setForm((current) => ({ ...current, equipmentId: identity.id, equipmentIdentifier: identity.inventory_code,
+        service: identity.hospital_area, location: [identity.hospital_area, identity.location].filter(Boolean).join(" · "),
+        manufacturer: identity.manufacturer, modelSerial: [identity.model, identity.serial_number].filter(Boolean).join(" / ") }))
+    } catch (cause) { if (request === selectionRequest.current) setError(cause instanceof Error ? cause.message : "No fue posible verificar el equipo.") }
+    finally { if (request === selectionRequest.current) setIdentityLoading(false) }
+  }
 
   function updateField(field: keyof CreateReportInput, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -820,6 +849,7 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
             <span>Equipo o número de inventario *</span>
             <EquipmentReportSelector
               role={role}
+              readOnly={Boolean(selectedEquipment) || identityLoading}
               value={form.equipmentIdentifier}
               selected={selectedEquipment}
               onInputChange={(value) => {
@@ -830,44 +860,16 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
                   equipmentIdentifier: value,
                 }))
               }}
-              onSelect={(equipment) => {
-                setSelectedEquipment(equipment)
-                setForm((current) => ({
-                  ...current,
-                  equipmentId: equipment.id,
-                  equipmentIdentifier: equipment.inventory_code,
-                  location: current.location || equipment.location || "",
-                  manufacturer: current.manufacturer || equipment.manufacturer,
-                  modelSerial:
-                    current.modelSerial ||
-                    [equipment.model, equipment.serial_number]
-                      .filter(Boolean)
-                      .join(" / "),
-                }))
-                setError("")
-              }}
+              onSelect={selectReportEquipment}
             />
             <div className="report-qr-action">
               <EquipmentQrScanner role={role}
-                onSelect={(equipment) => {
-                setSelectedEquipment(equipment)
-                setForm((current) => ({
-                  ...current,
-                  equipmentId: equipment.id,
-                  equipmentIdentifier: equipment.inventory_code,
-                  location: current.location || equipment.location || "",
-                  manufacturer: current.manufacturer || equipment.manufacturer,
-                  modelSerial:
-                    current.modelSerial ||
-                    [equipment.model, equipment.serial_number]
-                      .filter(Boolean)
-                      .join(" / "),
-                }))
-                setError("")
-              }}
+                onSelect={selectReportEquipment}
               />
             </div>
           </div>
+          {identityLoading && <p role="status">Verificando los datos del equipo...</p>}
+          {selectedEquipment && <p role="status">Datos del equipo verificados y bloqueados. Completa únicamente la información del incidente.</p>}
           <label className="field">
             <span>Fecha del evento *</span>
             <input
@@ -901,24 +903,11 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
               <option>Lesión asociada</option>
             </select>
           </label>
-          <label className="field">
-            <span>Servicio *</span>
-            <select
-              required
-              value={form.service}
-              onChange={(event) => updateField("service", event.target.value)}
-            >
-              <option value="" disabled>
-                Selecciona una opción
-              </option>
-              <option>Urgencias</option>
-              <option>Hospitalización</option>
-              <option>UCI Adultos</option>
-            </select>
-          </label>
+          <label className="field"><span>Área / servicio del equipo *</span><input required readOnly value={form.service} placeholder="Se completa al localizar el equipo" /></label>
           <label className="field">
             <span>Ubicación</span>
             <input
+              readOnly
               value={form.location}
               onChange={(event) => updateField("location", event.target.value)}
               placeholder="Ej. Cubículo 3"
@@ -927,6 +916,7 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
           <label className="field">
             <span>Fabricante</span>
             <input
+              readOnly
               value={form.manufacturer}
               onChange={(event) =>
                 updateField("manufacturer", event.target.value)
@@ -934,16 +924,9 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
               placeholder="Fabricante del equipo"
             />
           </label>
-          <label className="field">
-            <span>Modelo / serie</span>
-            <input
-              value={form.modelSerial}
-              onChange={(event) =>
-                updateField("modelSerial", event.target.value)
-              }
-              placeholder="Modelo y número de serie"
-            />
-          </label>
+          <label className="field"><span>Nombre del equipo</span><input readOnly value={selectedEquipment?.equipment_type || ""} /></label>
+          <label className="field"><span>Modelo</span><input readOnly value={selectedEquipment?.model || ""} /></label>
+          <label className="field"><span>Número de serie</span><input readOnly value={selectedEquipment?.serial_number || "No registrado"} /></label>
           <label className="field span-2">
             <span>Descripción del evento *</span>
             <textarea
@@ -1135,6 +1118,7 @@ export default function App() {
         trazabilidad: "Trazabilidad",
 
         documentos: "Documentos",
+        tecnovigilancia: "Tecnovigilancia",
         capacitaciones: "Capacitaciones",
         notificaciones: "Notificaciones",
         configuracion: "Configuración institucional",
@@ -1208,6 +1192,7 @@ export default function App() {
           {view === "cotizaciones" && <QuotationsView />}
           {view === "usuarios" && <UserPermissionsView />}
           {view === "trazabilidad" && <AuditView />}
+          {view === "tecnovigilancia" && role !== "usuario" && <TechnovigilanceView role={role} />}
           {view === "documentos" && <DocumentsBrowser role={role} />}
           {view === "reportes" && (
             <ReportTray
