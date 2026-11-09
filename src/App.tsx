@@ -1,3 +1,4 @@
+import { EquipmentQrScanner } from "./components/EquipmentQrScanner"
 import { DocumentsBrowser } from "./components/DocumentsBrowser"
 import { useEffect, useMemo, useState } from "react"
 
@@ -847,13 +848,24 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
               }}
             />
             <div className="report-qr-action">
-              <button
-                type="button"
-                disabled
-                title="El lector QR todavía no está integrado"
-              >
-                <QrCode size={19} /> QR pendiente
-              </button>
+              <EquipmentQrScanner role={role}
+                onSelect={(equipment) => {
+                setSelectedEquipment(equipment)
+                setForm((current) => ({
+                  ...current,
+                  equipmentId: equipment.id,
+                  equipmentIdentifier: equipment.inventory_code,
+                  location: current.location || equipment.location || "",
+                  manufacturer: current.manufacturer || equipment.manufacturer,
+                  modelSerial:
+                    current.modelSerial ||
+                    [equipment.model, equipment.serial_number]
+                      .filter(Boolean)
+                      .join(" / "),
+                }))
+                setError("")
+              }}
+              />
             </div>
           </div>
           <label className="field">

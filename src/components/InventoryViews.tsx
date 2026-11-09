@@ -1,3 +1,4 @@
+import { EquipmentQrScanner } from "./EquipmentQrScanner";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import {
@@ -183,6 +184,7 @@ export function Inventory({
       {!configured ? <PendingConfiguration /> : (
         <section className="panel inventory-panel">
           <div className="filter-bar" aria-label="Filtros de inventario">
+            <EquipmentQrScanner role={role} onSelect={(item) => onSelectEquipment(item.id)} />
             <label className="search-box">
               <Search size={17} />
               <input

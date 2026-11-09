@@ -21,6 +21,21 @@ pnpm preview
 
 La aplicación incluye un manifiesto web y un service worker para uso como PWA.
 
+## Buscar equipos con QR
+
+En Inventario y al reportar una falla, pulsa **Escanear QR** y permite el acceso a
+la cámara. El lector utiliza preferentemente la cámara trasera, reconoce las
+etiquetas generadas desde la ficha del equipo y también códigos de inventario
+como `EQ-000001`. La consulta conserva los permisos del usuario autenticado y no
+abre enlaces externos contenidos en el QR. La cámara se apaga al cerrar el lector
+o al cambiar de aplicación.
+
+El navegador requiere HTTPS o localhost para acceder a la cámara. Desde un
+teléfono, una URL HTTP con la IP de la computadora no es suficiente: utiliza un
+origen HTTPS de desarrollo con un certificado de confianza. La búsqueda manual
+permanece disponible cuando no hay cámara o se deniega el permiso. No se necesitan
+migraciones de Supabase para esta función.
+
 > La página conserva `noindex, nofollow`, ya que así estaba configurada en el proyecto de origen. Si se publica como sitio público, revisa esta opción en `index.html`.
 
 ## Supabase y PostgreSQL

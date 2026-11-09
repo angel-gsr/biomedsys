@@ -666,3 +666,7 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
 .document-equipment:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 .document-equipment span, .document-equipment small, .document-link-note { color: #64748b; }
 .document-link-note { padding: 0 18px 18px; font-size: 13px; }
+
+.qr-scanner-layer { z-index: 1000; }
+.qr-scanner { max-width: 520px; }
+.qr-scanner video { width: 100%; max-height: 55dvh; background: #111827; border-radius: 12px; object-fit: cover; }
