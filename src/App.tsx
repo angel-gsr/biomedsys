@@ -338,7 +338,7 @@ function Login({ onLogin }: { onLogin: (profile: Profile) => void }) {
   )
 }
 
-function Sidebar({
+export function Sidebar({
   profile,
 
   view,
@@ -385,27 +385,12 @@ function Sidebar({
         {role === "jefe" && (
           <>
             <span className="nav-label">ADMINISTRACIÓN</span>
-            <button onClick={() => setView("usuarios")}>
-              <Users size={19} />
-              <span>Usuarios y permisos</span>
-            </button>
-            <button onClick={() => setView("trazabilidad")}>
-              <History size={19} />
-              <span>Trazabilidad</span>
-            </button>
-            <button onClick={() => setView("cotizaciones")}>
-              <FileText size={19} />
-              <span>Cotizaciones</span>
-            </button>
-            <button type="button" onClick={() => setView("configuracion")}>
-              <Settings size={19} />
-              <span>Configuración</span>
-            </button>
+            {administrationNavigation.map(({ label, view: next, icon: Icon }) => <button type="button" key={next} className={view === next ? "active" : ""} aria-current={view === next ? "page" : undefined} onClick={() => setView(next)}><Icon size={19} /><span>{label}</span></button>)}
           </>
         )}
       </nav>
       <div className="profile">
-        <button type="button" className="profile-main" onClick={onProfile}>
+        <button type="button" className="profile-main" aria-label="Ver mi perfil" onClick={onProfile}>
         <span className="avatar">{initials}</span>
         <span>
           <strong>{profile.full_name}</strong>
@@ -1003,29 +988,71 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
   )
 }
 
-function BottomNav({
+const administrationNavigation: { label: string; view: View; icon: React.ElementType }[] = [
+  { label: "Usuarios y permisos", view: "usuarios", icon: Users },
+  { label: "Trazabilidad", view: "trazabilidad", icon: History },
+  { label: "Cotizaciones", view: "cotizaciones", icon: FileText },
+  { label: "Configuración", view: "configuracion", icon: Settings },
+]
+
+export function BottomNav({
   role,
   view,
   setView,
+  onLogout,
 }: {
   role: Role
   view: View
   setView: (v: View) => void
+  onLogout: () => void
 }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const primaryViews: View[] = role === "jefe" ? ["dashboard", "reportes", "inventario", "notificaciones"] : role === "tecnico" ? ["dashboard", "reportes", "orden", "inventario"] : ["dashboard", "reportes", "inventario", "avisos"]
+  const labels: Partial<Record<View, string>> = { dashboard: "Inicio", reportes: "Reportes", inventario: "Equipos", orden: "Órdenes", notificaciones: "Alertas" }
   return (
-    <nav className="bottom-nav">
-      {navigation[role].slice(0, 4).map(({ label, view: v, icon: Icon }) => (
+    <><nav className="bottom-nav" aria-label="Navegación móvil">
+      {primaryViews.map((key) => navigation[role].find((item) => item.view === key)!).map(({ label, view: v, icon: Icon }) => (
         <button
+          type="button"
           key={label}
           className={view === v ? "active" : ""}
+          aria-current={view === v ? "page" : undefined}
           onClick={() => setView(v)}
         >
           <Icon size={20} />
-          <span>{label.split(" ")[0]}</span>
+          <span>{labels[v] || label}</span>
         </button>
       ))}
+      <button type="button" className={menuOpen || !primaryViews.includes(view) ? "active" : ""} aria-haspopup="dialog" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Menu size={20} /><span>Menú</span></button>
     </nav>
+    {menuOpen && <MobileNavigationMenu role={role} view={view} onClose={() => setMenuOpen(false)} onNavigate={(next) => { setMenuOpen(false); setView(next) }} onLogout={() => { setMenuOpen(false); onLogout() }} />}
+    </>
   )
+}
+
+function MobileNavigationMenu({ role, view, onClose, onNavigate, onLogout }: { role: Role; view: View; onClose: () => void; onNavigate: (view: View) => void; onLogout: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    const element = dialog.current!
+    element.showModal()
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    const desktop = window.matchMedia("(min-width: 861px)")
+    const resize = () => { if (desktop.matches) close.current() }
+    desktop.addEventListener("change", resize)
+    return () => { desktop.removeEventListener("change", resize); document.body.style.overflow = previousOverflow; element.close() }
+  }, [])
+  return <dialog ref={dialog} className="mobile-navigation-menu" aria-label="Todas las opciones" onCancel={(event) => { event.preventDefault(); onClose() }} onClick={(event) => { if (event.target === dialog.current) onClose() }}>
+    <header className="mobile-menu-header"><h2>Todas las opciones</h2><button type="button" className="icon-btn" aria-label="Cerrar menú" onClick={onClose}><X size={22} /></button></header>
+    <nav className="side-nav mobile-menu-options" aria-label="Todas las secciones">
+      <span className="nav-label">OPERACIÓN</span>
+      {navigation[role].map(({ label, view: next, icon: Icon }) => <button type="button" key={next} aria-current={view === next ? "page" : undefined} className={view === next ? "active" : ""} onClick={() => onNavigate(next)}><Icon size={20} /><span>{label}</span></button>)}
+      {role === "jefe" && <><span className="nav-label">ADMINISTRACIÓN</span>{administrationNavigation.map(({ label, view: next, icon: Icon }) => <button type="button" key={next} aria-current={view === next ? "page" : undefined} className={view === next ? "active" : ""} onClick={() => onNavigate(next)}><Icon size={20} /><span>{label}</span></button>)}</>}
+    </nav>
+    <footer className="mobile-menu-account"><button type="button" className="btn btn-secondary" onClick={() => onNavigate("perfil")}><Users size={18} /> Mi perfil</button><button type="button" className="btn btn-secondary" onClick={onLogout}><LogOut size={18} /> Cerrar sesión</button></footer>
+  </dialog>
 }
 
 export default function App() {
@@ -1203,7 +1230,7 @@ export default function App() {
           )}
         </main>
       </div>
-      <BottomNav role={role} view={view} setView={setView} />
+      <BottomNav role={role} view={view} setView={setView} onLogout={() => { void supabase?.auth.signOut(); setProfile(null) }} />
       {reportOpen && <ReportModal role={role} onClose={() => setReportOpen(false)} />}
       {profile.must_change_password && <PasswordChangeGate onCompleted={setProfile} />}
     </div>
