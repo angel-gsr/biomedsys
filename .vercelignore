@@ -1,0 +1,13 @@
+.env*
+.cache/
+.git/
+.agents/
+.codex/
+node_modules/
+dist/
+supabase/
+scripts/
+docs/
+*.log
+*.dump
+*.xlsx

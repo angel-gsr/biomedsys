@@ -4,6 +4,7 @@ dist/
 build/
 .cache/
 .vite/
+.vercel/
 .env*
 !.env.example
 !.env.demo.example
@@ -16,3 +17,4 @@ __pycache__/
 .venv-inventory/
 supabase/.temp/
 .DS_Store
+.vercel
