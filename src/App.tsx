@@ -1,3 +1,4 @@
+import { FilePicker } from "./components/FilePicker"
 import { GeneralCalendar } from "./components/GeneralCalendar"
 import { EquipmentQrScanner } from "./components/EquipmentQrScanner"
 import { DocumentsBrowser } from "./components/DocumentsBrowser"
@@ -819,7 +820,7 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
             El folio <strong>{reportNumber}</strong> fue enviado a Ingeniería
             Clínica. Te notificaremos cada avance.
           </p>
-          {isOperationalCompletionEnabled && reportId && <div className="attachment-panel"><strong>Evidencia opcional</strong><input aria-label="Evidencia del reporte" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.doc,.docx" onChange={(event) => setEvidence(event.target.files?.[0] || null)} /><button type="button" className="row-action" disabled={!evidence || uploading} onClick={async () => { if (!evidence) return; setUploading(true); setUploadError(""); try { await uploadPrivateAttachment(evidence, { reportId }, "Evidencia adjunta al reporte"); setEvidence(null) } catch (cause) { setUploadError(cause instanceof Error ? cause.message : "No fue posible subir la evidencia.") } finally { setUploading(false) } }}><Upload size={15} />{uploading ? "Subiendo..." : "Subir evidencia"}</button>{uploadError && <small className="form-error">{uploadError}</small>}</div>}
+          {isOperationalCompletionEnabled && reportId && <div className="attachment-panel"><strong>Evidencia opcional</strong><FilePicker label="Evidencia del reporte" file={evidence} onChange={setEvidence} disabled={uploading} /><button type="button" className="row-action" disabled={!evidence || uploading} onClick={async () => { if (!evidence) return; setUploading(true); setUploadError(""); try { await uploadPrivateAttachment(evidence, { reportId }, "Evidencia adjunta al reporte"); setEvidence(null) } catch (cause) { setUploadError(cause instanceof Error ? cause.message : "No fue posible subir la evidencia.") } finally { setUploading(false) } }}><Upload size={15} />{uploading ? "Subiendo..." : "Subir evidencia"}</button>{uploadError && <small className="form-error">{uploadError}</small>}</div>}
           {isOperationalCompletionEnabled && !reportId && uploadError && <small className="form-error">{uploadError}</small>}
           <Button onClick={onClose}>Entendido</Button>
         </div>

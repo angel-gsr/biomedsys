@@ -746,3 +746,22 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
 .inventory-source-periodicity { padding: 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 16px; }
 
 .equipment-manager { max-width: 780px; max-height: 90dvh; overflow-y: auto; }
+
+/* File controls must fit narrow cards as well as mobile screens. */
+.attachment-panel, .detail-aside, .detail-aside > * { min-width: 0; }
+.attachment-panel { overflow-wrap: anywhere; }
+.attachment-upload { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.attachment-upload > *, .attachment-row > * { min-width: 0; max-width: 100%; }
+.attachment-upload input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; box-sizing: border-box; }
+.file-picker { display: grid; gap: 8px; min-width: 0; }
+.file-picker input[hidden] { display: none; }
+.file-picker-button { justify-content: center; gap: 8px; min-height: 44px; width: 100%; }
+.file-picker-name, .attachment-link { overflow-wrap: anywhere; word-break: break-word; }
+.file-picker-name { color: var(--muted); }
+.attachment-row { grid-template-columns: minmax(0, 1fr) auto; }
+.equipment-qr { padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; box-sizing: border-box; }
+.detail-aside .equipment-qr h3 { margin: 0; }
+.equipment-qr img { display: block; width: min(100%, 250px); height: auto; aspect-ratio: 1; }
+.equipment-qr p { margin: 0; line-height: 1.5; font-size: 12px; max-width: 100%; }
+.equipment-qr .qr-actions { flex-wrap: wrap; width: 100%; gap: 10px; }
+.equipment-qr .qr-actions .row-action { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }

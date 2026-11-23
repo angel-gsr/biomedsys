@@ -1,3 +1,4 @@
+import { FilePicker } from "./FilePicker"
 import { Fragment, useEffect, useMemo, useState } from "react"
 import {
   AlertTriangle,
@@ -508,5 +509,5 @@ function AttachmentPanel({ maintenanceId, attachments, onChanged }: { maintenanc
     finally { setBusy(false) }
   }
 
-  return <div className="attachment-panel"><strong>Evidencias privadas</strong><div className="attachment-upload"><input aria-label="Archivo de evidencia" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.doc,.docx" onChange={(event) => setFile(event.target.files?.[0] || null)} /><input aria-label="Descripción de evidencia" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Descripción" /><button type="button" className="row-action" disabled={!file || busy} onClick={upload}><Upload size={15} /> {busy ? "Subiendo..." : "Subir"}</button></div>{attachments.map((attachment) => <div className="attachment-row" key={attachment.id}><button type="button" className="attachment-link" onClick={() => download(attachment)}>{attachment.original_name} · {(attachment.size_bytes / 1024).toFixed(1)} KB</button><button type="button" className="row-action" disabled={busy} onClick={() => remove(attachment)}>Eliminar</button></div>)}{error && <small className="form-error" role="alert">{error}</small>}</div>
+  return <div className="attachment-panel"><strong>Evidencias privadas</strong><div className="attachment-upload"><FilePicker label="Archivo de evidencia" file={file} onChange={setFile} disabled={busy} /><input aria-label="Descripción de evidencia" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Descripción" /><button type="button" className="row-action" disabled={!file || busy} onClick={upload}><Upload size={15} /> {busy ? "Subiendo..." : "Guardar archivo"}</button></div>{attachments.map((attachment) => <div className="attachment-row" key={attachment.id}><button type="button" className="attachment-link" onClick={() => download(attachment)}>{attachment.original_name} · {(attachment.size_bytes / 1024).toFixed(1)} KB</button><button type="button" className="row-action" disabled={busy} onClick={() => remove(attachment)}>Eliminar</button></div>)}{error && <small className="form-error" role="alert">{error}</small>}</div>
 }
