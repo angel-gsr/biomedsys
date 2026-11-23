@@ -15,7 +15,7 @@ it("exposes every manager section in the mobile menu and closes after navigating
   render(<BottomNav role="jefe" view="dashboard" setView={setView} onLogout={vi.fn()} />)
   fireEvent.click(screen.getByRole("button", { name: "Menú" }))
   const menu = within(screen.getByRole("dialog", { name: "Todas las opciones" }))
-  for (const name of ["Resumen", "Mesa de ayuda", "Tecnovigilancia", "Inventario", "Mantenimiento", "Documentos", "Capacitaciones", "Notificaciones", "Usuarios y permisos", "Trazabilidad", "Cotizaciones", "Configuración", "Mi perfil", "Cerrar sesión"]) {
+  for (const name of ["Resumen", "Mesa de ayuda", "Tecnovigilancia", "Inventario", "Calendario general", "Documentos", "Capacitaciones", "Notificaciones", "Usuarios y permisos", "Trazabilidad", "Cotizaciones", "Configuración", "Mi perfil", "Cerrar sesión"]) {
     expect(menu.getByRole("button", { name })).toBeTruthy()
   }
   expect(document.body.style.overflow).toBe("hidden")

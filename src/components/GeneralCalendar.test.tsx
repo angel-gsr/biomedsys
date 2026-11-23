@@ -1,0 +1,45 @@
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { calendarEventsOverlap, eventOnDay, localDateKey, type CalendarEvent } from "../lib/generalCalendar"
+const services = vi.hoisted(() => ({ listGeneralCalendar: vi.fn(), generalCalendarOptions: vi.fn(), saveGeneralCalendarEvent: vi.fn().mockResolvedValue("reserva:1"), cancelGeneralCalendarEvent: vi.fn() }))
+vi.mock("../lib/generalCalendar", async (original) => ({ ...(await original<typeof import("../lib/generalCalendar")>()), ...services }))
+import { GeneralCalendar } from "./GeneralCalendar"
+afterEach(cleanup)
+const now = new Date(), day = localDateKey(now)
+const sample = (kind: CalendarEvent["kind"], start = `${day}T10:00:00`, end: string | null = `${day}T12:00:00`): CalendarEvent => ({ event_key: kind, kind, title: `${kind} de prueba`, starts_at: start, ends_at: end, location_id: 1, location_name: "Quirófano 1", equipment_ids: ["asset"], status: "programado", blocks_resources: true })
+describe("general calendar", () => {
+  it("uses half-open intervals, room/equipment matching, cancelled resources and unknown end times", () => {
+    const event = sample("cirugia")
+    expect(calendarEventsOverlap({ ...event, starts_at: `${day}T12:00:00`, ends_at: `${day}T13:00:00` }, event)).toBe(false)
+    expect(calendarEventsOverlap({ ...event, location_id: 2 }, event)).toBe(true)
+    expect(calendarEventsOverlap({ ...event, location_id: 2, equipment_ids: [] }, event)).toBe(false)
+    expect(calendarEventsOverlap(event, { ...event, blocks_resources: false })).toBe(false)
+    expect(calendarEventsOverlap({ ...event, starts_at: `${day}T18:00:00` }, { ...event, ends_at: null })).toBe(true)
+    expect(eventOnDay(sample("cirugia", `${day}T00:00:00`, `${day}T01:00:00`), day)).toBe(true)
+    expect(eventOnDay({ ...event, starts_at: `${day}T00:00:00`, ends_at: `${day}T00:00:00` }, day)).toBe(false)
+  })
+  it("shows all event types in the same agenda and lets the chief register a surgery", async () => {
+    services.listGeneralCalendar.mockResolvedValue([sample("cirugia"), sample("mantenimiento"), sample("capacitacion"), sample("uso_equipo")])
+    services.generalCalendarOptions.mockResolvedValue({ locations: [{ id: 1, name: "Quirófano 1" }], equipment: [{ id: "asset", name: "EQ-000001" }], programs: [], technicians: [] })
+    render(<GeneralCalendar role="jefe" onMaintenance={vi.fn()} />)
+    await screen.findByText("cirugia de prueba")
+    expect(screen.getByText("mantenimiento de prueba")).toBeTruthy()
+    expect(screen.getByText("capacitacion de prueba")).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: "Programar evento" }))
+    fireEvent.change(screen.getByLabelText("Título (sin datos de pacientes)"), { target: { value: "Cirugía programada" } })
+    fireEvent.change(screen.getByLabelText("Inicio"), { target: { value: "2030-01-01T14:00" } })
+    fireEvent.change(screen.getByLabelText("Fin"), { target: { value: "2030-01-01T15:00" } })
+    fireEvent.change(screen.getByLabelText("Sala / ubicación ocupada"), { target: { value: "1" } })
+    fireEvent.click(screen.getByRole("button", { name: "Guardar evento" }))
+    await waitFor(() => expect(services.saveGeneralCalendarEvent).toHaveBeenCalledWith(expect.objectContaining({ key: null, kind: "cirugia", locationId: 1, title: "Cirugía programada" })))
+  })
+  it("marks missing end times and keeps the technician read-only", async () => {
+    services.listGeneralCalendar.mockResolvedValue([sample("mantenimiento", `${day}T10:00:00`, null)])
+    services.generalCalendarOptions.mockResolvedValue({ locations: [], equipment: [], programs: [], technicians: [] })
+    render(<GeneralCalendar role="tecnico" onMaintenance={vi.fn()} />)
+    await screen.findByText(/1 eventos sin hora de fin/)
+    expect(screen.queryByRole("button", { name: "Programar evento" })).toBeNull()
+    fireEvent.click(screen.getAllByRole("button", { name: "Ver evento" })[0])
+    expect(screen.queryByRole("button", { name: "Guardar evento" })).toBeNull()
+  })
+})

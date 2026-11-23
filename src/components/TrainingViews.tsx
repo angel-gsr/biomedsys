@@ -44,8 +44,8 @@ export function TrainingCalendar({ role }: { role: Role }) {
   return (
     <>
       <PageIntro
-        title="Calendario de mantenimiento"
-        description="Programa mantenimientos y capacitaciones para el personal clínico."
+        title="Capacitaciones"
+        description="Administra las capacitaciones; sus fechas también aparecen en el calendario general."
         action={
           <Button icon={Plus} onClick={() => setShowForm(true)}>
             Programar capacitación

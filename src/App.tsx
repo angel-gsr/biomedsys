@@ -1,3 +1,4 @@
+import { GeneralCalendar } from "./components/GeneralCalendar"
 import { EquipmentQrScanner } from "./components/EquipmentQrScanner"
 import { DocumentsBrowser } from "./components/DocumentsBrowser"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -191,7 +192,7 @@ const navigation: Record<Role, {
 
     { label: "Inventario", view: "inventario", icon: MonitorCog },
 
-    { label: "Mantenimiento", view: "calendario", icon: CalendarDays },
+    { label: "Calendario general", view: "calendario", icon: CalendarDays },
 
     { label: "Documentos", view: "documentos", icon: FileText },
     { label: "Capacitaciones", view: "capacitaciones", icon: CalendarDays },
@@ -205,7 +206,7 @@ const navigation: Record<Role, {
 
     { label: "Mis órdenes", view: "orden", icon: ClipboardList },
 
-    { label: "Calendario", view: "calendario", icon: CalendarDays },
+    { label: "Calendario general", view: "calendario", icon: CalendarDays },
 
     { label: "Inventario", view: "inventario", icon: MonitorCog },
 
@@ -1134,7 +1135,7 @@ export default function App() {
         orden: "Orden de servicio",
 
 
-        calendario: "Mantenimiento",
+        calendario: "Calendario general",
 
         avisos: "Avisos",
 
@@ -1210,7 +1211,7 @@ export default function App() {
             />
           )}
           {view === "orden" && <ServiceOrdersView role={role} />}
-          {view === "calendario" && <MaintenanceView role={role} />}
+          {view === "calendario" && <GeneralCalendar role={role} onMaintenance={() => setView("orden")} />}
           {view === "avisos" && <NoticesView />}
           {view === "capacitaciones" && <TrainingCalendar role={role} />}
           {view === "notificaciones" && <NotificationsView />}
