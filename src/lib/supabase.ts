@@ -530,6 +530,7 @@ export type CreateReportInput = {
   patientOutcome: string
 
   actionTaken: string
+  priority?: "Crítica" | "Alta" | "Ordinaria"
 }
 
 export async function createReport(
@@ -567,9 +568,10 @@ export async function createReport(
       description: input.incidentLabel || input.eventType,
       observations: input.description || null,
 
-      patient_outcome: input.patientOutcome || null,
+      patient_outcome: input.patientOutcome?.trim() || "No aplica",
 
-      action_taken: input.actionTaken || null,
+      action_taken: input.actionTaken?.trim() || "No aplica",
+      priority: input.priority || "Ordinaria",
     })
 
     .select("report_number")

@@ -29,3 +29,5 @@
 -- 21_inventory_enrichment.sql (additional workbook columns and import provenance)
 -- 22_inventory_control_incidents.sql (chief inventory lifecycle and equipment-specific incident options)
 -- 23_report_service_state.sql (selective reports, optional observations and automatic out-of-service state)
+
+-- 24_report_priority_defaults.sql

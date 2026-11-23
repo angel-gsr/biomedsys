@@ -1,4 +1,5 @@
-import { FilePicker } from "./components/FilePicker"
+import { IncidentPhotos } from "./components/IncidentPhotos"
+import { formatIncidentLabel } from "./lib/incidentLabels"
 import { GeneralCalendar } from "./components/GeneralCalendar"
 import { EquipmentQrScanner } from "./components/EquipmentQrScanner"
 import { DocumentsBrowser } from "./components/DocumentsBrowser"
@@ -58,7 +59,6 @@ import {
   ShieldCheck,
   Stethoscope,
   Users,
-  Save,
   Wifi,
   Wrench,
   X,
@@ -128,6 +128,7 @@ function Button({
   type = "button",
 
   className = "",
+  disabled = false,
 }: {
   children: React.ReactNode
 
@@ -140,10 +141,12 @@ function Button({
   type?: "button" | "submit"
 
   className?: string
+  disabled?: boolean
 }) {
   return (
     <button
       type={type}
+      disabled={disabled}
       onClick={onClick}
       className={`btn btn-${variant} ${className}`}
     >
@@ -720,7 +723,7 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
 
   const [reportNumber, setReportNumber] = useState("")
   const [reportId, setReportId] = useState<number | null>(null)
-  const [evidence, setEvidence] = useState<File | null>(null)
+  const [photos, setPhotos] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState("")
 
@@ -750,9 +753,10 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
 
     description: "",
 
-    patientOutcome: "",
+    patientOutcome: "No aplica",
 
-    actionTaken: "",
+    actionTaken: "No aplica",
+    priority: "Ordinaria",
   })
 
   const selectionRequest = useRef(0)
@@ -780,6 +784,25 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
     setForm((current) => ({ ...current, [field]: value }))
   }
 
+  async function savePhotos(id: number, pending: File[]) {
+    setUploading(true); setUploadError("")
+    const failed: File[] = []
+    for (const photo of pending) {
+      try { await uploadPrivateAttachment(photo, { reportId: id }, "Foto del incidente") }
+      catch { failed.push(photo) }
+    }
+    setPhotos(failed); setUploading(false)
+    if (failed.length) setUploadError("El reporte ya se guardó. Algunas fotos no pudieron adjuntarse; puedes reintentar sin crear otro reporte.")
+  }
+  async function retryPhotos() {
+    setUploading(true)
+    try {
+      const id = reportId || await getReportIdByNumber(reportNumber)
+      setReportId(id)
+      await savePhotos(id, photos)
+    } catch { setUploading(false); setUploadError("El reporte ya está guardado. No fue posible consultar su folio; vuelve a intentar guardar las fotos.") }
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -790,12 +813,12 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
     try {
       const createdNumber = await createReport(form)
       setReportNumber(createdNumber)
-      setSent(true)
       window.dispatchEvent(new Event("biomedgest:reports-changed"))
       if (isOperationalCompletionEnabled) {
-        try { setReportId(await getReportIdByNumber(createdNumber)) }
+        try { const id = await getReportIdByNumber(createdNumber); setReportId(id); if (photos.length) await savePhotos(id, photos) }
         catch { setUploadError("El reporte se guardó, pero no fue posible habilitar su evidencia en esta sesión.") }
       }
+      setSent(true)
     } catch (reportError) {
       setError(
         reportError instanceof Error
@@ -820,8 +843,9 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
             El folio <strong>{reportNumber}</strong> fue enviado a Ingeniería
             Clínica. Te notificaremos cada avance.
           </p>
-          {isOperationalCompletionEnabled && reportId && <div className="attachment-panel"><strong>Evidencia opcional</strong><FilePicker label="Evidencia del reporte" file={evidence} onChange={setEvidence} disabled={uploading} /><button type="button" className="row-action" disabled={!evidence || uploading} onClick={async () => { if (!evidence) return; setUploading(true); setUploadError(""); try { await uploadPrivateAttachment(evidence, { reportId }, "Evidencia adjunta al reporte"); setEvidence(null) } catch (cause) { setUploadError(cause instanceof Error ? cause.message : "No fue posible subir la evidencia.") } finally { setUploading(false) } }}><Save size={15} />{uploading ? "Subiendo..." : "Subir evidencia"}</button>{uploadError && <small className="form-error">{uploadError}</small>}</div>}
-          {isOperationalCompletionEnabled && !reportId && uploadError && <small className="form-error">{uploadError}</small>}
+          {photos.length > 0 && <IncidentPhotos files={photos} onChange={setPhotos} disabled={uploading} />}
+          {photos.length > 0 && <button type="button" className="btn btn-primary" disabled={uploading} onClick={() => void retryPhotos()}>{uploading ? "Guardando fotos..." : "Reintentar guardar fotos"}</button>}
+          {uploadError && <p className="form-error" role="alert">{uploadError}</p>}
           <Button onClick={onClose}>Entendido</Button>
         </div>
       </div>
@@ -900,7 +924,7 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
             </select>
           </label>
           <label className="field"><span>Área / servicio del equipo *</span><input required readOnly value={form.service} placeholder="Se completa al localizar el equipo" /></label>
-          <label className="field span-2"><span>Incidente del equipo *</span><select aria-label="Incidente del equipo *" required disabled={!selectedEquipment || identityLoading} value={incidentChoice} onChange={(event) => { const value=event.target.value; setIncidentChoice(value); const option=incidentOptions.find((item) => String(item.id)===value); setForm((current) => ({ ...current,incidentOptionId:option?.id || null,incidentLabel:option?.label || (value === "other" ? "Otro incidente" : "") })) }}><option value="" disabled>Selecciona el incidente del equipo localizado</option>{incidentOptions.some((item) => item.report_count>0) && <optgroup label="Reportados anteriormente en este equipo">{incidentOptions.filter((item) => item.report_count>0).map((item) => <option key={item.id} value={item.id}>{item.label} · {item.report_count} reporte(s)</option>)}</optgroup>}{incidentOptions.some((item) => item.report_count===0) && <optgroup label="Posibles problemas disponibles">{incidentOptions.filter((item) => item.report_count===0).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</optgroup>}<option value="other">Otro incidente</option></select><small>Las opciones corresponden únicamente al equipo seleccionado. No se muestran descripciones ni datos de otros pacientes.</small></label>
+          <label className="field span-2"><span>Incidente del equipo *</span><select aria-label="Incidente del equipo *" required disabled={!selectedEquipment || identityLoading} value={incidentChoice} onChange={(event) => { const value=event.target.value; setIncidentChoice(value); const option=incidentOptions.find((item) => String(item.id)===value); setForm((current) => ({ ...current,incidentOptionId:option?.id || null,incidentLabel:option?.label || (value === "other" ? "Otro incidente" : "") })) }}><option value="" disabled>Selecciona el incidente del equipo localizado</option>{incidentOptions.some((item) => item.report_count>0) && <optgroup label="Reportados anteriormente en este equipo">{incidentOptions.filter((item) => item.report_count>0).map((item) => <option key={item.id} value={item.id}>{formatIncidentLabel(item.label)} · {item.report_count} reporte(s)</option>)}</optgroup>}{incidentOptions.some((item) => item.report_count===0) && <optgroup label="Posibles problemas disponibles">{incidentOptions.filter((item) => item.report_count===0).map((item) => <option key={item.id} value={item.id}>{formatIncidentLabel(item.label)}</option>)}</optgroup>}<option value="other">Otro incidente</option></select><small>Las opciones corresponden únicamente al equipo seleccionado. No se muestran descripciones ni datos de otros pacientes.</small></label>
 
           <label className="field">
             <span>Ubicación</span>
@@ -943,7 +967,7 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
                 updateField("patientOutcome", event.target.value)
               }
             >
-              <option value="">Sin registrar</option>
+
               <option>Sin lesión</option>
               <option>Lesión temporal</option>
               <option>Lesión grave</option>
@@ -951,38 +975,20 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
               <option>No aplica</option>
             </select>
           </label>
-          <label className="field"><span>Acción tomada</span><select value={form.actionTaken} onChange={(event) => updateField("actionTaken",event.target.value)}><option value="">Sin registrar</option><option>Equipo aislado y retirado de uso</option><option>Se informó a Ingeniería Biomédica</option><option>No aplica</option></select></label>
+          <label className="field"><span>Acción tomada</span><select value={form.actionTaken} onChange={(event) => updateField("actionTaken",event.target.value)}><option>Equipo aislado y retirado de uso</option><option>Se informó a Ingeniería Biomédica</option><option>No aplica</option></select></label>
         </div>
         {error && (
           <p className="form-error" role="alert">
             {error}
           </p>
         )}
-        <div className="priority-suggest">
-          <AlertTriangle size={20} />
-          <div>
-            <strong>La prioridad inicial será ordinaria</strong>
-            <span>
-              Un jefe podrá clasificar el reporte posteriormente; todavía no
-              existe un cálculo automático de prioridad.
-            </span>
-          </div>
-        </div>
-        <div className="photo-upload" aria-disabled="true">
-          <Plus size={20} />
-          <span>
-            <strong>Adjuntos pendientes de implementación</strong>
-            <small>
-              No se enviarán archivos hasta contar con Storage y políticas
-              aprobadas.
-            </small>
-          </span>
-        </div>
+        <fieldset className="report-priority"><legend>Prioridad del incidente</legend><div role="radiogroup" aria-label="Prioridad del incidente">{([{value:"Crítica",tone:"critical",description:"Atención inmediata"},{value:"Alta",tone:"high",description:"Atención prioritaria"},{value:"Ordinaria",tone:"ordinary",description:"Revisión programada"}] as const).map(option => <label key={option.value} className={`priority-choice priority-choice-${option.tone} ${form.priority === option.value ? "is-selected" : ""}`}><input type="radio" name="report-priority" value={option.value} checked={form.priority===option.value} onChange={() => setForm(current => ({...current,priority:option.value}))} /><span className="priority-color" aria-hidden="true" /><span><strong>{option.value}</strong><small>{option.description}</small></span></label>)}</div></fieldset>
+        {isOperationalCompletionEnabled && <IncidentPhotos files={photos} onChange={setPhotos} disabled={saving} />}
         <div className="modal-footer">
           <Button variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit">
+          <Button type="submit" disabled={saving}>
             {saving ? "Guardando..." : "Enviar reporte"}
           </Button>
         </div>

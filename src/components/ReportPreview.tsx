@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react"
 import { X } from "lucide-react"
 import { createReportPdf, editReportIncident, getReportPreview, remainingEditSeconds, type IncidentChanges, type ReportPreviewData } from "../lib/reportManagement"
 import { Button } from "./ui"
+import { ReportAttachments } from "./ReportAttachments"
+import { isOperationalCompletionEnabled } from "../lib/supabase"
 
 export function ReportPreview({ reportId, onClose, onChanged }: { reportId: number; onClose: () => void; onChanged: () => void }) {
   const [preview, setPreview] = useState<ReportPreviewData | null>(null)
@@ -67,6 +69,7 @@ export function ReportPreview({ reportId, onClose, onChanged }: { reportId: numb
         </fieldset><Button variant="secondary" onClick={() => setEditing(false)}>Cerrar edición</Button>
       </form>}
       {!editing && <div className="qr-actions"><button type="button" className="btn btn-primary" disabled={busy} onClick={previewPdf}>{busy ? "Preparando..." : "Vista previa PDF"}</button>{pdfUrl && <><a className="btn btn-secondary" href={pdfUrl} target="_blank" rel="noreferrer">Abrir PDF</a><a className="btn btn-secondary" href={pdfUrl} download={`${report.report_number}.pdf`}>Descargar PDF</a></>}</div>}
+      {!editing && isOperationalCompletionEnabled && <ReportAttachments reportId={reportId} />}
       {pdfUrl && <iframe className="report-pdf-preview" title="Vista previa PDF del reporte" src={pdfUrl} />}
     </>}
   </div></div>
