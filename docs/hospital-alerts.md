@@ -29,6 +29,12 @@ Solo jefe y técnico pueden marcar «En atención» o cerrar, con responsable, h
 motivo obligatorio de cierre y auditoría. Leer una notificación no cierra la alerta.
 Un identificador por envío evita duplicados al reintentar tras un fallo de red.
 
+La X de cada notificación la archiva solo para su destinatario y la quita del
+contador; no borra el registro ni cierra una emergencia. La X del aviso flotante
+oculta ese aviso y detiene su sonido en la sesión actual. Las alertas nuevas
+vuelven a mostrar un aviso. El cierre de la emergencia sigue requiriendo jefe
+o biomédico y motivo de cierre. Migración: `supabase/27_notification_dismissal.sql`.
+
 La recepción usa Supabase Realtime, con consulta de respaldo cada 10 segundos
 y al volver a la app. Cada código tiene un patrón sonoro propio: 18 segundos para
 avisos generales y 6 segundos para avisos dirigidos. Son patrones de esta app,

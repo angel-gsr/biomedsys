@@ -876,6 +876,11 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
 .personal-notice-list .notification-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; max-width: 100%; white-space: normal; line-height: 1.5; text-align: center; }
 .personal-notice-list .notification-standard.notification-unread { border-left: 4px solid var(--primary); }
 .tv-editor-anchor { scroll-margin-top: 95px; outline: none; }
+.personal-notice-list article.personal-notification { position: relative; }
+.personal-notice-list .notification-content { padding-right: 32px; }
+.icon-btn.notification-close { position: absolute; top: 7px; right: 7px; width: 32px; height: 32px; min-height: 32px; border-radius: 8px; background: #ffffff; color: var(--muted); z-index: 1; }
+.icon-btn.notification-close:hover { color: var(--red); border-color: var(--red); }
+.hospital-alert-toast { padding-top: 42px; }
 @media (max-width: 480px) {
   .notice-list.personal-notice-list { padding: 12px; gap: 12px; }
   .personal-notice-list article.personal-notification { padding: 12px; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; }

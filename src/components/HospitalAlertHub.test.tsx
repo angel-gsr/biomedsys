@@ -54,3 +54,16 @@ it("allows biomedical staff to take an alert and requires a closure explanation"
   fireEvent.click(screen.getByRole("button", { name: "Confirmar cierre" }))
   await waitFor(() => expect(services.update).toHaveBeenCalledWith(25, "cerrada", "Atención completada"))
 })
+
+it("hides a floating notice without closing the emergency and shows new emergencies again", async () => {
+  services.inbox.mockResolvedValue({ codes: [code], alerts: [alert], unread: 1 })
+  render(<HospitalAlertHub profile={{ ...base, role: "usuario" }} onNotifications={vi.fn()} />)
+  fireEvent.click(await screen.findByRole("button", { name: "Cerrar aviso flotante" }))
+  expect(screen.queryByRole("button", { name: "Cerrar aviso flotante" })).toBeNull()
+  expect(services.update).not.toHaveBeenCalled()
+  await act(async () => { services.event?.() })
+  expect(screen.queryByRole("button", { name: "Cerrar aviso flotante" })).toBeNull()
+  services.inbox.mockResolvedValue({ codes: [code], alerts: [{ ...alert, id: 26 }], unread: 2 })
+  await act(async () => { services.event?.() })
+  expect(await screen.findByRole("button", { name: "Cerrar aviso flotante" })).toBeTruthy()
+})

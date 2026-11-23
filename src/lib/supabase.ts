@@ -1674,10 +1674,16 @@ export async function listNotifications(
   const { data, error } = await configuredClient
     .from("notifications")
     .select("id, event_type, title, message, entity_type, entity_id, read_at, created_at")
+    .is("dismissed_at", null)
     .order("created_at", { ascending: false })
     .limit(100)
   if (error) throw error
   return (data || []) as Notification[]
+}
+
+export async function dismissNotification(notificationId: number, client: SupabaseClient | null = supabase) {
+  const { error } = await requireSupabase(client).rpc("dismiss_notification", { target_notification_id: notificationId })
+  if (error) throw error
 }
 
 export async function markNotificationRead(

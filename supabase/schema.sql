@@ -33,3 +33,4 @@
 -- 24_report_priority_defaults.sql
 -- 25_hospital_alerts.sql (hospital code catalogue, scoped alerts, notifications and realtime)
 -- 26_hospital_alert_identity_sound.sql (server-derived emitter identity and audible incident codes)
+-- 27_notification_dismissal.sql (personal persistent dismissal without closing hospital alerts)

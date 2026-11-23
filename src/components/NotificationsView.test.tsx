@@ -1,10 +1,20 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
-const services = vi.hoisted(() => ({ notifications: vi.fn(), codes: vi.fn() }))
-vi.mock("../lib/supabase", async original => ({ ...(await original<typeof import("../lib/supabase")>()), isOperationalCompletionEnabled: true, listNotifications: services.notifications }))
+const services = vi.hoisted(() => ({ notifications: vi.fn(), codes: vi.fn(), dismiss: vi.fn() }))
+vi.mock("../lib/supabase", async original => ({ ...(await original<typeof import("../lib/supabase")>()), isOperationalCompletionEnabled: true, listNotifications: services.notifications, dismissNotification: services.dismiss }))
 vi.mock("../lib/hospitalAlerts", () => ({ listHospitalCodes: services.codes }))
 import { NotificationsView } from "./PlatformViews"
 afterEach(cleanup)
+it("removes a dismissed notification after saving the account-specific dismissal", async () => {
+  services.codes.mockResolvedValue([])
+  services.notifications.mockResolvedValue([{ id: 9, title: "Aviso de prueba", message: "Pendiente", created_at: "2026-11-23T10:00:00Z" }])
+  services.dismiss.mockImplementation(async () => { services.notifications.mockResolvedValue([]) })
+  render(<NotificationsView />)
+  fireEvent.click(await screen.findByRole("button", { name: "Cerrar aviso: Aviso de prueba" }))
+  await screen.findByText("No hay notificaciones")
+  expect(services.dismiss).toHaveBeenCalledWith(9)
+  expect(screen.queryByText("Aviso de prueba")).toBeNull()
+})
 it("distinguishes hospital codes with their own icons from normal notifications", async () => {
   services.codes.mockResolvedValue([{ code: "negro", name: "Negro", color: "#171717" }, { code: "verde", name: "Verde", color: "#198754" }])
   services.notifications.mockResolvedValue([

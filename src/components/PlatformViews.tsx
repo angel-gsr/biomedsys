@@ -2,7 +2,7 @@ import type { CSSProperties } from "react"
 import { HospitalCodeIcon } from "./HospitalCodeIcon"
 import { listHospitalCodes, type HospitalCode } from "../lib/hospitalAlerts"
 import { useEffect, useState } from "react"
-import { Bell, Building2, CheckCheck, UserRound } from "lucide-react"
+import { Bell, Building2, CheckCheck, UserRound, X } from "lucide-react"
 
 import {
   getInstitutionSettings,
@@ -13,6 +13,7 @@ import {
   isBusinessCompletionEnabled,
   listNotifications,
   markNotificationRead,
+  dismissNotification,
   updateInstitutionSettings,
   updateOwnProfile,
   type InstitutionSettings,
@@ -42,6 +43,14 @@ export function NotificationsView() {
 
   if (!isOperationalCompletionEnabled) return <PendingMigration title="Notificaciones" />
 
+  async function dismiss(row: Notification) {
+    try {
+      await dismissNotification(row.id)
+      setRows(current => current.filter(item => item.id !== row.id))
+      window.dispatchEvent(new Event("biomedgest:notifications-changed"))
+    } catch { setError("No fue posible cerrar el aviso. Intenta de nuevo.") }
+  }
+
   async function toggle(row: Notification) {
     try {
       const updated = await markNotificationRead(row.id, !row.read_at)
@@ -57,6 +66,7 @@ export function NotificationsView() {
     const code = hospital ? codes.find(item => row.title.toLocaleLowerCase("es-MX").startsWith(`código ${item.name.toLocaleLowerCase("es-MX")}`)) : undefined
     const color = code?.code === "blanco" ? "#94a3b8" : code?.color || "#b4232e"
     return <article key={row.id} className={`personal-notification ${hospital ? "notification-hospital" : "notification-standard"} ${row.read_at ? "notification-read" : "notification-unread"}`} style={hospital ? { "--notice-color":color } as CSSProperties : undefined}>
+      <button type="button" className="icon-btn notification-close" aria-label={`Cerrar aviso: ${row.title}`} title="Cerrar aviso" onClick={() => void dismiss(row)}><X size={18} /></button>
       {hospital ? <HospitalCodeIcon code={code?.code || ""} color={code?.color || "#b4232e"} /> : <span className="summary-icon blue"><Bell size={22} /></span>}
       <div className="notification-content"><span className="notification-kind">{hospital ? "Alerta hospitalaria" : "Notificaci\u00f3n"}</span><strong>{row.title}</strong><p>{row.message}</p><small>{new Date(row.created_at).toLocaleString("es-MX")}</small></div>
       <div className="notification-actions">{hospital && <button type="button" className="row-action" onClick={() => window.dispatchEvent(new Event("biomedgest:open-hospital-alerts"))}>Ver alertas hospitalarias</button>}<button type="button" className="row-action" onClick={() => toggle(row)}><CheckCheck size={16} />{row.read_at ? "Marcar pendiente" : "Marcar le\u00edda"}</button></div>

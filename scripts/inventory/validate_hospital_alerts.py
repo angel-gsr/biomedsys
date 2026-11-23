@@ -24,7 +24,7 @@ def denied(action, text):
 try:
     q.execute("select current_database(),host(inet_server_addr())")
     assert q.fetchone() == ("biomedgest_report_state_restore", "127.0.0.1")
-    for name in ["24_report_priority_defaults.sql", "25_hospital_alerts.sql", "26_hospital_alert_identity_sound.sql"]:
+    for name in ["24_report_priority_defaults.sql", "25_hospital_alerts.sql", "26_hospital_alert_identity_sound.sql", "27_notification_dismissal.sql"]:
         body = (Path("supabase") / name).read_text(encoding="utf-8").replace("begin;", "", 1).rsplit("commit;", 1)[0]
         q.execute(body)
     q.execute("select count(*) from hospital_codes")
@@ -105,6 +105,18 @@ try:
     q.execute("select has_function_privilege('anon','public.emit_hospital_alert(text,text,text,uuid)','execute')")
     assert q.fetchone()[0] is False
     print("PASS attribution, closure history, status notifications, audit and anonymous RPC denial", flush=True)
+    role(users["usuario"])
+    q.execute("select id from notifications where entity_type='hospital_alert' and entity_id=%s and recipient_id=auth.uid() limit 1", (str(targeted),))
+    notification_id = q.fetchone()[0]
+    q.execute("select dismiss_notification(%s)", (notification_id,))
+    q.execute("select dismiss_notification(%s)", (notification_id,))
+    q.execute("select dismissed_at is not null,read_at is not null from notifications where id=%s", (notification_id,))
+    assert q.fetchone() == (True, True)
+    q.execute("select status from hospital_alerts where id=%s", (targeted,))
+    assert q.fetchone()[0] == "activa"
+    role(peer)
+    denied(lambda: q.execute("select dismiss_notification(%s)", (notification_id,)), "no autorizada")
+    print("PASS personal idempotent dismissal cannot affect another account or close a hospital alert", flush=True)
 finally:
     c.rollback()
     q.close()

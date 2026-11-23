@@ -12,7 +12,7 @@ export async function loadHospitalInbox() {
   const [codes, alerts, unread] = await Promise.all([
     db.from("hospital_codes").select("*").order("sort_order"),
     db.rpc("list_hospital_alerts", { include_closed: false }),
-    db.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+    db.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null).is("dismissed_at", null),
   ])
   if (codes.error || alerts.error || unread.error) throw new Error("No fue posible actualizar las alertas. Reintentando la conexión.")
   return { codes: (codes.data || []) as HospitalCode[], alerts: (alerts.data || []) as HospitalAlert[], unread: unread.count || 0 }
