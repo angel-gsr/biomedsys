@@ -1,3 +1,4 @@
+import { HospitalAlertHub } from "./components/HospitalAlertHub"
 import { IncidentPhotos } from "./components/IncidentPhotos"
 import { formatIncidentLabel } from "./lib/incidentLabels"
 import { GeneralCalendar } from "./components/GeneralCalendar"
@@ -202,7 +203,6 @@ const navigation: Record<Role, {
     { label: "Documentos", view: "documentos", icon: FileText },
     { label: "Mantenimiento", view: "mantenimiento", icon: Wrench },
     { label: "Capacitaciones", view: "capacitaciones", icon: CalendarDays },
-    { label: "Notificaciones", view: "notificaciones", icon: Bell },
   ],
 
   tecnico: [
@@ -219,7 +219,6 @@ const navigation: Record<Role, {
     { label: "Documentos", view: "documentos", icon: FileText },
     { label: "Mantenimiento", view: "mantenimiento", icon: Wrench },
     { label: "Capacitaciones", view: "capacitaciones", icon: CalendarDays },
-    { label: "Notificaciones", view: "notificaciones", icon: Bell },
   ],
 
   usuario: [
@@ -230,7 +229,6 @@ const navigation: Record<Role, {
     { label: "Solicitud de equipo", view: "inventario", icon: Search },
 
     { label: "Avisos", view: "avisos", icon: Bell },
-    { label: "Notificaciones", view: "notificaciones", icon: Bell },
   ],
 }
 
@@ -412,7 +410,7 @@ export function Sidebar({
   )
 }
 
-function AppHeader({ profile, title }: { profile: Profile; title: string }) {
+function AppHeader({ profile, title, onNotifications }: { profile: Profile; title: string; onNotifications: () => void }) {
   const role = profile.role
 
   const initials =
@@ -435,6 +433,7 @@ function AppHeader({ profile, title }: { profile: Profile; title: string }) {
         <h1>{title}</h1>
       </div>
       <div className="header-actions">
+        <HospitalAlertHub profile={profile} onNotifications={onNotifications} />
         <div className="connection">
           <Wifi size={15} /> En línea
         </div>
@@ -1016,7 +1015,7 @@ export function BottomNav({
   onLogout: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const primaryViews: View[] = role === "jefe" ? ["dashboard", "reportes", "inventario", "notificaciones"] : role === "tecnico" ? ["dashboard", "reportes", "orden", "inventario"] : ["dashboard", "reportes", "inventario", "avisos"]
+  const primaryViews: View[] = role === "jefe" ? ["dashboard", "reportes", "inventario", "calendario"] : role === "tecnico" ? ["dashboard", "reportes", "orden", "inventario"] : ["dashboard", "reportes", "inventario", "avisos"]
   const labels: Partial<Record<View, string>> = { dashboard: "Inicio", reportes: "Reportes", inventario: "Equipos", orden: "Órdenes", notificaciones: "Alertas" }
   return (
     <><nav className="bottom-nav" aria-label="Navegación móvil">
@@ -1197,7 +1196,7 @@ export default function App() {
         onProfile={() => setView("perfil")}
       />
       <div className="app-main">
-        <AppHeader profile={profile} title={title} />
+        <AppHeader profile={profile} title={title} onNotifications={() => setView("notificaciones")} />
         <main className="content">
           {view === "dashboard" && (
             <Dashboard profile={profile} setView={setView} />

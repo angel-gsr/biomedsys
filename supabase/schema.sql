@@ -31,3 +31,4 @@
 -- 23_report_service_state.sql (selective reports, optional observations and automatic out-of-service state)
 
 -- 24_report_priority_defaults.sql
+-- 25_hospital_alerts.sql (hospital code catalogue, scoped alerts, notifications and realtime)

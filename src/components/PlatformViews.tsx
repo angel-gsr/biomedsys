@@ -33,7 +33,7 @@ export function NotificationsView() {
     setError("")
     listNotifications().then(setRows).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "No fue posible cargar las notificaciones.")).finally(() => setLoading(false))
   }
-  useEffect(load, [])
+  useEffect(() => { load(); window.addEventListener("biomedgest:notifications-changed", load); return () => window.removeEventListener("biomedgest:notifications-changed", load) }, [])
 
   if (!isOperationalCompletionEnabled) return <PendingMigration title="Notificaciones" />
 
@@ -41,12 +41,13 @@ export function NotificationsView() {
     try {
       const updated = await markNotificationRead(row.id, !row.read_at)
       setRows((current) => current.map((item) => item.id === updated.id ? updated : item))
+      window.dispatchEvent(new Event("biomedgest:notifications-changed"))
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No fue posible actualizar la notificación.")
     }
   }
 
-  return <><PageIntro title="Notificaciones" description="Eventos persistentes visibles únicamente para tu cuenta." /><section className="panel"><div className="panel-head"><div><h3>Bandeja personal</h3><p>{rows.filter((row) => !row.read_at).length} sin leer</p></div><Bell size={21} /></div>{error && <p className="form-error" role="alert">{error}</p>}{loading ? <div className="empty-state"><h3>Cargando notificaciones...</h3></div> : rows.length === 0 ? <div className="empty-state"><h3>No hay notificaciones</h3><p>Los cambios de reportes y mantenimiento aparecerán aquí.</p></div> : <div className="notice-list">{rows.map((row) => <article key={row.id} className={row.read_at ? "notification-read" : "notification-unread"}><span className="summary-icon blue"><Bell size={18} /></span><div><strong>{row.title}</strong><p>{row.message}</p><small>{new Date(row.created_at).toLocaleString("es-MX")}</small></div><button type="button" className="row-action" onClick={() => toggle(row)}><CheckCheck size={15} />{row.read_at ? "Marcar pendiente" : "Marcar leída"}</button></article>)}</div>}</section></>
+  return <><PageIntro title="Notificaciones" description="Eventos persistentes visibles únicamente para tu cuenta." /><section className="panel"><div className="panel-head"><div><h3>Bandeja personal</h3><p>{rows.filter((row) => !row.read_at).length} sin leer</p></div><Bell size={21} /></div>{error && <p className="form-error" role="alert">{error}</p>}{loading ? <div className="empty-state"><h3>Cargando notificaciones...</h3></div> : rows.length === 0 ? <div className="empty-state"><h3>No hay notificaciones</h3><p>Los cambios de reportes y mantenimiento aparecerán aquí.</p></div> : <div className="notice-list">{rows.map((row) => <article key={row.id} className={row.read_at ? "notification-read" : "notification-unread"}><span className="summary-icon blue"><Bell size={18} /></span><div><strong>{row.title}</strong><p>{row.message}</p><small>{new Date(row.created_at).toLocaleString("es-MX")}</small>{row.entity_type === "hospital_alert" && <button type="button" className="row-action" onClick={() => window.dispatchEvent(new Event("biomedgest:open-hospital-alerts"))}>Ver alertas hospitalarias</button>}</div><button type="button" className="row-action" onClick={() => toggle(row)}><CheckCheck size={15} />{row.read_at ? "Marcar pendiente" : "Marcar leída"}</button></article>)}</div>}</section></>
 }
 
 export function InstitutionSettingsView() {
