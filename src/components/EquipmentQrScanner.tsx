@@ -9,7 +9,7 @@ export function EquipmentQrScanner({ role, onSelect }: { role: Role; onSelect: (
   const trigger = useRef<HTMLButtonElement>(null)
   function close() { setOpen(false); trigger.current?.focus() }
   return <>
-    <button ref={trigger} type="button" className="btn btn-secondary" onClick={() => setOpen(true)}><QrCode size={19} /> Escanear QR</button>
+    <button ref={trigger} type="button" className="btn btn-secondary qr-scan-trigger" onClick={() => setOpen(true)}><QrCode size={28} /> Escanear QR</button>
     {open && <Scanner role={role} onClose={close} onSelect={(equipment) => { close(); onSelect(equipment) }} />}
   </>
 }

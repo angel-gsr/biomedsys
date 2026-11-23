@@ -840,9 +840,24 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
 .hospital-alert-toast strong, .hospital-alert-toast span { display: block; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .hospital-alert-toast .row-action { min-height: 44px; flex-shrink: 0; }
 @media (max-width: 600px) {
-  .hospital-code-grid { grid-template-columns: 1fr; }
+  .hospital-code-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .hospital-modal { padding: 18px; }
   .hospital-alert-toast { top: 76px; right: 12px; width: calc(100vw - 24px); }
   .app-header { gap: 4px; padding-inline: 12px; }
   .hospital-header-actions { gap: 8px; }
+}
+
+.hospital-code-card { border: 2px solid var(--hospital-code-color, var(--line)); border-top-width: 5px; background: color-mix(in srgb, var(--hospital-code-tint, #ffffff) 5%, white); }
+.hospital-code-card:hover, .hospital-code-card:focus-visible { border-color: var(--hospital-code-color, var(--primary)); outline: 2px solid var(--primary); outline-offset: 3px; }
+.hospital-code-card > span:last-child { min-width: 0; }
+.hospital-color { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 12px; }
+.btn.qr-scan-trigger { min-height: 58px; padding: 12px 22px; font-size: 16px; font-weight: 700; gap: 12px; border: 2px solid var(--primary); background: var(--primary-soft); color: var(--primary); box-shadow: 0 3px 10px #0b5fa51a; }
+.btn.qr-scan-trigger svg { width: 28px; height: 28px; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .hospital-code-card { flex-direction: column; gap: 10px; padding: 12px; }
+  .hospital-code-card strong { font-size: 13px; line-height: 1.5; }
+  .hospital-code-card span > span { font-size: 12px; overflow-wrap: anywhere; }
+  .hospital-code-card small { font-size: 10px; }
+  .hospital-code-card .hospital-color { width: 42px; height: 42px; }
+  .btn.qr-scan-trigger { min-height: 60px; width: 100%; justify-content: center; }
 }
