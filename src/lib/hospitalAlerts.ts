@@ -1,6 +1,6 @@
 import { supabase } from "./supabase"
 export type HospitalCode = { code: string; name: string; description: string; color: string; audience: "todos" | "biomedicos"; audible: boolean; sort_order: number }
-export type HospitalAlert = HospitalCode & { id: number; code_name: string; code_description: string; emitted_by: string; emitter_name: string; location: string; details: string | null; status: "activa" | "en_atencion" | "cerrada"; created_at: string; responder_name: string | null; closure_notes: string | null }
+export type HospitalAlert = HospitalCode & { id: number; code_name: string; code_description: string; emitted_by: string; emitter_name: string; emitter_institutional_id: string | null; emitter_role: string | null; emitter_department: string | null; location: string; details: string | null; status: "activa" | "en_atencion" | "cerrada"; created_at: string; responder_name: string | null; closure_notes: string | null }
 function client() { if (!supabase) throw new Error("Supabase no está configurado."); return supabase }
 export async function loadHospitalInbox() {
   const db = client()
@@ -22,24 +22,4 @@ export async function updateHospitalAlert(id: number, status: "en_atencion" | "c
   if (error) throw new Error(error.message)
 }
 
-export class HospitalSound {
-  private context?: AudioContext
-  async enable() {
-    this.context ||= new AudioContext()
-    await this.context.resume()
-    if (this.context.state !== "running") throw new Error("Activa el sonido desde este botón para permitir la alerta audible.")
-  }
-  play() {
-    const context = this.context
-    if (!context || context.state !== "running") return false
-    for (let i = 0; i < 3; i++) {
-      const oscillator = context.createOscillator(), gain = context.createGain()
-      const start = context.currentTime + i * .35
-      oscillator.type = "sine"; oscillator.frequency.value = i % 2 ? 660 : 880
-      gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(.12, start + .02); gain.gain.exponentialRampToValueAtTime(.001, start + .25)
-      oscillator.connect(gain); gain.connect(context.destination); oscillator.start(start); oscillator.stop(start + .27)
-    }
-    return true
-  }
-  async stop() { if (this.context) { const context=this.context; this.context=undefined; await context.close() } }
-}
+export { HospitalSound } from "./hospitalSound"

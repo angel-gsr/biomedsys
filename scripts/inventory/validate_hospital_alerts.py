@@ -24,10 +24,12 @@ def denied(action, text):
 try:
     q.execute("select current_database(),host(inet_server_addr())")
     assert q.fetchone() == ("biomedgest_report_state_restore", "127.0.0.1")
-    for name in ["24_report_priority_defaults.sql", "25_hospital_alerts.sql"]:
+    for name in ["24_report_priority_defaults.sql", "25_hospital_alerts.sql", "26_hospital_alert_identity_sound.sql"]:
         body = (Path("supabase") / name).read_text(encoding="utf-8").replace("begin;", "", 1).rsplit("commit;", 1)[0]
         q.execute(body)
     q.execute("select count(*) from hospital_codes")
+    assert q.fetchone()[0] == 14
+    q.execute("select count(*) from hospital_codes where audible")
     assert q.fetchone()[0] == 14
     q.execute("select id,role from profiles where active")
     users = {role_name: uid for uid, role_name in q.fetchall()}
@@ -44,6 +46,20 @@ try:
     args = ("magenta", "CEYE, sala de equipos", "Revisión técnica", request)
     q.execute("select emit_hospital_alert(%s,%s,%s,%s)", args)
     targeted = q.fetchone()[0]
+    q.execute("select list_hospital_alerts(false)")
+    emitted = next(row for row in q.fetchone()[0] if row["id"] == targeted)
+    q.execute("reset role")
+    q.execute("select full_name,institutional_id,role::text from profiles where id=%s", (str(users["usuario"]),))
+    name, institutional_id, emitter_role = q.fetchone()
+    assert (emitted["emitter_name"], emitted["emitter_institutional_id"], emitted["emitter_role"]) == (name, institutional_id, emitter_role)
+    q.execute("select message from notifications where entity_type='hospital_alert' and entity_id=%s", (str(targeted),))
+    assert all(name in row[0] and institutional_id in row[0] for row in q.fetchall())
+    denied(lambda: q.execute("update hospital_alerts set emitter_snapshot='{}'::jsonb where id=%s", (targeted,)), "identidad del emisor")
+    q.execute("update profiles set full_name='Renombrado local' where id=%s", (str(users["usuario"]),))
+    role(users["usuario"])
+    q.execute("select list_hospital_alerts(false)")
+    assert next(row for row in q.fetchone()[0] if row["id"] == targeted)["emitter_name"] == name
+    print("PASS session-derived emitter name/ID, notification identity and immutable snapshot", flush=True)
     q.execute("select emit_hospital_alert(%s,%s,%s,%s)", args)
     assert q.fetchone()[0] == targeted
     denied(lambda: q.execute("select emit_hospital_alert('magenta','Otra sala','Cambio',%s)", (request,)), "otra alerta")

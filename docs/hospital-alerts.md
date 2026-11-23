@@ -16,6 +16,10 @@ no una afirmación sobre la asignación clínica institucional de esos códigos.
 | Jefe e ingenieros biomédicos | Ámbar, azul, rosa, blanco, magenta, morado, naranja y oro |
 
 El emisor puede consultar su propia alerta dirigida y recibe sus actualizaciones.
+Su nombre, ID institucional, perfil y departamento se toman del servidor al emitir
+y quedan guardados en la alerta. Los registros anteriores toman la identidad
+disponible al aplicar la migración 26. Los avisos nuevos incluyen nombre e ID;
+la tarjeta y el aviso flotante los muestran automáticamente.
 Los destinatarios se deciden en PostgreSQL; el cliente no puede cambiar el alcance.
 Los avisos generales y sus cambios de estado generan notificaciones persistentes
 para todos los perfiles activos. Las cuentas inactivas no pueden emitir ni recibir.
@@ -26,14 +30,18 @@ motivo obligatorio de cierre y auditoría. Leer una notificación no cierra la a
 Un identificador por envío evita duplicados al reintentar tras un fallo de red.
 
 La recepción usa Supabase Realtime, con consulta de respaldo cada 10 segundos
-y al volver a la app. El sonido es un aviso breve para códigos generales: requiere
+y al volver a la app. Cada código tiene un patrón sonoro propio: 18 segundos para
+avisos generales y 6 segundos para avisos dirigidos. Son patrones de esta app,
+no señales acústicas hospitalarias oficiales. Se reproducen en secuencia para
+evitar superposiciones y se cancelan al cerrar la alerta o desactivar el sonido.
+Requieren
 el botón «Activar sonido» en cada sesión/navegador y una pestaña operativa.
 No se garantiza sonido con la aplicación cerrada, el teléfono bloqueado o el
 navegador suspendido; no hay push externo ni integración con altavoces hospitalarios.
 
 ## Verificación
 
-Migración: `supabase/25_hospital_alerts.sql`.
+Migraciones: `supabase/25_hospital_alerts.sql` y `supabase/26_hospital_alert_identity_sound.sql`.
 En la restauración local desechable de PostgreSQL, ejecutar
 `python scripts/inventory/validate_hospital_alerts.py`.
 Las pruebas verifican aislamiento por destinatario, todos los perfiles activos,
