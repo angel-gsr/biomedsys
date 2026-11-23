@@ -30,6 +30,8 @@ describe("creación de reportes vinculados", () => {
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({
       equipment_id: input.equipmentId,
       equipment_identifier: "EQ-000052",
+      description: input.eventType,
+      observations: input.description,
     }))
   })
 

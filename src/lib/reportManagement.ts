@@ -7,7 +7,7 @@ export type ReportEquipmentIdentity = {
 export type ReportPreviewData = {
   report: ReportSummary; server_now: string; can_edit: boolean; editable_until: string
 }
-export type IncidentChanges = Pick<ReportSummary, "event_date" | "event_type" | "description" | "patient_outcome" | "action_taken" | "incident_option_id" | "incident_label">
+export type IncidentChanges = Pick<ReportSummary, "event_date" | "event_type" | "description" | "patient_outcome" | "action_taken" | "incident_option_id" | "incident_label" | "observations">
 export type TechnovigilanceReview = {
   report_id: number; internal_risk: "catastrofico" | "alto" | "medio" | "bajo";
   failure_type: string; confirmed_on: string | null;
@@ -97,6 +97,7 @@ export async function createReportPdf(report: ReportSummary) {
   field("Fecha del evento", report.event_date); field("Tipo", report.event_type)
   field("Incidente del equipo", report.incident_label)
   field("Descripción", report.description); field("Resultado para el paciente", report.patient_outcome)
+  field("Observaciones", report.observations)
   field("Acción tomada", report.action_taken); field("Prioridad", report.priority); field("Estado", report.status)
   field("Control de edición", "Correcciones del autor permitidas durante 10 minutos desde el registro. Este PDF refleja el estado consultado.")
   return pdf.output("blob")

@@ -134,6 +134,15 @@ export function Inventory({
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
   const [page, setPage] = useState(1);
+  useEffect(() => {
+    if (!configured) return;
+    const refresh = () => setReloadToken((value) => value + 1);
+    window.addEventListener("biomedgest:reports-changed", refresh);
+    window.addEventListener("biomedgest:inventory-changed", refresh);
+    window.addEventListener("focus", refresh);
+    const timer = window.setInterval(refresh, 15000);
+    return () => { window.removeEventListener("biomedgest:reports-changed", refresh); window.removeEventListener("biomedgest:inventory-changed", refresh); window.removeEventListener("focus", refresh); window.clearInterval(timer); };
+  }, [configured]);
 
   useEffect(() => {
     if (!configured) return;

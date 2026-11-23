@@ -564,7 +564,8 @@ export async function createReport(
 
       model_serial: input.modelSerial || null,
 
-      description: input.description,
+      description: input.incidentLabel || input.eventType,
+      observations: input.description || null,
 
       patient_outcome: input.patientOutcome || null,
 
@@ -581,6 +582,7 @@ export async function createReport(
 }
 
 export type ReportSummary = {
+  observations?: string | null
   incident_option_id?: number | null
   incident_label?: string | null
   equipment_snapshot?: import("./reportManagement").ReportEquipmentIdentity
@@ -623,7 +625,7 @@ export type ReportSummary = {
 }
 
 const reportSummarySelection =
-  "id, report_number, reporter_id, equipment_id, maintenance_id, equipment_identifier, description, service, priority, status, created_at, event_date, event_type, location, manufacturer, model_serial, patient_outcome, action_taken, equipment_snapshot, edited_at, incident_option_id, incident_label"
+  "id, report_number, reporter_id, equipment_id, maintenance_id, equipment_identifier, description, service, priority, status, created_at, event_date, event_type, location, manufacturer, model_serial, patient_outcome, action_taken, equipment_snapshot, edited_at, incident_option_id, incident_label, observations"
 
 export async function listReports(client: SupabaseClient | null = supabase) {
   const configuredClient = requireSupabase(client)

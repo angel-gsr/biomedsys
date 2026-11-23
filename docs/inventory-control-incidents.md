@@ -13,11 +13,10 @@ conservan y se separan en etiquetas técnicas usando saltos de línea, comas y
 punto y coma. Los reportes históricos aportan su tipo de evento, sin inferir
 diagnósticos de las narraciones.
 
-**Otro incidente** permite registrar una etiqueta técnica breve, de 3 a 240
-caracteres, además de la descripción del caso. Al guardar queda disponible para
-reportes futuros del mismo equipo. La etiqueta no debe contener nombres ni datos
-de pacientes. No se reutilizan la descripción, la consecuencia ni la acción
-clínica de otros reportes como opciones.
+**Otro incidente** ofrece una categoría adicional sin exigir texto libre. El
+catálogo sigue contando las fallas registradas para cada equipo. La descripción
+y los datos de pacientes no se reutilizan como opciones. La migración 23 agrega
+**Observaciones** opcionales y genera la descripción desde la falla seleccionada.
 
 La base comprueba que cada opción pertenezca al equipo seleccionado. La etiqueta
 se guarda en el reporte y aparece en su detalle y PDF. Se puede corregir durante
