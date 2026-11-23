@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biomedgest-shell-v2'
+const CACHE_NAME = 'biomedgest-shell-v3'
 const APP_SHELL = ['/', '/manifest.webmanifest', '/favicon.svg']
 const STATIC_DESTINATIONS = new Set(['style', 'script', 'image', 'font', 'manifest'])
 
@@ -27,7 +27,13 @@ self.addEventListener('fetch', (event) => {
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('/')),
+      fetch(event.request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone()
+          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put('/', copy)))
+        }
+        return response
+      }).catch(() => caches.match('/')),
     )
     return
   }

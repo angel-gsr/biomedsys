@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { QrCode, X } from "lucide-react"
+import jsQR from "jsqr"
 import { findEquipmentQr } from "../lib/equipmentQr"
 import type { EquipmentInventoryDetail, Role } from "../lib/supabase"
 
@@ -37,7 +38,6 @@ function Scanner({ role, onClose, onSelect }: { role: Role; onClose: () => void;
       try {
         if (!window.isSecureContext) throw new Error("Para usar la cámara abre la app mediante HTTPS o localhost. Una dirección HTTP de la red local no permite acceder a la cámara.")
         if (!navigator.mediaDevices?.getUserMedia) throw new Error("Este navegador no permite usar la cámara. Puedes buscar el equipo por su código.")
-        const { default: jsQR } = await import("jsqr")
         if (!active) return
         stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } })
         if (!active) { stop(); return }
