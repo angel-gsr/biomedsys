@@ -4,7 +4,7 @@ import {
   AlertTriangle,
   CalendarDays,
   RefreshCw,
-  Upload,
+  Save,
   Wrench,
 } from "lucide-react"
 import {
@@ -509,5 +509,5 @@ function AttachmentPanel({ maintenanceId, attachments, onChanged }: { maintenanc
     finally { setBusy(false) }
   }
 
-  return <div className="attachment-panel"><strong>Evidencias privadas</strong><div className="attachment-upload"><FilePicker label="Archivo de evidencia" file={file} onChange={setFile} disabled={busy} /><input aria-label="Descripción de evidencia" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Descripción" /><button type="button" className="row-action" disabled={!file || busy} onClick={upload}><Upload size={15} /> {busy ? "Subiendo..." : "Guardar archivo"}</button></div>{attachments.map((attachment) => <div className="attachment-row" key={attachment.id}><button type="button" className="attachment-link" onClick={() => download(attachment)}>{attachment.original_name} · {(attachment.size_bytes / 1024).toFixed(1)} KB</button><button type="button" className="row-action" disabled={busy} onClick={() => remove(attachment)}>Eliminar</button></div>)}{error && <small className="form-error" role="alert">{error}</small>}</div>
+  return <div className="attachment-panel"><strong>Evidencias privadas</strong><div className="attachment-upload"><FilePicker label="Archivo de evidencia" file={file} onChange={setFile} disabled={busy} /><input aria-label="Descripción de evidencia" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Descripción" /><button type="button" className="row-action" disabled={!file || busy} onClick={upload}><Save size={15} /> {busy ? "Subiendo..." : "Guardar archivo"}</button></div>{attachments.map((attachment) => <div className="attachment-row" key={attachment.id}><button type="button" className="attachment-link" onClick={() => download(attachment)}>{attachment.original_name} · {(attachment.size_bytes / 1024).toFixed(1)} KB</button><button type="button" className="row-action" disabled={busy} onClick={() => remove(attachment)}>Eliminar</button></div>)}{error && <small className="form-error" role="alert">{error}</small>}</div>
 }
