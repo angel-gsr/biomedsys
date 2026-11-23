@@ -37,7 +37,7 @@ export class HospitalSound {
       const oscillator = context.createOscillator(), gain = context.createGain()
       const at = start + offset
       oscillator.type = "sine"; oscillator.frequency.value = pattern.notes[i % pattern.notes.length]
-      gain.gain.setValueAtTime(0, at); gain.gain.linearRampToValueAtTime(.1, at + .02); gain.gain.exponentialRampToValueAtTime(.001, at + noteLength)
+      gain.gain.setValueAtTime(0, at); gain.gain.linearRampToValueAtTime(.18, at + .02); gain.gain.exponentialRampToValueAtTime(.001, at + noteLength)
       oscillator.connect(gain); gain.connect(context.destination)
       job.nodes.add(oscillator)
       oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); job.nodes.delete(oscillator); if (!job.nodes.size && this.jobs.get(alert.id) === job) this.jobs.delete(alert.id) }

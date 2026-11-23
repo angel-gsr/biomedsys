@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { listReports, type ReportSummary, type Role } from "../lib/supabase"
 import { listTechnovigilanceHolidays, saveTechnovigilanceHoliday, removeTechnovigilanceHoliday } from "../lib/reportManagement"
 import { getMovementLocations, getReportEquipmentIdentity, listTechnovigilanceReviews, moveTechnovigilanceEquipment, saveTechnovigilanceReview, type TechnovigilanceReview } from "../lib/reportManagement"
 import { PageIntro, Button } from "./ui"
 import { ReportPreview } from "./ReportPreview"
 
-export function TechnovigilanceView({ role }: { role: Role }) {
+export function TechnovigilanceView({ role, requestedReportId = null }: { role: Role; requestedReportId?: number | null }) {
   const [reports, setReports] = useState<ReportSummary[]>([])
   const [reviews, setReviews] = useState<TechnovigilanceReview[]>([])
-  const [selected, setSelected] = useState<number | null>(null)
+  const [selected, setSelected] = useState<number | null>(requestedReportId)
+  const editor = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (requestedReportId !== null) setSelected(requestedReportId) }, [requestedReportId])
   const [preview, setPreview] = useState<number | null>(null)
   const [error, setError] = useState("")
   const [search, setSearch] = useState("")
@@ -24,6 +26,7 @@ export function TechnovigilanceView({ role }: { role: Role }) {
     return () => { active = false; clearInterval(timer); window.removeEventListener("focus", refresh); window.removeEventListener("biomedgest:reports-changed", refresh) }
   }, [])
   const report = reports.find((row) => row.id === selected)
+  useEffect(() => { if (report && report.id === requestedReportId) { editor.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }); editor.current?.focus({ preventScroll: true }) } }, [report?.id, requestedReportId])
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(new Date())
   const filtered = reports.filter((row) => [row.report_number, row.equipment_identifier, row.description, row.service].join(" ").toLocaleLowerCase("es-MX").includes(search.toLocaleLowerCase("es-MX")))
   return <>
@@ -39,7 +42,7 @@ export function TechnovigilanceView({ role }: { role: Role }) {
         return <tr key={row.id}><td><strong>{row.report_number}</strong><small>{row.equipment_identifier} · {row.service}</small></td><td>{row.event_type}<small>{row.description}</small></td><td><span className={internalLate ? "badge badge-danger" : "badge badge-neutral"}>{review?.legal_record_completed_on ? "Acta registrada" : review ? `${internalLate ? "Vencida · " : ""}${review.internal_due_on}` : "Sin clasificar"}</span></td><td><span className={regulatoryLate ? "badge badge-danger" : "badge badge-neutral"}>{review?.notified_on ? "Notificación registrada" : review?.regulatory_due_on ? `${regulatoryLate ? "Vencida · " : ""}${review.regulatory_due_on}` : "Pendiente / no aplica"}</span></td><td><div className="table-actions"><button type="button" className="row-action" onClick={() => setSelected(row.id)}>Gestionar</button><button type="button" className="row-action" onClick={() => setPreview(row.id)}>Ver reporte / PDF</button></div></td></tr>
       })}</tbody></table></div>}
     </section>
-    {report && <ReviewEditor key={report.id} report={report} existing={reviews.find((item) => item.report_id === report.id)} onSaved={() => void load()} />}
+    {report && <div ref={editor} tabIndex={-1} className="tv-editor-anchor"><ReviewEditor key={report.id} report={report} existing={reviews.find((item) => item.report_id === report.id)} onSaved={() => void load()} /></div>}
     {preview !== null && <ReportPreview reportId={preview} onClose={() => setPreview(null)} onChanged={() => void load()} />}
   </>
 }

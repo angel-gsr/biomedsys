@@ -45,6 +45,7 @@ import {
   FileCheck2,
   FileText,
   Gauge,
+  GraduationCap,
   Headphones,
   HeartPulse,
   History,
@@ -202,7 +203,7 @@ const navigation: Record<Role, {
 
     { label: "Documentos", view: "documentos", icon: FileText },
     { label: "Mantenimiento", view: "mantenimiento", icon: Wrench },
-    { label: "Capacitaciones", view: "capacitaciones", icon: CalendarDays },
+    { label: "Capacitaciones", view: "capacitaciones", icon: GraduationCap },
   ],
 
   tecnico: [
@@ -218,7 +219,7 @@ const navigation: Record<Role, {
 
     { label: "Documentos", view: "documentos", icon: FileText },
     { label: "Mantenimiento", view: "mantenimiento", icon: Wrench },
-    { label: "Capacitaciones", view: "capacitaciones", icon: CalendarDays },
+    { label: "Capacitaciones", view: "capacitaciones", icon: GraduationCap },
   ],
 
   usuario: [
@@ -525,10 +526,12 @@ function ReportTray({
   role,
   setView,
   openReport,
+  onOpenTechnovigilance,
 }: {
   role: Role
   setView: (v: View) => void
   openReport: () => void
+  onOpenTechnovigilance: (id: number) => void
 }) {
   const [reports, setReports] =
     useState<Awaited<ReturnType<typeof listReports>>>([])
@@ -704,7 +707,7 @@ function ReportTray({
                 {role === "jefe" && <ReportWorkflowEditor report={report} technicians={technicians} onCreated={() => listReports().then(setReports).catch(() => undefined)} />}
                 {role !== "jefe" && <><Badge>{report.priority}</Badge><Badge>{report.status}</Badge></>}
                 {role === "jefe" && <Button variant="secondary" onClick={() => setView("orden")}>Ver órdenes</Button>}
-                <button type="button" className="icon-btn" aria-label={`Ver reporte ${report.report_number}`} onClick={() => setPreviewId(report.id)}><ChevronRight size={18} /></button>
+                <button type="button" className="icon-btn" aria-label={role === "usuario" ? `Ver reporte ${report.report_number}` : `Abrir Tecnovigilancia de ${report.report_number}`} onClick={() => role === "usuario" ? setPreviewId(report.id) : onOpenTechnovigilance(report.id)}><ChevronRight size={18} /></button>
               </article>
             ))}
           </div>
@@ -1077,6 +1080,7 @@ export default function App() {
   )
 
   const [reportOpen, setReportOpen] = useState(false)
+  const [technovigilanceReportId, setTechnovigilanceReportId] = useState<number | null>(null)
 
   const [loadingSession, setLoadingSession] = useState(true)
 
@@ -1236,13 +1240,14 @@ export default function App() {
           {view === "cotizaciones" && <QuotationsView />}
           {view === "usuarios" && <UserPermissionsView />}
           {view === "trazabilidad" && <AuditView />}
-          {view === "tecnovigilancia" && role !== "usuario" && <TechnovigilanceView role={role} />}
+          {view === "tecnovigilancia" && role !== "usuario" && <TechnovigilanceView role={role} requestedReportId={technovigilanceReportId} />}
           {view === "documentos" && <DocumentsBrowser role={role} />}
           {view === "reportes" && (
             <ReportTray
               role={role}
               setView={setView}
               openReport={() => setReportOpen(true)}
+              onOpenTechnovigilance={id => { setTechnovigilanceReportId(id); setView("tecnovigilancia") }}
             />
           )}
         </main>

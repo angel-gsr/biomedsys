@@ -2,6 +2,11 @@ import { supabase } from "./supabase"
 export type HospitalCode = { code: string; name: string; description: string; color: string; audience: "todos" | "biomedicos"; audible: boolean; sort_order: number }
 export type HospitalAlert = HospitalCode & { id: number; code_name: string; code_description: string; emitted_by: string; emitter_name: string; emitter_institutional_id: string | null; emitter_role: string | null; emitter_department: string | null; location: string; details: string | null; status: "activa" | "en_atencion" | "cerrada"; created_at: string; responder_name: string | null; closure_notes: string | null }
 function client() { if (!supabase) throw new Error("Supabase no está configurado."); return supabase }
+export async function listHospitalCodes() {
+  const { data, error } = await client().from("hospital_codes").select("*").order("sort_order")
+  if (error) throw error
+  return (data || []) as HospitalCode[]
+}
 export async function loadHospitalInbox() {
   const db = client()
   const [codes, alerts, unread] = await Promise.all([

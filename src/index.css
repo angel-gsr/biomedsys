@@ -864,3 +864,22 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
 
 .hospital-emitter { margin: 12px 0; padding: 12px; background: var(--primary-soft); border: 1px solid #b9d4eb; border-radius: 9px; }
 .hospital-emitter strong, .hospital-emitter span { display: block; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.notice-list.personal-notice-list { display: grid; gap: 14px; padding: 16px; }
+.personal-notice-list article.personal-notification { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+.personal-notice-list article.notification-hospital { border: 2px solid var(--notice-color); border-left-width: 5px; background: color-mix(in srgb, var(--notice-color) 4%, white); }
+.personal-notice-list .notification-content { min-width: 0; overflow-wrap: anywhere; }
+.personal-notice-list .notification-content strong { font-size: 14px; line-height: 1.5; }
+.personal-notice-list .notification-content p { font-size: 12px; line-height: 1.6; margin-block: 6px; white-space: pre-wrap; }
+.personal-notice-list .notification-content small { font-size: 11px; line-height: 1.5; }
+.personal-notice-list .notification-kind { text-transform: uppercase; font-weight: 700; letter-spacing: .04em; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+.personal-notice-list .notification-actions { grid-column: 2; display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.personal-notice-list .notification-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; max-width: 100%; white-space: normal; line-height: 1.5; text-align: center; }
+.personal-notice-list .notification-standard.notification-unread { border-left: 4px solid var(--primary); }
+.tv-editor-anchor { scroll-margin-top: 95px; outline: none; }
+@media (max-width: 480px) {
+  .notice-list.personal-notice-list { padding: 12px; gap: 12px; }
+  .personal-notice-list article.personal-notification { padding: 12px; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; }
+  .personal-notice-list .hospital-color, .personal-notice-list .summary-icon { width: 40px; height: 40px; }
+  .personal-notice-list .notification-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr; }
+  .personal-notice-list .notification-actions button { width: 100%; }
+}

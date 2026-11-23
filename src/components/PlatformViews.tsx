@@ -1,3 +1,6 @@
+import type { CSSProperties } from "react"
+import { HospitalCodeIcon } from "./HospitalCodeIcon"
+import { listHospitalCodes, type HospitalCode } from "../lib/hospitalAlerts"
 import { useEffect, useState } from "react"
 import { Bell, Building2, CheckCheck, UserRound } from "lucide-react"
 
@@ -25,6 +28,8 @@ function PendingMigration({ title }: { title: string }) {
 
 export function NotificationsView() {
   const [rows, setRows] = useState<Notification[]>([])
+  const [codes, setCodes] = useState<HospitalCode[]>([])
+  useEffect(() => { let active = true; listHospitalCodes().then(data => { if (active) setCodes(data) }).catch(() => undefined); return () => { active = false } }, [])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -47,7 +52,16 @@ export function NotificationsView() {
     }
   }
 
-  return <><PageIntro title="Notificaciones" description="Eventos persistentes visibles únicamente para tu cuenta." /><section className="panel"><div className="panel-head"><div><h3>Bandeja personal</h3><p>{rows.filter((row) => !row.read_at).length} sin leer</p></div><Bell size={21} /></div>{error && <p className="form-error" role="alert">{error}</p>}{loading ? <div className="empty-state"><h3>Cargando notificaciones...</h3></div> : rows.length === 0 ? <div className="empty-state"><h3>No hay notificaciones</h3><p>Los cambios de reportes y mantenimiento aparecerán aquí.</p></div> : <div className="notice-list">{rows.map((row) => <article key={row.id} className={row.read_at ? "notification-read" : "notification-unread"}><span className="summary-icon blue"><Bell size={18} /></span><div><strong>{row.title}</strong><p>{row.message}</p><small>{new Date(row.created_at).toLocaleString("es-MX")}</small>{row.entity_type === "hospital_alert" && <button type="button" className="row-action" onClick={() => window.dispatchEvent(new Event("biomedgest:open-hospital-alerts"))}>Ver alertas hospitalarias</button>}</div><button type="button" className="row-action" onClick={() => toggle(row)}><CheckCheck size={15} />{row.read_at ? "Marcar pendiente" : "Marcar leída"}</button></article>)}</div>}</section></>
+  return <><PageIntro title="Notificaciones" description="Eventos persistentes visibles únicamente para tu cuenta." /><section className="panel"><div className="panel-head"><div><h3>Bandeja personal</h3><p>{rows.filter((row) => !row.read_at).length} sin leer</p></div><Bell size={21} /></div>{error && <p className="form-error" role="alert">{error}</p>}{loading ? <div className="empty-state"><h3>Cargando notificaciones...</h3></div> : rows.length === 0 ? <div className="empty-state"><h3>No hay notificaciones</h3><p>Los cambios de reportes y mantenimiento aparecerán aquí.</p></div> : <div className="notice-list personal-notice-list">{rows.map(row => {
+    const hospital = row.entity_type === "hospital_alert"
+    const code = hospital ? codes.find(item => row.title.toLocaleLowerCase("es-MX").startsWith(`código ${item.name.toLocaleLowerCase("es-MX")}`)) : undefined
+    const color = code?.code === "blanco" ? "#94a3b8" : code?.color || "#b4232e"
+    return <article key={row.id} className={`personal-notification ${hospital ? "notification-hospital" : "notification-standard"} ${row.read_at ? "notification-read" : "notification-unread"}`} style={hospital ? { "--notice-color":color } as CSSProperties : undefined}>
+      {hospital ? <HospitalCodeIcon code={code?.code || ""} color={code?.color || "#b4232e"} /> : <span className="summary-icon blue"><Bell size={22} /></span>}
+      <div className="notification-content"><span className="notification-kind">{hospital ? "Alerta hospitalaria" : "Notificaci\u00f3n"}</span><strong>{row.title}</strong><p>{row.message}</p><small>{new Date(row.created_at).toLocaleString("es-MX")}</small></div>
+      <div className="notification-actions">{hospital && <button type="button" className="row-action" onClick={() => window.dispatchEvent(new Event("biomedgest:open-hospital-alerts"))}>Ver alertas hospitalarias</button>}<button type="button" className="row-action" onClick={() => toggle(row)}><CheckCheck size={16} />{row.read_at ? "Marcar pendiente" : "Marcar le\u00edda"}</button></div>
+    </article>
+  })}</div>}</section></>
 }
 
 export function InstitutionSettingsView() {

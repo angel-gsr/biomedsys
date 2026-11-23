@@ -12,6 +12,12 @@ vi.mock("../lib/reportManagement", () => ({
 import { TechnovigilanceView } from "./TechnovigilanceView"
 afterEach(cleanup)
 
+it("opens the requested report directly in its technovigilance editor", async () => {
+  render(<TechnovigilanceView role="tecnico" requestedReportId={10} />)
+  expect(await screen.findByRole("heading", { name: "Gestión de REP-000010" })).toBeTruthy()
+  expect(screen.getByLabelText("Tipo de falla / incidente")).toHaveProperty("value", "Falla")
+})
+
 it("lets the technician classify the case and relocate the actual equipment without editing the original report", async () => {
   render(<TechnovigilanceView role="tecnico" />)
   fireEvent.click(await screen.findByRole("button", { name: "Gestionar" }))
