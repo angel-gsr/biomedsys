@@ -744,3 +744,5 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
 .inventory-enrichment-item small, .inventory-source-periodicity small { display: block; margin-top: 10px; color: var(--muted); }
 .inventory-enrichment-warning { background: #fffbeb; border-color: #fcd34d; }
 .inventory-source-periodicity { padding: 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 16px; }
+
+.equipment-manager { max-width: 780px; max-height: 90dvh; overflow-y: auto; }

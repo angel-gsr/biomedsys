@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { ReportPreview } from "./components/ReportPreview"
 import { TechnovigilanceView } from "./components/TechnovigilanceView"
 import { getReportEquipmentIdentity } from "./lib/reportManagement"
+import { getEquipmentIncidentOptions, type IncidentOption } from "./lib/equipmentControl"
 
 import {
   createCorrectiveOrderFromReport,
@@ -712,6 +713,8 @@ function ReportTray({
 }
 
 export function ReportModal({ onClose, role }: { onClose: () => void; role: Role }) {
+  const [incidentOptions, setIncidentOptions] = useState<IncidentOption[]>([])
+  const [incidentChoice, setIncidentChoice] = useState("")
   const [sent, setSent] = useState(false)
 
   const [reportNumber, setReportNumber] = useState("")
@@ -757,15 +760,17 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
     const request = ++selectionRequest.current
     setIdentityLoading(true)
     setSelectedEquipment(null)
+    setIncidentOptions([]); setIncidentChoice("")
     setForm((current) => ({ ...current, equipmentId: null, equipmentIdentifier: equipment.inventory_code, service: "", location: "", manufacturer: "", modelSerial: "" }))
     setError("")
     try {
-      const identity = await getReportEquipmentIdentity(equipment.id)
+      const [identity, options] = await Promise.all([getReportEquipmentIdentity(equipment.id), getEquipmentIncidentOptions(equipment.id)])
       if (request !== selectionRequest.current) return
       setSelectedEquipment({ ...equipment, ...identity })
+      setIncidentOptions(options)
       setForm((current) => ({ ...current, equipmentId: identity.id, equipmentIdentifier: identity.inventory_code,
         service: identity.hospital_area, location: [identity.hospital_area, identity.location].filter(Boolean).join(" · "),
-        manufacturer: identity.manufacturer, modelSerial: [identity.model, identity.serial_number].filter(Boolean).join(" / ") }))
+        manufacturer: identity.manufacturer, modelSerial: [identity.model, identity.serial_number].filter(Boolean).join(" / "), incidentOptionId: null, incidentLabel: "" }))
     } catch (cause) { if (request === selectionRequest.current) setError(cause instanceof Error ? cause.message : "No fue posible verificar el equipo.") }
     finally { if (request === selectionRequest.current) setIdentityLoading(false) }
   }
@@ -893,6 +898,8 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
             </select>
           </label>
           <label className="field"><span>Área / servicio del equipo *</span><input required readOnly value={form.service} placeholder="Se completa al localizar el equipo" /></label>
+          <label className="field span-2"><span>Incidente del equipo *</span><select aria-label="Incidente del equipo *" required disabled={!selectedEquipment || identityLoading} value={incidentChoice} onChange={(event) => { const value=event.target.value; setIncidentChoice(value); const option=incidentOptions.find((item) => String(item.id)===value); setForm((current) => ({ ...current,incidentOptionId:option?.id || null,incidentLabel:option?.label || "" })) }}><option value="" disabled>Selecciona el incidente del equipo localizado</option>{incidentOptions.some((item) => item.report_count>0) && <optgroup label="Reportados anteriormente en este equipo">{incidentOptions.filter((item) => item.report_count>0).map((item) => <option key={item.id} value={item.id}>{item.label} · {item.report_count} reporte(s)</option>)}</optgroup>}{incidentOptions.some((item) => item.report_count===0) && <optgroup label="Posibles problemas disponibles">{incidentOptions.filter((item) => item.report_count===0).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</optgroup>}<option value="other">Otro incidente</option></select><small>Las opciones corresponden únicamente al equipo seleccionado. No se muestran descripciones ni datos de otros pacientes.</small></label>
+          {incidentChoice === "other" && <label className="field span-2"><span>Otro incidente del equipo *</span><input required minLength={3} maxLength={240} value={form.incidentLabel || ""} onChange={(event) => setForm((current) => ({ ...current,incidentOptionId:null,incidentLabel:event.target.value }))} placeholder="Falla breve del equipo, sin nombres ni datos de pacientes" /></label>}
           <label className="field">
             <span>Ubicación</span>
             <input

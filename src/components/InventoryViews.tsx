@@ -34,6 +34,7 @@ import {
 } from "../lib/supabase";
 import { PrivateAttachmentPanel } from "./PrivateAttachmentPanel";
 import { InventoryEnrichmentDetails } from "./InventoryEnrichmentDetails";
+import { InventoryEquipmentManager } from "./InventoryEquipmentManager";
 
 const PAGE_SIZE = 20;
 
@@ -178,6 +179,7 @@ export function Inventory({
     <>
       <PageIntro
         title={role === "usuario" ? "Consultar equipo" : "Inventario de activos"}
+        action={role === "jefe" && configured ? <InventoryEquipmentManager onChanged={() => setReloadToken((value) => value + 1)} /> : undefined}
         description={role === "usuario"
           ? "Consulta disponibilidad, identificación y ubicación sin exponer datos técnicos restringidos."
           : "Consulta los equipos médicos, su riesgo y la información técnica validada."}
@@ -244,7 +246,7 @@ export function Inventory({
                           <td><Badge tone={riskTone(item.current_risk_category)}>{item.current_risk_category ? riskLabels[item.current_risk_category] : "Sin evaluación"}</Badge></td>
                         )}
                         <td><Badge tone={statusTone(item.status)}>{statusLabels[item.status]}</Badge></td>
-                        <td><button className="row-action" aria-label={`Abrir ficha ${item.inventory_code}`}>Ver ficha</button></td>
+                        <td><div className="table-actions"><button type="button" className="row-action" aria-label={`Abrir ficha ${item.inventory_code}`}>Ver ficha</button>{role === "jefe" && <InventoryEquipmentManager equipmentId={item.id} onChanged={() => setReloadToken((value) => value + 1)} />}</div></td>
                       </tr>
                     ))}
                   </tbody>
@@ -478,7 +480,7 @@ export function EquipmentDetail({
         <ErrorState message="No se seleccionó ningún equipo." onRetry={onBack} />
       ) : loading ? <LoadingState message="Cargando ficha del equipo..." /> : error ? (
         <ErrorState message={error} onRetry={() => setReloadToken((value) => value + 1)} />
-      ) : bundle ? <DetailContent bundle={bundle} role={role} onChanged={() => setReloadToken((value) => value + 1)} /> : null}
+      ) : bundle ? <>{role === "jefe" && <InventoryEquipmentManager equipmentId={bundle.equipment.id} onChanged={(id) => { if (id) setReloadToken((value) => value + 1); else onBack() }} />}<DetailContent bundle={bundle} role={role} onChanged={() => setReloadToken((value) => value + 1)} /></> : null}
     </>
   );
 }

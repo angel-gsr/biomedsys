@@ -507,6 +507,8 @@ export async function getCurrentProfile() {
 }
 
 export type CreateReportInput = {
+  incidentOptionId?: number | null
+  incidentLabel?: string
   equipmentId: string | null
 
   equipmentIdentifier: string
@@ -544,6 +546,8 @@ export async function createReport(
     .from("reports")
 
     .insert({
+      incident_option_id: input.incidentOptionId || null,
+      incident_label: input.incidentLabel || null,
       equipment_id: input.equipmentId,
 
       equipment_identifier: input.equipmentIdentifier,
@@ -577,6 +581,8 @@ export async function createReport(
 }
 
 export type ReportSummary = {
+  incident_option_id?: number | null
+  incident_label?: string | null
   equipment_snapshot?: import("./reportManagement").ReportEquipmentIdentity
   edited_at?: string | null
   id: number
@@ -617,7 +623,7 @@ export type ReportSummary = {
 }
 
 const reportSummarySelection =
-  "id, report_number, reporter_id, equipment_id, maintenance_id, equipment_identifier, description, service, priority, status, created_at, event_date, event_type, location, manufacturer, model_serial, patient_outcome, action_taken, equipment_snapshot, edited_at"
+  "id, report_number, reporter_id, equipment_id, maintenance_id, equipment_identifier, description, service, priority, status, created_at, event_date, event_type, location, manufacturer, model_serial, patient_outcome, action_taken, equipment_snapshot, edited_at, incident_option_id, incident_label"
 
 export async function listReports(client: SupabaseClient | null = supabase) {
   const configuredClient = requireSupabase(client)

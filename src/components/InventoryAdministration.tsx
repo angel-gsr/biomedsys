@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 import { AlertTriangle, CalendarPlus, CheckCircle2, Save, Settings2 } from "lucide-react"
 import {
   configureEquipmentPreventiveProgram,
@@ -129,6 +129,7 @@ function PreventiveEditor({ equipmentId, bundle, data, api, onChanged }: {
   const [programId, setProgramId] = useState(firstProgram?.maintenance_program_id ?? 0)
   const selected = data.programs.find((item) => item.maintenance_program_id === programId) || firstProgram
   const [form, setForm] = useState<EquipmentProgramConfiguration | null>(selected || null)
+  const lastConfiguration = useRef<EquipmentProgramConfiguration | null>(selected || null)
   const [scheduledAt, setScheduledAt] = useState("")
   const [assignedTo, setAssignedTo] = useState("")
   const [priority, setPriority] = useState<"critica" | "alta" | "ordinaria">("ordinaria")
@@ -137,7 +138,7 @@ function PreventiveEditor({ equipmentId, bundle, data, api, onChanged }: {
 
   useEffect(() => {
     const next = data.programs.find((item) => item.maintenance_program_id === programId) || null
-    setForm(next)
+    if (lastConfiguration.current !== next) { lastConfiguration.current = next; setForm(next) }
   }, [data.programs, programId])
 
   if (!form) return <section className="panel inventory-admin-card"><h3>Mantenimiento preventivo</h3><p>No hay una rutina vinculada que pueda configurarse.</p></section>

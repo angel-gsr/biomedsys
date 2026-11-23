@@ -27,3 +27,4 @@
 -- 19_reports_technovigilance.sql (identity snapshots, 10-minute corrections and biomedical review)
 -- 20_general_calendar.sql (shared surgery, equipment, maintenance and training schedules)
 -- 21_inventory_enrichment.sql (additional workbook columns and import provenance)
+-- 22_inventory_control_incidents.sql (chief inventory lifecycle and equipment-specific incident options)
