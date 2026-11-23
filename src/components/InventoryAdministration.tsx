@@ -32,6 +32,14 @@ export function inventoryIssueLabel(code: string) {
   return issueLabels[code] || code.replace(/_/g, " ")
 }
 
+export function inventoryIssueDescription(issue: InventoryIssue) {
+  if (issue.issue_code === "missing_specific_location") return "Agrega la ubicación específica del equipo dentro del área hospitalaria."
+  if (issue.issue_code === "maintenance_periodicity_missing") return "El jefe debe confirmar el intervalo y las fechas del programa de mantenimiento."
+  return /xlsx|excel|hoja1|archivo|importaci/i.test(issue.details)
+    ? "Revisa este dato en la administración del equipo y registra su resolución."
+    : issue.details
+}
+
 export type InventoryAdministrationApi = {
   load: typeof getInventoryAdministrationData
   updateAsset: typeof updateEquipmentAssetAdmin
@@ -101,7 +109,7 @@ function AssetEditor({ data, onSave }: {
   return (
     <form className="panel inventory-admin-card" onSubmit={submit}>
       <h3><Settings2 size={18} /> Administración del equipo</h3>
-      <p>Se conservan el código, fabricante, modelo y datos originales de importación.</p>
+      <p>Administra la ubicación, el estado y los datos del equipo.</p>
       <div className="form-grid">
         <label className="field"><span>Número de serie</span><input value={asset.serial_number || ""} onChange={(e) => setAsset({ ...asset, serial_number: e.target.value || null })} /></label>
         <label className="field"><span>Estado</span><select value={asset.status} onChange={(e) => setAsset({ ...asset, status: e.target.value as InventoryAdminAsset["status"] })}><option value="desconocido">Sin confirmar</option><option value="operativo">Operativo</option><option value="en_reparacion">En reparación</option><option value="fuera_de_servicio">Fuera de servicio</option><option value="baja">Baja</option></select></label>
@@ -177,7 +185,7 @@ function PreventiveEditor({ equipmentId, bundle, data, api, onChanged }: {
   return (
     <section className="panel inventory-admin-card">
       <h3><CalendarPlus size={18} /> Mantenimiento preventivo</h3>
-      {bundle.enrichment?.maintenance_periodicity && <div className="inventory-source-periodicity"><strong>Periodicidad del inventario actualizado</strong><p>{bundle.enrichment.maintenance_periodicity}</p>{bundle.enrichment.suggested_interval_months ? <button type="button" className="row-action" onClick={() => setForm({ ...form, interval_months: bundle.enrichment!.suggested_interval_months, periodicity_basis: `Inventario ${bundle.enrichment!.source?.source_file || "actualizado"}, Hoja1 fila ${bundle.enrichment!.source_row}`, periodicity_notes: bundle.enrichment!.maintenance_periodicity })}>Usar intervalo del archivo ({bundle.enrichment.suggested_interval_months} meses)</button> : <span className="badge badge-warning">Definir las tareas e intervalos antes de configurar</span>}<small>Revisa los valores y pulsa Guardar periodicidad para confirmarlos. Las fechas existentes se conservan.</small></div>}
+      {bundle.enrichment?.maintenance_periodicity && <div className="inventory-source-periodicity"><strong>Periodicidad del inventario actualizado</strong><p>{bundle.enrichment.maintenance_periodicity}</p>{bundle.enrichment.suggested_interval_months ? <button type="button" className="row-action" onClick={() => setForm({ ...form, interval_months: bundle.enrichment!.suggested_interval_months, periodicity_basis: "Periodicidad de referencia del equipo", periodicity_notes: bundle.enrichment!.maintenance_periodicity })}>Usar intervalo de referencia ({bundle.enrichment.suggested_interval_months} meses)</button> : <span className="badge badge-warning">Definir las tareas e intervalos antes de configurar</span>}<small>Revisa los valores y pulsa Guardar periodicidad para confirmarlos. Las fechas existentes se conservan.</small></div>}
       <label className="field"><span>Rutina vinculada</span><select value={programId} onChange={(e) => setProgramId(Number(e.target.value))}>{data.programs.map((item) => <option key={item.maintenance_program_id} value={item.maintenance_program_id}>{programName(item.maintenance_program_id)}</option>)}</select></label>
       <form onSubmit={saveConfiguration}>
         <div className="form-grid">
@@ -231,7 +239,7 @@ function IssueReview({ issue, reviews, api, onChanged }: {
   return (
     <article className="inventory-issue-review">
       <strong>{inventoryIssueLabel(issue.issue_code)}</strong>
-      <p>{issue.details}</p>
+      <p>{inventoryIssueDescription(issue)}</p>
       <span>Estado: {issue.review_status}</span>
       {history.length > 0 && <details><summary>Historial ({history.length})</summary>{history.map((review) => <p key={review.id}><b>{review.review_status}</b> · {new Date(review.reviewed_at).toLocaleString("es-MX")}<br />{review.notes}<br /><small>{review.justification}</small></p>)}</details>}
       <form onSubmit={submit}>

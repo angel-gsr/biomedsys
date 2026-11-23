@@ -43,7 +43,7 @@ describe("InventoryAdministration", () => {
     vi.mocked(service.load).mockResolvedValue({ ...adminData, programs: [{ ...adminData.programs[0], reference_date: "2026-11-01" }] })
     const enriched: EquipmentInventoryBundle = { ...bundle, enrichment: { maintenance_periodicity: "Semestral", suggested_interval_months: 6, periodicity_needs_review: false, possible_problems: null, decommission_notes: null, warranty_notes: null, regulatory_notes: null, source_sha256: "a".repeat(64), source_row: 53, updated_at: "2026-11-23", source: { source_file: "Final (2).xlsx", imported_at: "2026-11-23" } } }
     render(<InventoryAdministration bundle={enriched} enabled api={service} onChanged={() => undefined} />)
-    fireEvent.click(await screen.findByRole("button", { name: "Usar intervalo del archivo (6 meses)" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Usar intervalo de referencia (6 meses)" }))
     expect(service.configureProgram).not.toHaveBeenCalled()
     expect((screen.getByLabelText("Periodicidad (meses)") as HTMLInputElement).value).toBe("6")
     fireEvent.click(screen.getByRole("button", { name: "Guardar periodicidad" }))

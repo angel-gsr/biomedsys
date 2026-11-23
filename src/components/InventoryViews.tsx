@@ -4,8 +4,8 @@ import QRCode from "qrcode";
 import {
   AlertTriangle,
   ArrowLeft,
-  CheckCircle2,
   ExternalLink,
+  Download,
   FileText,
   MonitorCog,
   PackageOpen,
@@ -16,7 +16,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Button, PageIntro } from "./ui";
-import { InventoryAdministration, inventoryIssueLabel } from "./InventoryAdministration";
+import { InventoryAdministration, inventoryIssueLabel, inventoryIssueDescription } from "./InventoryAdministration";
 import {
   getEquipmentInventoryBundle,
   getInventoryCapabilities,
@@ -232,7 +232,7 @@ export function Inventory({
             <div className="empty-state inventory-inline-empty">
               <PackageOpen size={34} />
               <h3>No hay equipos para mostrar</h3>
-              <p>Prueba con otros criterios o confirma que la importación ya se ejecutó en Supabase.</p>
+              <p>Prueba con otros criterios de búsqueda o registra un equipo.</p>
             </div>
           ) : (
             <>
@@ -289,6 +289,19 @@ function safeDocumentUrl(url: string) {
 function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventoryBundle; role: Role; onChanged: () => void }) {
   const { equipment, risks, documents, programs, issues, restricted } = bundle;
   const currentRisk = risks[0];
+  const pendingIssues = issues.filter(issue => {
+    if (issue.review_status !== "pendiente") return false;
+    if (issue.issue_code === "missing_specific_location" && equipment.location) return false;
+    if (issue.issue_code === "maintenance_periodicity_missing" && programs.length && programs.every(program => program.interval_months)) return false;
+    return true;
+  });
+  function downloadRoutine(program: typeof programs[number]) {
+    const tasks = program.procedure_text.split(/\r?\n|;/).map(task => task.trim()).filter(Boolean);
+    const text = ["HOJA DE MANTENIMIENTO", `${equipment.inventory_code} - ${equipment.equipment_type}`, `Modelo: ${equipment.model}`, `Serie: ${equipment.serial_number || "No registrada"}`, `Rutina: ${program.name}`, program.interval_months ? `Periodicidad: cada ${program.interval_months} meses` : "Periodicidad: pendiente de confirmar", "", "Fecha: __________________  Responsable: __________________", "", ...tasks.map(task => `[ ] ${task}`), "", "Observaciones:", "________________________________________________________", "Firma: __________________"].join("\n");
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = `${equipment.inventory_code}-rutina-${program.id}.txt`; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
   return (
     <>
       <section className="equipment-head">
@@ -373,10 +386,11 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
                 {programs.length === 0 ? <p className="detail-empty">No hay rutinas vinculadas.</p> : (
                   <div className="program-list">
                     {programs.map((program) => (
-                      <article key={program.id}>
-                        <div><Wrench size={18} /><strong>{program.name}</strong>{program.requires_review && <Badge tone="warning">Revisión pendiente</Badge>}</div>
+                      <article className="maintenance-routine-card" key={program.id}>
+                        <button type="button" className="row-action routine-download" aria-label={`Descargar checklist: ${program.name}`} title="Descargar checklist TXT" onClick={() => downloadRoutine(program)}><Download size={18} /></button>
+                        <div className="routine-heading"><Wrench size={18} /><strong>{program.name}</strong>{program.requires_review && <Badge tone="warning">Revisión pendiente</Badge>}</div>
                         <p>{program.procedure_text}</p>
-                        <span>{program.interval_months ? `Cada ${program.interval_months} meses` : "Periodicidad pendiente de definición"}{program.periodicity_basis ? ` · ${program.periodicity_basis}` : ""}</span>
+                        <span>{program.interval_months ? `Cada ${program.interval_months} meses` : "Periodicidad pendiente de definición"}</span>
                       </article>
                     ))}
                   </div>
@@ -397,18 +411,15 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
             <div><span>Documentos</span><strong>{restricted ? "Restringidos" : documents.length}</strong></div>
             <div><span>Rutinas</span><strong>{restricted ? "Restringidas" : programs.length}</strong></div>
           </section>
-          {role === "jefe" && (
+          {role === "jefe" && pendingIssues.length > 0 && (
             <section className="panel inventory-issues-card">
               <h3>Incidencias del inventario</h3>
-              {issues.length === 0 ? (
-                <div className="issue-clear"><CheckCircle2 size={18} /><span>Sin incidencias registradas para este equipo.</span></div>
-              ) : issues.map((issue) => (
+              {pendingIssues.map((issue) => (
                 <article key={issue.id}>
                   <Badge tone={issue.severity === "error" ? "danger" : issue.severity === "advertencia" ? "warning" : "info"}>{issue.severity}</Badge>
                   <strong>{inventoryIssueLabel(issue.issue_code)}</strong>
-                  <p>{issue.details}</p>
+                  <p>{inventoryIssueDescription(issue)}</p>
                   <small>Estado de revisión: {issue.review_status}</small>
-                  {issue.source_value && <small>Valor original: {issue.source_value}</small>}
                 </article>
               ))}
             </section>

@@ -765,3 +765,16 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
 .equipment-qr p { margin: 0; line-height: 1.5; font-size: 12px; max-width: 100%; }
 .equipment-qr .qr-actions { flex-wrap: wrap; width: 100%; gap: 10px; }
 .equipment-qr .qr-actions .row-action { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+
+.inventory-enrichment-item { padding: 18px; background: #f8fafc; border-left: 4px solid #b6d7ee; }
+.inventory-enrichment-item h4 { font-size: 13px; font-weight: 700; color: var(--primary); padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.inventory-enrichment-item p { margin: 0 0 10px; font-size: 14px; }
+.inventory-problems ul { padding-left: 22px; margin: 0; display: grid; gap: 10px; list-style: disc; }
+.inventory-problems li { padding-left: 4px; line-height: 1.6; overflow-wrap: anywhere; }
+.inventory-problems li::marker { color: var(--primary); }
+.program-list .maintenance-routine-card { position: relative; padding: 20px; background: #f4f9fd; border: 1px solid #c4dced; border-left: 4px solid var(--primary); border-radius: 12px; }
+.maintenance-routine-card .routine-heading { padding-right: 52px; flex-wrap: wrap; margin-bottom: 16px; min-height: 44px; }
+.maintenance-routine-card .routine-heading strong { font-size: 14px; }
+.program-list .maintenance-routine-card > span { font-size: 12px; }
+.maintenance-routine-card .routine-download { position: absolute; top: 12px; right: 12px; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.program-list .maintenance-routine-card p { white-space: pre-line; line-height: 1.8; font-size: 13px; padding-block: 12px; border-block: 1px solid #dce9f3; margin-bottom: 14px; }
