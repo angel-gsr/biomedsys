@@ -89,18 +89,21 @@ export function ProfileView({ profile, onUpdated }: { profile: Profile; onUpdate
   return <><PageIntro title="Mi perfil" description="Puedes editar tus datos personales. Tu rol y estado requieren autorización de un jefe." /><form className="panel training-form" onSubmit={save}><div className="panel-head"><div><h3>{profile.institutional_id}</h3><p>Rol: {profile.role} · {profile.active ? "Activo" : "Inactivo"}</p></div><UserRound size={22} /></div><div className="form-grid"><label className="field span-2"><span>Nombre completo</span><input required value={fullName} onChange={(event) => setFullName(event.target.value)} /></label><label className="field span-2"><span>Departamento</span><input value={department} onChange={(event) => setDepartment(event.target.value)} /></label></div>{error && <p className="form-error" role="alert">{error}</p>}{saved && <p className="form-success">Perfil actualizado.</p>}<div className="form-footer"><Button type="submit">{saving ? "Guardando..." : "Guardar perfil"}</Button></div></form><section className="panel"><div className="panel-head"><div><h3>Mi actividad</h3><p>Reportes, asignaciones, mantenimientos y cambios persistidos.</p></div></div><div className="audit-list">{activity.map((row, index) => <article key={`${row.event_type}-${row.reference}-${index}`}><div><strong>{row.reference} · {row.event_type}</strong><small>{new Date(row.event_time).toLocaleString("es-MX")} · {row.description}</small></div></article>)}</div>{activity.length === 0 && <div className="empty-state"><h3>Sin actividad visible</h3></div>}</section></>
 }
 
-export function PasswordChangeGate({ onCompleted }: { onCompleted: (profile: Profile) => void }) {
+export function PasswordChangeGate({ onCompleted, onStart }: { onCompleted: () => Promise<void>; onStart?: () => void }) {
   const [password, setPassword] = useState("")
   const [confirmation, setConfirmation] = useState("")
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
+  const [changed, setChanged] = useState(false)
   async function submit(event: React.FormEvent) {
-    event.preventDefault(); setError("")
+    event.preventDefault(); if (saving) return; setError("")
     if (password !== confirmation) { setError("Las contraseñas no coinciden."); return }
     setSaving(true)
-    try { onCompleted(await changeOwnPassword(password)) }
+    onStart?.()
+    try { await changeOwnPassword(password); setPassword(""); setConfirmation(""); setChanged(true) }
     catch (cause) { setError(cause instanceof Error ? cause.message : "No fue posible cambiar la contraseña.") }
     finally { setSaving(false) }
   }
+  if (changed) return <div className="modal-layer password-gate"><section className="modal" role="dialog" aria-modal="true" aria-label="Contraseña actualizada"><h2>Contraseña actualizada correctamente</h2><p role="status">El cambio se guardó. Vuelve al inicio de sesión e ingresa con tu nueva contraseña.</p>{error && <p className="form-error" role="alert">{error}</p>}<button type="button" disabled={saving} className="btn btn-primary" onClick={async () => { setSaving(true); setError(""); try { await onCompleted() } catch (cause) { setError(cause instanceof Error ? cause.message : "No fue posible volver al inicio de sesión.") } finally { setSaving(false) } }}>{saving ? "Cerrando sesión..." : "Ir a iniciar sesión"}</button></section></div>
   return <div className="modal-layer password-gate"><form className="modal" onSubmit={submit}><div className="modal-head"><div><span className="eyebrow">Seguridad de la cuenta</span><h2>Cambia tu contraseña temporal</h2><p>Debes completar este paso antes de utilizar BioMedGest.</p></div></div><label className="field"><span>Nueva contraseña</span><input required type="password" minLength={12} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><label className="field"><span>Confirmar contraseña</span><input required type="password" minLength={12} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></label>{error && <p className="form-error" role="alert">{error}</p>}<Button type="submit">{saving ? "Actualizando..." : "Cambiar contraseña"}</Button></form></div>
 }

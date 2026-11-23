@@ -82,7 +82,7 @@ import {
   ServiceOrdersView,
 } from "./components/OperationalViews"
 
-type View = "tecnovigilancia" | "dashboard" | "reportes" | "inventario" | "equipo" | "orden" | "calendario" | "avisos" | "cotizaciones" | "usuarios" | "trazabilidad" | "documentos" | "capacitaciones" | "notificaciones" | "configuracion" | "perfil"
+type View = "mantenimiento" | "tecnovigilancia" | "dashboard" | "reportes" | "inventario" | "equipo" | "orden" | "calendario" | "avisos" | "cotizaciones" | "usuarios" | "trazabilidad" | "documentos" | "capacitaciones" | "notificaciones" | "configuracion" | "perfil"
 
 const roleMeta = {
   jefe: { label: "Jefe de Ingeniería Clínica", short: "Jefe", initials: "AM" },
@@ -195,6 +195,7 @@ const navigation: Record<Role, {
     { label: "Calendario general", view: "calendario", icon: CalendarDays },
 
     { label: "Documentos", view: "documentos", icon: FileText },
+    { label: "Mantenimiento", view: "mantenimiento", icon: Wrench },
     { label: "Capacitaciones", view: "capacitaciones", icon: CalendarDays },
     { label: "Notificaciones", view: "notificaciones", icon: Bell },
   ],
@@ -211,6 +212,7 @@ const navigation: Record<Role, {
     { label: "Inventario", view: "inventario", icon: MonitorCog },
 
     { label: "Documentos", view: "documentos", icon: FileText },
+    { label: "Mantenimiento", view: "mantenimiento", icon: Wrench },
     { label: "Capacitaciones", view: "capacitaciones", icon: CalendarDays },
     { label: "Notificaciones", view: "notificaciones", icon: Bell },
   ],
@@ -227,7 +229,7 @@ const navigation: Record<Role, {
   ],
 }
 
-function Login({ onLogin }: { onLogin: (profile: Profile) => void }) {
+function Login({ onLogin, notice }: { onLogin: (profile: Profile) => void; notice?: string }) {
   const [id, setId] = useState("")
 
   const [password, setPassword] = useState("")
@@ -291,6 +293,7 @@ function Login({ onLogin }: { onLogin: (profile: Profile) => void }) {
           <p className="muted">
             Ingresa tu ID institucional de 8 dígitos y contraseña.
           </p>
+          {notice && <p className="form-success" role="status">{notice}</p>}
           {!isSupabaseConfigured && (
             <p className="form-error" role="alert">
               Falta configurar Supabase. Copia `.env.example` a `.env.local` y
@@ -1058,6 +1061,8 @@ function MobileNavigationMenu({ role, view, onClose, onNavigate, onLogout }: { r
 
 export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [passwordChangePending, setPasswordChangePending] = useState(false)
+  const [loginNotice, setLoginNotice] = useState("")
 
   const role = profile?.role ?? null
 
@@ -1073,16 +1078,18 @@ export default function App() {
 
   useEffect(() => {
     let mounted = true
+    let refreshId = 0
     const refreshProfile = () => {
+      const currentRequest = ++refreshId
       getCurrentProfile()
         .then((currentProfile) => {
-          if (mounted) setProfile(currentProfile)
+          if (mounted && currentRequest === refreshId) setProfile(currentProfile)
         })
         .catch(() => {
-          if (mounted) setProfile(null)
+          if (mounted && currentRequest === refreshId) setProfile(null)
         })
         .finally(() => {
-          if (mounted) setLoadingSession(false)
+          if (mounted && currentRequest === refreshId) setLoadingSession(false)
         })
     }
 
@@ -1090,6 +1097,7 @@ export default function App() {
     const authSubscription = supabase?.auth.onAuthStateChange((event) => {
       if (!mounted) return
       if (event === "SIGNED_OUT") {
+        refreshId += 1
         setProfile(null)
         setLoadingSession(false)
         return
@@ -1136,6 +1144,7 @@ export default function App() {
 
 
         calendario: "Calendario general",
+        mantenimiento: "Mantenimiento",
 
         avisos: "Avisos",
 
@@ -1161,7 +1170,9 @@ export default function App() {
   if (!profile || !role)
     return (
       <Login
+        notice={loginNotice}
         onLogin={(authenticatedProfile) => {
+          setLoginNotice("")
           setProfile(authenticatedProfile)
           setView("dashboard")
         }}
@@ -1212,6 +1223,7 @@ export default function App() {
           )}
           {view === "orden" && <ServiceOrdersView role={role} />}
           {view === "calendario" && <GeneralCalendar role={role} onMaintenance={() => setView("orden")} />}
+          {view === "mantenimiento" && <MaintenanceView role={role} />}
           {view === "avisos" && <NoticesView />}
           {view === "capacitaciones" && <TrainingCalendar role={role} />}
           {view === "notificaciones" && <NotificationsView />}
@@ -1233,7 +1245,12 @@ export default function App() {
       </div>
       <BottomNav role={role} view={view} setView={setView} onLogout={() => { void supabase?.auth.signOut(); setProfile(null) }} />
       {reportOpen && <ReportModal role={role} onClose={() => setReportOpen(false)} />}
-      {profile.must_change_password && <PasswordChangeGate onCompleted={setProfile} />}
+      {(profile.must_change_password || passwordChangePending) && <PasswordChangeGate onStart={() => setPasswordChangePending(true)} onCompleted={async () => {
+        const result = await supabase?.auth.signOut({ scope: "local" })
+        if (result?.error) throw new Error("La contraseña ya cambió, pero no fue posible cerrar la sesión. Intenta volver al inicio de sesión nuevamente.")
+        setLoginNotice("Contraseña actualizada correctamente. Inicia sesión con tu nueva contraseña.")
+        setPasswordChangePending(false); setProfile(null); setView("dashboard")
+      }} />}
     </div>
   )
 }
