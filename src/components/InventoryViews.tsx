@@ -33,6 +33,7 @@ import {
   type ActivityTimelineEntry,
 } from "../lib/supabase";
 import { PrivateAttachmentPanel } from "./PrivateAttachmentPanel";
+import { InventoryEnrichmentDetails } from "./InventoryEnrichmentDetails";
 
 const PAGE_SIZE = 20;
 
@@ -327,6 +328,7 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
 
           {!restricted && (
             <>
+              <InventoryEnrichmentDetails data={bundle.enrichment} />
               <div className="detail-section">
                 <h3>Evaluación de riesgo</h3>
                 {!currentRisk ? <p className="detail-empty">No existe una evaluación de riesgo visible.</p> : (

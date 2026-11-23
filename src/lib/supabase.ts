@@ -242,6 +242,7 @@ export type InventoryAdministrationData = {
 }
 
 export type EquipmentInventoryBundle = {
+  enrichment?: InventoryEnrichment | null
   equipment: EquipmentInventoryDetail
 
   risks: RiskAssessment[]
@@ -253,6 +254,20 @@ export type EquipmentInventoryBundle = {
   issues: InventoryIssue[]
 
   restricted: boolean
+}
+
+export type InventoryEnrichment = {
+  maintenance_periodicity: string | null
+  suggested_interval_months: number | null
+  periodicity_needs_review: boolean
+  possible_problems: string | null
+  decommission_notes: string | null
+  warranty_notes: string | null
+  regulatory_notes: string | null
+  source_sha256: string
+  source_row: number
+  updated_at: string
+  source: { source_file: string; imported_at: string } | null
 }
 
 export type InventoryCapabilities = {
@@ -1371,7 +1386,7 @@ export async function getEquipmentInventoryBundle(
     configuredClient,
   )
 
-  const [riskResult, documentResult, programResult] = await Promise.all([
+  const [riskResult, documentResult, programResult, enrichmentResult] = await Promise.all([
     configuredClient
 
       .from("risk_assessments")
@@ -1399,10 +1414,13 @@ export async function getEquipmentInventoryBundle(
       .from("equipment_maintenance_programs")
 
       .select(
-        "maintenance_programs(id, name, procedure_text, interval_months, periodicity_basis, requires_review)",
+        "interval_months, periodicity_basis, maintenance_programs(id, name, procedure_text, interval_months, periodicity_basis, requires_review)",
       )
 
       .eq("equipment_id", equipmentId),
+    configuredClient.from("equipment_inventory_extensions")
+      .select("maintenance_periodicity,suggested_interval_months,periodicity_needs_review,possible_problems,decommission_notes,warranty_notes,regulatory_notes,source_sha256,source_row,updated_at,source:inventory_enrichment_batches(source_file,imported_at)")
+      .eq("equipment_id", equipmentId).maybeSingle(),
   ])
 
   if (riskResult.error) throw riskResult.error
@@ -1410,6 +1428,7 @@ export async function getEquipmentInventoryBundle(
   if (documentResult.error) throw documentResult.error
 
   if (programResult.error) throw programResult.error
+  if (enrichmentResult.error) throw enrichmentResult.error
 
   let issues: InventoryIssue[] = []
 
@@ -1443,11 +1462,12 @@ export async function getEquipmentInventoryBundle(
 
   const programs = (programResult.data || [])
 
-    .map((row) =>
-      unwrapRelation(
+    .map((row) => {
+      const program = unwrapRelation(
         row.maintenance_programs as MaintenanceProgram | MaintenanceProgram[] | null,
-      ),
-    )
+      )
+      return program ? { ...program, interval_months: row.interval_months ?? program.interval_months, periodicity_basis: row.periodicity_basis ?? program.periodicity_basis } : null
+    })
 
     .filter((program): program is MaintenanceProgram => Boolean(program))
 
@@ -1463,6 +1483,7 @@ export async function getEquipmentInventoryBundle(
     issues,
 
     restricted: false,
+    enrichment: enrichmentResult.data ? { ...enrichmentResult.data, source: unwrapRelation(enrichmentResult.data.source) } as InventoryEnrichment : null,
   }
 }
 

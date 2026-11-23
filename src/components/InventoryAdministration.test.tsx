@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { InventoryAdministration, inventoryIssueLabel, type InventoryAdministrationApi } from "./InventoryAdministration"
 import type { EquipmentInventoryBundle, InventoryAdministrationData } from "../lib/supabase"
+afterEach(cleanup)
 
 const bundle: EquipmentInventoryBundle = {
   equipment: {
@@ -37,6 +38,17 @@ function api(): InventoryAdministrationApi {
 }
 
 describe("InventoryAdministration", () => {
+  it("propone el intervalo del archivo sin guardar automáticamente ni cambiar las fechas existentes", async () => {
+    const service = api()
+    vi.mocked(service.load).mockResolvedValue({ ...adminData, programs: [{ ...adminData.programs[0], reference_date: "2026-11-01" }] })
+    const enriched: EquipmentInventoryBundle = { ...bundle, enrichment: { maintenance_periodicity: "Semestral", suggested_interval_months: 6, periodicity_needs_review: false, possible_problems: null, decommission_notes: null, warranty_notes: null, regulatory_notes: null, source_sha256: "a".repeat(64), source_row: 53, updated_at: "2026-11-23", source: { source_file: "Final (2).xlsx", imported_at: "2026-11-23" } } }
+    render(<InventoryAdministration bundle={enriched} enabled api={service} onChanged={() => undefined} />)
+    fireEvent.click(await screen.findByRole("button", { name: "Usar intervalo del archivo (6 meses)" }))
+    expect(service.configureProgram).not.toHaveBeenCalled()
+    expect((screen.getByLabelText("Periodicidad (meses)") as HTMLInputElement).value).toBe("6")
+    fireEvent.click(screen.getByRole("button", { name: "Guardar periodicidad" }))
+    await waitFor(() => expect(service.configureProgram).toHaveBeenCalledWith("asset-52", expect.objectContaining({ interval_months: 6, reference_date: "2026-11-01", periodicity_notes: "Semestral" })))
+  })
   it("mantiene las escrituras deshabilitadas antes de desplegar la migración", () => {
     const service = api()
     render(<InventoryAdministration bundle={bundle} enabled={false} api={service} onChanged={() => undefined} />)

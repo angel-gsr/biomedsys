@@ -1,0 +1,18 @@
+{
+  "source_file": "Final (2).xlsx",
+  "source_sha256": "3eff2c6bfbcaa84282dc5ae6a3e44215a70f34c3c412a58a1f3091f870c9c7fc",
+  "row_count": 100,
+  "new_columns": [
+    "Periodicidad mantenimiento",
+    "Posibles problemas",
+    "baja de equipos",
+    "Garantía",
+    "FDA/COFEPRIS"
+  ],
+  "simple_intervals": 56,
+  "periodicities_requiring_review": 44,
+  "decommission_notes": 11,
+  "warranty_notes": 46,
+  "regulatory_notes": 46,
+  "base_columns_changed": 0
+}

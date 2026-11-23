@@ -176,6 +176,7 @@ function PreventiveEditor({ equipmentId, bundle, data, api, onChanged }: {
   return (
     <section className="panel inventory-admin-card">
       <h3><CalendarPlus size={18} /> Mantenimiento preventivo</h3>
+      {bundle.enrichment?.maintenance_periodicity && <div className="inventory-source-periodicity"><strong>Periodicidad del inventario actualizado</strong><p>{bundle.enrichment.maintenance_periodicity}</p>{bundle.enrichment.suggested_interval_months ? <button type="button" className="row-action" onClick={() => setForm({ ...form, interval_months: bundle.enrichment!.suggested_interval_months, periodicity_basis: `Inventario ${bundle.enrichment!.source?.source_file || "actualizado"}, Hoja1 fila ${bundle.enrichment!.source_row}`, periodicity_notes: bundle.enrichment!.maintenance_periodicity })}>Usar intervalo del archivo ({bundle.enrichment.suggested_interval_months} meses)</button> : <span className="badge badge-warning">Definir las tareas e intervalos antes de configurar</span>}<small>Revisa los valores y pulsa Guardar periodicidad para confirmarlos. Las fechas existentes se conservan.</small></div>}
       <label className="field"><span>Rutina vinculada</span><select value={programId} onChange={(e) => setProgramId(Number(e.target.value))}>{data.programs.map((item) => <option key={item.maintenance_program_id} value={item.maintenance_program_id}>{programName(item.maintenance_program_id)}</option>)}</select></label>
       <form onSubmit={saveConfiguration}>
         <div className="form-grid">

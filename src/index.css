@@ -737,3 +737,10 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
  .calendar-agenda-event > button { width: 100%; }
  .general-calendar-toolbar h3 { font-size: 14px; text-align: center; }
 }
+.inventory-enrichment-source { color: var(--muted); font-size: 12px; margin-bottom: 16px; }
+.inventory-enrichment-item { border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-block: 12px; }
+.inventory-enrichment-item h4 { margin: 0 0 8px; }
+.inventory-enrichment-item p, .inventory-source-periodicity p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+.inventory-enrichment-item small, .inventory-source-periodicity small { display: block; margin-top: 10px; color: var(--muted); }
+.inventory-enrichment-warning { background: #fffbeb; border-color: #fcd34d; }
+.inventory-source-periodicity { padding: 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 16px; }
