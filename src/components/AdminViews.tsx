@@ -1,3 +1,5 @@
+import {PurchaseRequisition} from "./PurchaseRequisition"
+import type {PurchaseRequisition as PurchaseRecord} from "../lib/purchaseRequisition"
 import { profileEditDraft } from "../lib/profileDraft"
 import { t } from "../lib/i18n"
 import { ProfilePhotoPicker } from "./ProfilePhotoPicker"
@@ -10,7 +12,6 @@ import { Button, PageIntro } from "./ui"
 import { PrivateAttachmentPanel } from "./PrivateAttachmentPanel"
 
 import {
-  createQuote,
   createAccessRequest,
   deleteInactiveUser,
   listUserDepartments,
@@ -46,6 +47,7 @@ export function QuotationsView() {
   const [error, setError] = useState("")
 
   const [open, setOpen] = useState(false)
+  const [selectedQuote,setSelectedQuote]=useState<Quote|undefined>(),[selectedRecord,setSelectedRecord]=useState<PurchaseRecord|undefined>()
 
   useEffect(() => {
     listQuotes()
@@ -59,24 +61,16 @@ export function QuotationsView() {
       )
   }, [])
 
+  if(open)return <PurchaseRequisition key={selectedQuote?.id||"new"} quote={selectedQuote} initial={selectedRecord} onBack={()=>{setOpen(false);setSelectedQuote(undefined);setSelectedRecord(undefined)}} onSaved={result=>{setQuotes(current=>[result.quote,...current.filter(item=>item.id!==result.quote.id)]);setSelectedQuote(result.quote);setSelectedRecord(result.requisition)}}/>
   return (
     <>
       <PageIntro
         title={t("Cotizaciones")}
         description={t("Solicita y revisa cotizaciones de equipo médico con proveedores.")}
         action={
-          <Button icon={UserPlus} onClick={() => setOpen(true)}>{"Nueva cotización"}</Button>
+          <Button icon={UserPlus} onClick={() => {setSelectedQuote(undefined);setSelectedRecord(undefined);setOpen(true)}}>{t("Nueva requisición")}</Button>
         }
       />
-      {open && (
-        <QuoteForm
-          onCancel={() => setOpen(false)}
-          onCreated={(quote) => {
-            setQuotes((current) => [quote, ...current])
-            setOpen(false)
-          }}
-        />
-      )}
       <section className="panel">
         {error && <QueryError message={error} />}
         {!error && (
@@ -89,7 +83,7 @@ export function QuotationsView() {
                     <th>{t("Proveedor")}</th>
                     <th>{t("Equipo")}</th>
                     <th>{t("Monto")}</th>
-                    <th>{t("Conexión")}</th><th>{t("Acceso")}</th>
+                    <th>{t("Estado")}</th><th>{t("Requisición de compra")}</th>
                     {isBusinessCompletionEnabled && <th>{t("Detalle")}</th>}
                   </tr>
                 </thead>
@@ -106,12 +100,12 @@ export function QuotationsView() {
                       <td>
                         {quote.currency} {quote.amount.toLocaleString("es-MX")}
                       </td>
-                      {isBusinessCompletionEnabled && <td><QuoteDetailEditor quote={quote} onChanged={(updated) => setQuotes((current) => current.map((item) => item.id === updated.id ? updated : item))} /></td>}
+
                       <td>
                         <span className="badge badge-warning">
                           {quote.status}
                         </span>
-                      </td>
+                      </td><td><Button variant="secondary" onClick={()=>{setSelectedQuote(quote);setSelectedRecord(undefined);setOpen(true)}}>{t(quote.has_purchase_requisition?"Ver requisición / PDF":"Crear requisición")}</Button></td>{isBusinessCompletionEnabled && <td>{quote.has_purchase_requisition?t("Editar desde la requisición"):<QuoteDetailEditor quote={quote} onChanged={(updated) => setQuotes((current) => current.map((item) => item.id === updated.id ? updated : item))}/>}</td>}
                     </tr>
                   ))}
                 </tbody>
@@ -127,102 +121,6 @@ export function QuotationsView() {
         )}
       </section>
     </>
-  )
-}
-
-function QuoteForm({
-  onCancel,
-  onCreated,
-}: {
-  onCancel: () => void
-  onCreated: (quote: Quote) => void
-}) {
-  const [supplier, setSupplier] = useState("")
-  const [equipmentDescription, setEquipmentDescription] = useState("")
-  const [amount, setAmount] = useState("")
-  const [notes, setNotes] = useState("")
-  const [items, setItems] = useState<QuoteItem[]>([{ description: "", quantity: 1, unit_cost: 0 }])
-  const [error, setError] = useState("")
-  const [saving, setSaving] = useState(false)
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError("")
-    setSaving(true)
-    try {
-      let created = await createQuote({
-          supplier,
-          equipmentDescription,
-          amount: isBusinessCompletionEnabled ? items.reduce((sum, item) => sum + item.quantity * item.unit_cost, 0) : Number(amount),
-          notes,
-        })
-      if (isBusinessCompletionEnabled) created = await saveQuoteItems(created.id, created.status, items)
-      onCreated(created)
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "No fue posible guardar la cotización.",
-      )
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <form className="panel training-form" onSubmit={submit}>
-      <div className="panel-head">
-        <h3>{t("Nueva cotización")}</h3>
-      </div>
-      <div className="form-grid">
-        <label className="field">
-          <span>{t("Proveedor *")}</span>
-          <input
-            required
-            value={supplier}
-            onChange={(event) => setSupplier(event.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span>{t("Monto MXN *")}</span>
-          <input
-            required
-            type="number"
-            min="0"
-            value={isBusinessCompletionEnabled ? items.reduce((sum, item) => sum + item.quantity * item.unit_cost, 0) : amount}
-            onChange={(event) => setAmount(event.target.value)}
-            readOnly={isBusinessCompletionEnabled}
-          />
-        </label>
-        <label className="field span-2">
-          <span>{t("Equipo o servicio *")}</span>
-          <input
-            required
-            value={equipmentDescription}
-            onChange={(event) => setEquipmentDescription(event.target.value)}
-          />
-        </label>
-        <label className="field span-2">
-          <span>{t("Notas")}</span>
-          <textarea
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-          />
-        </label>
-      </div>
-      {isBusinessCompletionEnabled && <div className="quote-items"><strong>{t("Conceptos")}</strong>{items.map((item, index) => <div className="quote-item-row" key={index}><input required aria-label={`Concepto ${index + 1}`} placeholder={t("Descripción")} value={item.description} onChange={(event) => setItems((current) => current.map((row, position) => position === index ? { ...row, description: event.target.value } : row))} /><input required aria-label={`Cantidad ${index + 1}`} type="number" min="0.01" step="0.01" value={item.quantity} onChange={(event) => setItems((current) => current.map((row, position) => position === index ? { ...row, quantity: Number(event.target.value) } : row))} /><input required aria-label={`Costo ${index + 1}`} type="number" min="0" step="0.01" value={item.unit_cost} onChange={(event) => setItems((current) => current.map((row, position) => position === index ? { ...row, unit_cost: Number(event.target.value) } : row))} />{items.length > 1 && <button type="button" className="row-action" onClick={() => setItems((current) => current.filter((_, position) => position !== index))}>{t("Quitar")}</button>}</div>)}<button type="button" className="row-action" onClick={() => setItems((current) => [...current, { description: "", quantity: 1, unit_cost: 0 }])}>{t("Agregar concepto")}</button></div>}
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
-      <div className="form-footer">
-        <Button variant="secondary" onClick={onCancel}>{t("Cancelar")}</Button>
-        <Button type="submit">
-          {saving ? t("Guardando...") : t("Guardar cotización")}
-        </Button>
-      </div>
-    </form>
   )
 }
 

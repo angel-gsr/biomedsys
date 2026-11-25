@@ -1054,6 +1054,22 @@ td small { color: var(--text-secondary, #8293a2); margin-top: 3px; font-size: 8p
 .equipment-incident-list article { display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:14px;padding:16px;border:1px solid var(--line);border-radius:12px;align-items:center; }
 .equipment-incident-list article small { display:block;margin-top:8px;color:var(--text-secondary); }
 .equipment-incident-list article p { margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere; }
+.purchase-requisition > .btn { margin-bottom:20px; }
+.purchase-form,.purchase-document { padding:24px;margin-top:20px;min-width:0; }
+.purchase-form > p { margin-block:14px;line-height:1.6; }
+.purchase-form h3 { margin-block:22px 14px; }
+.purchase-items { display:grid;gap:18px;margin-bottom:16px; }
+.purchase-item { border:1px solid var(--line);border-radius:12px;background:var(--surface-soft);padding:18px;min-width:0; }
+.purchase-item-head { display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px; }
+.purchase-line-total { font-weight:700;text-align:right;margin-top:16px; }
+.purchase-summary { margin-top:20px; }
+.purchase-summary dl { border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0; }
+.purchase-summary dl > div { display:flex;justify-content:space-between;gap:14px;margin-bottom:10px; }
+.purchase-summary dl > div:last-child { margin:0;padding-top:10px;border-top:1px solid var(--line);font-weight:700; }
+.purchase-summary dd { margin:0;white-space:nowrap; }
+.purchase-document > p { margin-block:12px; }
+.purchase-document .table-actions { margin-block:16px; }
+@media(max-width:600px){.purchase-form,.purchase-document { padding:16px; }.purchase-item { padding:12px; }.purchase-item-head { flex-wrap:wrap; }.purchase-document .table-actions .btn { flex:1 1 auto; }.purchase-summary dl > div { flex-wrap:wrap; }}
 @media(max-width:600px){.equipment-incident-list article { grid-template-columns:minmax(0,1fr) auto; }.equipment-incident-list article > .btn { grid-column:1 / -1; }.equipment-documents-panel .table-actions .btn { flex:1 1 auto; }.equipment-documents-panel .attachment-panel { padding:12px; }}
 .generated-report-document .table-actions { margin-block:16px; }
 .success-modal:has(.generated-report-document) { width:min(960px,calc(100vw - 24px));max-width:960px;text-align:left; }

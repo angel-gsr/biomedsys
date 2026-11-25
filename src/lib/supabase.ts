@@ -74,6 +74,7 @@ export type ProfileChange = {
 export type AccessRequest = { id: number; institutional_id: string; full_name: string; first_name?: string; last_name?: string; age?: number; phone?: string | null; role: Role; department: string | null; status: string; created_at: string }
 
 export type Quote = {
+  has_purchase_requisition?: boolean
   id: number
   quote_number: string
   supplier: string
@@ -1072,7 +1073,7 @@ export async function listQuotes() {
   const { data, error } = await supabase
     .from("quotes")
     .select(
-      "id, quote_number, supplier, equipment_description, amount, currency, status, notes, created_at, equipment_id, maintenance_id",
+      "id, quote_number, supplier, equipment_description, amount, currency, status, notes, created_at, equipment_id, maintenance_id, has_purchase_requisition",
     )
     .order("created_at", { ascending: false })
 
