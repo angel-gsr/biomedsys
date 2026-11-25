@@ -7,9 +7,7 @@ import QRCode from "qrcode";
 import {
   AlertTriangle,
   ArrowLeft,
-  ExternalLink,
   Download,
-  FileText,
   MonitorCog,
   PackageOpen,
   RefreshCw,
@@ -19,13 +17,10 @@ import {
   Wrench,
 } from "lucide-react";
 import { Button, PageIntro } from "./ui";
-import { InventoryAdministration, inventoryIssueLabel, inventoryIssueDescription } from "./InventoryAdministration";
+import { InventoryAdministration } from "./InventoryAdministration";
 import {
   getEquipmentInventoryBundle,
   getInventoryCapabilities,
-  getEquipmentActivity,
-  isBusinessCompletionEnabled,
-  isOperationalCompletionEnabled,
   isSupabaseConfigured,
   listEquipmentInventory,
   type EquipmentInventoryBundle,
@@ -33,9 +28,9 @@ import {
   type InventoryFilters,
   type RiskLevel,
   type Role,
-  type ActivityTimelineEntry,
 } from "../lib/supabase";
-import { PrivateAttachmentPanel } from "./PrivateAttachmentPanel";
+import { EquipmentDocumentsPanel } from "./EquipmentDocumentsPanel";
+import { EquipmentIncidentHistory } from "./EquipmentIncidentHistory";
 import { InventoryEnrichmentDetails } from "./InventoryEnrichmentDetails";
 import { InventoryEquipmentManager } from "./InventoryEquipmentManager";
 
@@ -278,24 +273,9 @@ export function Inventory({
   );
 }
 
-function safeDocumentUrl(url: string) {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : null;
-  } catch {
-    return null;
-  }
-}
-
 function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventoryBundle; role: Role; onChanged: () => void }) {
-  const { equipment, risks, documents, programs, issues, restricted } = bundle;
+  const { equipment, risks, documents, programs, restricted } = bundle;
   const currentRisk = risks[0];
-  const pendingIssues = issues.filter(issue => {
-    if (issue.review_status !== "pendiente") return false;
-    if (issue.issue_code === "missing_specific_location" && equipment.location) return false;
-    if (issue.issue_code === "maintenance_periodicity_missing" && programs.length && programs.every(program => program.interval_months)) return false;
-    return true;
-  });
   function downloadRoutine(program: typeof programs[number]) {
     const tasks = program.procedure_text.split(/\r?\n|;/).map(task => task.trim()).filter(Boolean);
     const text = ["HOJA DE MANTENIMIENTO", `${equipment.inventory_code} - ${equipment.equipment_type}`, `Modelo: ${equipment.model}`, `Serie: ${equipment.serial_number || "No registrada"}`, `Rutina: ${program.name}`, program.interval_months ? `Periodicidad: cada ${program.interval_months} meses` : "Periodicidad: pendiente de confirmar", "", "Fecha: __________________  Responsable: __________________", "", ...tasks.map(task => `[ ] ${task}`), "", "Observaciones:", "________________________________________________________", "Firma: __________________"].join("\n");
@@ -352,23 +332,7 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
             </div>
           </div>
 
-              <div className="detail-section">
-                <h3>{t("Manuales y documentos")}</h3>
-                {documents.length === 0 ? <p className="detail-empty">{t("No hay documentos vinculados.")}</p> : (
-                  <div className="document-list">
-                    {documents.map((document) => {
-                      const href = safeDocumentUrl(document.url);
-                      return (
-                        <article key={document.id}>
-                          <FileText size={20} />
-                          <div><strong>{document.title || (document.document_type === "manual_usuario" ? "Manual de usuario" : "Manual de servicio")}</strong><span>{document.document_type.replace(/_/g, " ")}{" "}{t("· Vínculo registrado ·")}{" "}{document.review_status}</span></div>
-                          {href ? <a href={href} target="_blank" rel="noreferrer" title={t("Abrir el vínculo registrado; la disponibilidad del archivo depende del sitio externo")}>{t("Abrir vínculo")}{" "}<ExternalLink size={14} /></a> : <Badge tone="warning">{t("Enlace por revisar")}</Badge>}
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+          <EquipmentDocumentsPanel equipmentId={equipment.id} documents={documents} role={role} onChanged={onChanged}/>
 
           {!restricted && (
             <>
@@ -406,8 +370,7 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
         <aside className="detail-aside">
           <EquipmentReferenceImage type={equipment.equipment_type} manufacturer={equipment.manufacturer} model={equipment.model}/>
           <EquipmentQr equipmentId={equipment.id} inventoryCode={equipment.inventory_code} />
-          {isOperationalCompletionEnabled && <PrivateAttachmentPanel readOnly={role === "usuario"} relation={{ equipmentId: equipment.id }} title={t(role === "usuario"?"Archivos del equipo":"Archivos privados del equipo")} />}
-          {isBusinessCompletionEnabled && role !== "usuario" && <EquipmentTimeline equipmentId={equipment.id} />}
+
           <section className="panel inventory-summary-card">
             <h3>{t(restricted?"Resumen del equipo":"Resumen técnico")}</h3>
             {!restricted && <><div><span>{t("Nivel de riesgo")}</span><strong>{equipment.current_risk_category ? riskLabels[equipment.current_risk_category] : t("No visible")}</strong></div>
@@ -415,31 +378,12 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
             <div><span>{t("Documentos")}</span><strong>{documents.length}</strong></div>
             {!restricted && <div><span>{t("Rutinas")}</span><strong>{programs.length}</strong></div>}
           </section>
-          {role === "jefe" && pendingIssues.length > 0 && (
-            <section className="panel inventory-issues-card">
-              <h3>{t("Incidencias del inventario")}</h3>
-              {pendingIssues.map((issue) => (
-                <article key={issue.id}>
-                  <Badge tone={issue.severity === "error" ? "danger" : issue.severity === "advertencia" ? "warning" : "info"}>{issue.severity}</Badge>
-                  <strong>{inventoryIssueLabel(issue.issue_code)}</strong>
-                  <p>{inventoryIssueDescription(issue)}</p>
-                  <small>{t("Estado de revisión:")}{" "}{issue.review_status}</small>
-                </article>
-              ))}
-            </section>
-          )}
         </aside>
       </div>
-      {role === "jefe" && <InventoryAdministration bundle={bundle} onChanged={onChanged} />}
+      <EquipmentIncidentHistory equipmentId={equipment.id}/>
+      {role === "jefe" && <InventoryAdministration maintenanceOnly bundle={bundle} onChanged={onChanged} />}
     </>
   );
-}
-
-function EquipmentTimeline({ equipmentId }: { equipmentId: string }) {
-  const [rows, setRows] = useState<ActivityTimelineEntry[]>([]);
-  const [error, setError] = useState("");
-  useEffect(() => { getEquipmentActivity(equipmentId).then(setRows).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "No fue posible cargar el historial.")); }, [equipmentId]);
-  return <section className="panel"><h3>{t("Historial del equipo")}</h3><div className="audit-list">{rows.map((row, index) => <article key={`${row.event_type}-${row.reference}-${index}`}><div><strong>{row.reference}</strong><small>{new Date(row.event_time).toLocaleString("es-MX")} · {row.event_type} · {row.description}</small></div></article>)}</div>{rows.length === 0 && !error && <small>{t("Sin actividad registrada.")}</small>}{error && <small className="form-error">{error}</small>}</section>;
 }
 
 function EquipmentQr({ equipmentId, inventoryCode }: { equipmentId: string; inventoryCode: string }) {

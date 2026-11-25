@@ -934,46 +934,11 @@ export async function updateAssignedMaintenanceStatus(
   return data as MaintenanceSummary
 }
 
-export async function listDocumentLibrary(role: Role = "jefe") {
-  const configuredClient = requireSupabase()
-  if(role === "usuario") {
-    const {data,error}=await configuredClient.rpc("list_clinical_equipment_documents",{target_equipment_id:null})
-    if(error)throw error
-    return (data || []) as DocumentLibraryItem[]
-  }
-
-  const { data, error } = await configuredClient
-
-    .from("equipment_documents")
-
-    .select(
-      "id, document_type, title, url, review_status, equipment_document_links(equipment_id)",
-    )
-
-    .order("title", { ascending: true, nullsFirst: false })
-
-  if (error) throw error
-
-  return (data || []).map((row) => {
-    const relation = row.equipment_document_links as unknown as {
-      equipment_id: string
-    }[] | null
-
-    return {
-      id: row.id,
-
-      document_type: row.document_type,
-
-      title: row.title,
-
-      url: row.url,
-
-      review_status: row.review_status,
-
-      linkedEquipment: relation?.length ?? 0,
-      equipmentIds: (relation || []).map((link) => link.equipment_id),
-    } as DocumentLibraryItem
-  })
+export async function listDocumentLibrary(_role: Role = "jefe") {
+  const configuredClient=requireSupabase()
+  const {data,error}=await configuredClient.rpc("list_clinical_equipment_documents",{target_equipment_id:null})
+  if(error)throw error
+  return (data||[]) as DocumentLibraryItem[]
 }
 
 export async function listTrainings() {
@@ -1458,7 +1423,7 @@ export async function getEquipmentInventoryBundle(
       .from("equipment_document_links")
 
       .select(
-        "equipment_documents(id, document_type, title, url, review_status)",
+        "custom_title,equipment_documents(id, document_type, title, url, review_status)",
       )
 
       .eq("equipment_id", equipmentId),
@@ -1506,11 +1471,10 @@ export async function getEquipmentInventoryBundle(
 
   const documents = (documentResult.data || [])
 
-    .map((row) =>
-      unwrapRelation(
-        row.equipment_documents as EquipmentDocument | EquipmentDocument[] | null,
-      ),
-    )
+    .map((row) => {
+      const doc=unwrapRelation(row.equipment_documents as EquipmentDocument | EquipmentDocument[] | null)
+      return doc?{...doc,title:row.custom_title || doc.title}:null
+    })
 
     .filter((document): document is EquipmentDocument => Boolean(document))
 

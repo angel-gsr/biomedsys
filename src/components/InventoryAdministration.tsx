@@ -255,8 +255,9 @@ function IssueReview({ issue, reviews, api, onChanged }: {
   )
 }
 
-export function InventoryAdministration({ bundle, enabled = isInventoryAdministrationEnabled, api = defaultApi, onChanged }: {
+export function InventoryAdministration({ bundle, maintenanceOnly=false, enabled = isInventoryAdministrationEnabled, api = defaultApi, onChanged }: {
   bundle: EquipmentInventoryBundle
+  maintenanceOnly?: boolean
   enabled?: boolean
   api?: InventoryAdministrationApi
   onChanged: () => void
@@ -288,13 +289,13 @@ export function InventoryAdministration({ bundle, enabled = isInventoryAdministr
 
   return (
     <div className="inventory-admin-layout">
-      <AssetEditor data={data} onSave={async (asset) => { await api.updateAsset(asset); await refresh() }} />
+      {!maintenanceOnly && <AssetEditor data={data} onSave={async (asset) => { await api.updateAsset(asset); await refresh() }} />}
       <PreventiveEditor equipmentId={bundle.equipment.id} bundle={bundle} data={data} api={api} onChanged={refresh} />
-      <section className="panel inventory-admin-card inventory-review-panel">
+      {!maintenanceOnly && <section className="panel inventory-admin-card inventory-review-panel">
         <h3>{t("Revisión de incidencias")}</h3>
         <p>{t("Los registros dudosos se conservan; cada decisión agrega una entrada al historial.")}</p>
         {bundle.issues.length === 0 ? <p>{t("Este equipo no tiene incidencias registradas.")}</p> : bundle.issues.map((issue) => <IssueReview key={issue.id} issue={issue} reviews={data.issueReviews} api={api} onChanged={refresh} />)}
-      </section>
+      </section>}
     </div>
   )
 }

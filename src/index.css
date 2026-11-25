@@ -1040,6 +1040,21 @@ td small { color: var(--text-secondary, #8293a2); margin-top: 3px; font-size: 8p
 .tv-document { padding:18px;margin-block:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft); }
 .tv-document p { margin-block:12px;line-height:1.6; }
 .tv-document .table-actions { margin-block:14px; }
+.equipment-documents-panel > p { margin-bottom:14px;line-height:1.6; }
+.equipment-documents-panel > .btn { margin-bottom:14px; }
+.equipment-document-form { padding:16px;border:1px solid var(--line);border-radius:12px;margin-block:16px;background:var(--surface-soft); }
+.equipment-document-form fieldset { margin-top:12px; }
+.equipment-documents-panel .document-list article { grid-template-columns:22px minmax(0,1fr); }
+.equipment-documents-panel .document-list article > .table-actions { grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:10px; }
+.equipment-documents-panel .attachment-panel { margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:12px; }
+.attachment-description { display:block;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;margin-top:6px; }
+.equipment-incident-history { margin-block:20px;padding:20px; }
+.equipment-incident-history > p { margin-block:12px;line-height:1.6; }
+.equipment-incident-list { display:grid;gap:14px; }
+.equipment-incident-list article { display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:14px;padding:16px;border:1px solid var(--line);border-radius:12px;align-items:center; }
+.equipment-incident-list article small { display:block;margin-top:8px;color:var(--text-secondary); }
+.equipment-incident-list article p { margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere; }
+@media(max-width:600px){.equipment-incident-list article { grid-template-columns:minmax(0,1fr) auto; }.equipment-incident-list article > .btn { grid-column:1 / -1; }.equipment-documents-panel .table-actions .btn { flex:1 1 auto; }.equipment-documents-panel .attachment-panel { padding:12px; }}
 .generated-report-document .table-actions { margin-block:16px; }
 .success-modal:has(.generated-report-document) { width:min(960px,calc(100vw - 24px));max-width:960px;text-align:left; }
 @media(max-width:600px){.corrective-queue-list article { grid-template-columns:minmax(0,1fr) auto; }.corrective-queue-list article > .btn { grid-column:1 / -1;width:100%; }}

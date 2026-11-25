@@ -12,6 +12,7 @@ import type {
   EquipmentInventoryDetail,
 } from "../lib/supabase"
 
+vi.mock("../lib/equipmentDocuments",async original=>({...await original<typeof import("../lib/equipmentDocuments")>(),getEquipmentIncidentHistory:vi.fn().mockResolvedValue([{id:9,report_number:"REP-000009",created_at:"2026-11-25T12:00:00Z",incident:"Falla reportada real",status:"Recibido",priority:"Alta"}])}))
 afterEach(cleanup)
 
 const equipment: EquipmentInventoryDetail = {
@@ -243,7 +244,10 @@ describe("ficha de equipo", () => {
     expect(
       screen.getByText("Periodicidad pendiente de definición"),
     ).toBeTruthy()
-    expect(screen.getByText("Serial repetido")).toBeTruthy()
+    expect(screen.queryByText("Serial repetido")).toBeNull()
+    expect(screen.queryByRole("heading",{name:"Administración del equipo"})).toBeNull()
+    expect(screen.queryByRole("heading",{name:"Revisión de incidencias"})).toBeNull()
+    expect(await screen.findByText("REP-000009 · Falla reportada real")).toBeTruthy()
   })
 
   it("explica la ficha limitada al usuario y no muestra secciones técnicas", async () => {
@@ -266,7 +270,7 @@ describe("ficha de equipo", () => {
     )
     expect(await screen.findByText("Ficha de consulta")).toBeTruthy()
     expect(screen.getByText("SERIE-1")).toBeTruthy()
-    expect(screen.getByRole("heading",{name:"Manuales y documentos"})).toBeTruthy()
+    expect(screen.getByRole("heading",{name:"Documentos y archivos del equipo"})).toBeTruthy()
     expect(screen.getByRole("button",{name:"Solicitar equipo"})).toBeTruthy()
     expect(screen.queryByText("Evaluación de riesgo")).toBeNull()
     expect(screen.queryByText("Incidencias pendientes")).toBeNull()
