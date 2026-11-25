@@ -581,6 +581,7 @@ Completa nombres, apellidos y edad (18 a 100 años).|Complete given names, last 
 Registra los datos personales pendientes; el nombre anterior se conserva como referencia en el encabezado.|Complete missing personal details; the previous name remains in the heading for reference.
 `.trim().split("\n").filter(Boolean).map(line=>{const i=line.indexOf("|");return [line.slice(0,i),line.slice(i+1)]}))
 Object.assign(dictionary,{
+ "Pendientes y atenciones":"Pending work and recent service","pendientes · primero los de mayor prioridad":"pending · highest priority first","Atenciones recientes":"Recent service","Revisar incidente":"Review incident","Incidente sin asignar":"Unassigned incident","No hay incidentes pendientes de asignar.":"No incidents pending assignment.","Volver a Resumen":"Back to overview","Filtrar por tipo de evento":"Filter by event type","Todos los eventos":"All events","Concluido":"Finished","Revisa primero los incidentes críticos y de prioridad alta.":"Review critical and high-priority incidents first.",
  "Todas las opciones":"All options","Todas las secciones":"All sections","Solicitud de equipo":"Equipment request",
  "Reportar falla de equipo":"Report equipment fault","Cuéntanos qué sucede. Los campos con * son obligatorios.":"Tell us what happened. Fields marked * are required.",
  "Equipo o número de inventario":"Equipment or inventory number","Falla":"Fault","Evento adverso":"Adverse event","Otro":"Other",

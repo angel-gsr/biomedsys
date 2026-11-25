@@ -1024,6 +1024,7 @@ export default function App() {
   const [reportOpen, setReportOpen] = useState(false)
   const [orderReportId, setOrderReportId] = useState<number | null>(null)
   useEffect(() => { if (view !== "orden") setOrderReportId(null) }, [view])
+  const [orderReturnView, setOrderReturnView] = useState<View>("reportes")
   const [requestedOrderId, setRequestedOrderId] = useState<number | null>(null)
   useEffect(() => { if (view !== "orden") setRequestedOrderId(null) }, [view])
   const [technovigilanceReportId, setTechnovigilanceReportId] = useState<number | null>(null)
@@ -1078,7 +1079,16 @@ export default function App() {
       setSelectedEquipmentId(equipmentId)
       setView("equipo")
     }
-  }, [profile])
+  }, [profile?.id])
+
+  useEffect(() => {
+    if (view === "equipo" || !selectedEquipmentId) return
+    const url = new URL(window.location.href)
+    if (url.searchParams.has("equipment")) {
+      url.searchParams.delete("equipment")
+      window.history.replaceState({}, "", url)
+    }
+  }, [view, selectedEquipmentId])
 
   const title = useMemo(
     () =>
@@ -1152,7 +1162,7 @@ export default function App() {
         <AppHeader profile={profile} title={title} onNotifications={() => setView("notificaciones")} />
         <main className="content">
           {view === "dashboard" && (
-            <Dashboard profile={profile} setView={setView} />
+            <Dashboard key={`${profile.id}-${role}`} profile={profile} setView={setView} onOpenOrder={id=>{setOrderReturnView("dashboard");setRequestedOrderId(id);setView("orden")}} onOpenReport={id=>{if(role==="jefe"){setOrderReturnView("dashboard");setOrderReportId(id);setView("orden")}else{setTechnovigilanceReportId(id);setView("tecnovigilancia")}}} />
           )}
           {view === "inventario" && (
             <Inventory
@@ -1178,8 +1188,8 @@ export default function App() {
               }}
             />
           )}
-          {view === "orden" && (orderReportId !== null && role === "jefe" ? <ServiceOrderAssignment key={orderReportId} reportId={orderReportId} onBack={() => { setOrderReportId(null); setView("reportes") }} onConfirmed={id => { setRequestedOrderId(id); setOrderReportId(null) }} /> : <ServiceOrdersView role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView("reportes") }} />)}
-          {view === "calendario" && <GeneralCalendar role={role} onMaintenance={() => setView("orden")} />}
+          {view === "orden" && (orderReportId !== null && role === "jefe" ? <ServiceOrderAssignment backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : "Volver a Mesa de ayuda"} key={orderReportId} reportId={orderReportId} onBack={() => { setOrderReportId(null); setView(orderReturnView) }} onConfirmed={id => { setRequestedOrderId(id); setOrderReportId(null) }} /> : <ServiceOrdersView backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : "Volver a Mesa de ayuda"} role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView(orderReturnView) }} />)}
+          {view === "calendario" && <GeneralCalendar role={role} />}
           {view === "mantenimiento" && <MaintenanceView role={role} />}
           {view === "avisos" && <NoticesView />}
           {view === "capacitaciones" && <TrainingCalendar role={role} />}
@@ -1196,8 +1206,8 @@ export default function App() {
               role={role}
               setView={setView}
               openReport={() => setReportOpen(true)}
-              onAssignOrder={id => { setOrderReportId(id); setRequestedOrderId(null); setView("orden") }}
-              onOpenOrder={id => { setRequestedOrderId(id); setView("orden") }}
+              onAssignOrder={id => { setOrderReturnView("reportes"); setOrderReportId(id); setRequestedOrderId(null); setView("orden") }}
+              onOpenOrder={id => { setOrderReturnView("reportes"); setRequestedOrderId(id); setView("orden") }}
               onOpenTechnovigilance={id => { setTechnovigilanceReportId(id); setView("tecnovigilancia") }}
             />
           )}

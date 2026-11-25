@@ -1,3 +1,5 @@
+import { DashboardQueue, type DashboardActions } from "./DashboardQueue"
+import { useOperationalRefresh } from "../lib/useOperationalRefresh"
 import { t } from "../lib/i18n"
 import { useEffect, useMemo, useState } from "react"
 import {
@@ -20,7 +22,7 @@ import {
 } from "../lib/supabase"
 import { Button, PageIntro } from "./ui"
 
-type DashboardView = "reportes" | "inventario" | "calendario"
+type DashboardView = "reportes" | "inventario" | "calendario" | "mantenimiento"
 
 const reportStatusClosed = new Set(["Resuelto", "Cerrado"])
 const maintenanceStatusLabels: Record<string, string> = {
@@ -93,11 +95,12 @@ function ManagerContent({
   data,
   profile,
   setView,
+  onOpenOrder, onOpenReport,
 }: {
   data: DashboardData
   profile: Profile
   setView: (view: DashboardView) => void
-}) {
+} & DashboardActions) {
   const activeReports = data.reports.filter(
     (report) => !reportStatusClosed.has(report.status),
   )
@@ -106,7 +109,7 @@ function ManagerContent({
   nextWeek.setDate(nextWeek.getDate() + 7)
   const upcomingMaintenances = data.maintenances.filter((item) => {
     const date = new Date(item.scheduled_at)
-    return item.status !== "cancelado" && date >= now && date <= nextWeek
+    return item.status === "programado" && date >= now && date <= nextWeek
   })
   const statusCounts = data.equipment.reduce<Record<string, number>>(
     (counts, item) => {
@@ -143,9 +146,6 @@ function ManagerContent({
         eyebrow={currentDateLabel()}
         title={`Hola, ${profile.full_name.split(" ")[0] || profile.full_name}`}
         description={t("Estado actual calculado con la información disponible en BioMedGest.")}
-        action={
-          <Button icon={Plus} onClick={() => setView("reportes")}>{"Nuevo reporte"}</Button>
-        }
       />
       <div className="kpi-grid">
         <KpiCard
@@ -200,6 +200,7 @@ function ManagerContent({
           </div>
         </div>
       )}
+      <RealOrdersTable data={data} setView={setView} onOpenOrder={onOpenOrder} onOpenReport={onOpenReport} />
       <div className="dashboard-grid">
         <section className="panel chart-panel">
           <div className="panel-head">
@@ -250,96 +251,28 @@ function ManagerContent({
           ))}
           <div className="sla">
             <Clock3 size={17} />
-            <span>{t("Los objetivos SLA aún no están modelados en la base de datos.")}</span>
+            <span>{t("Revisa primero los incidentes críticos y de prioridad alta.")}</span>
           </div>
         </section>
       </div>
-      <RealOrdersTable data={data} setView={setView} />
     </>
   )
 }
 
-function RealOrdersTable({
-  data,
-  setView,
-}: {
-  data: DashboardData
-  setView: (view: DashboardView) => void
-}) {
-  const active = data.maintenances
-    .filter(
-      (item) => item.status !== "completado" && item.status !== "cancelado",
-    )
-    .slice(0, 6)
-  return (
-    <section className="panel orders-panel">
-      <div className="panel-head">
-        <div>
-          <h3>{t("Órdenes de mantenimiento")}</h3>
-          <p>{t("Registros abiertos visibles para tu sesión")}</p>
-        </div>
-        <Button variant="ghost" onClick={() => setView("calendario")}>{t("Ver mantenimiento")}{" "}<ChevronRight size={16} />
-        </Button>
-      </div>
-      {active.length === 0 ? (
-        <div className="empty-state">
-          <h3>{t("No hay órdenes abiertas")}</h3>
-          <p>{t("No se muestran órdenes de demostración.")}</p>
-        </div>
-      ) : (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>{t("Orden")}</th>
-                <th>{t("Equipo")}</th>
-                <th>{t("Tipo")}</th>
-                <th>{t("Prioridad")}</th>
-                <th>{t("Estado")}</th>
-                <th>{t("Programación")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {active.map((item) => (
-                <tr key={item.id}>
-                  <td>
-                    <strong className="order-id">
-                      {item.maintenance_number}
-                    </strong>
-                  </td>
-                  <td>
-                    {item.equipment_identifier ||
-                      "Equipo vinculado sin etiqueta heredada"}
-                  </td>
-                  <td>{item.maintenance_code}</td>
-                  <td>
-                    <Badge tone={priorityTone(item.priority)}>
-                      {item.priority || "Sin registrar"}
-                    </Badge>
-                  </td>
-                  <td>{maintenanceStatusLabels[item.status] || item.status}</td>
-                  <td>{formatDateTime(item.scheduled_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  )
-}
+function RealOrdersTable({data,setView,onOpenOrder,onOpenReport}:{data:DashboardData;setView:(view:DashboardView)=>void}&DashboardActions){return <DashboardQueue data={data} onMaintenance={()=>setView("mantenimiento")} onOpenOrder={onOpenOrder} onOpenReport={onOpenReport}/>}
 
 function RoleContent({
   data,
   profile,
   role,
   setView,
+  onOpenOrder, onOpenReport,
 }: {
   data: DashboardData
   profile: Profile
   role: Exclude<Role, "jefe">
   setView: (view: DashboardView) => void
-}) {
+} & DashboardActions) {
   const activeReports = data.reports.filter(
     (report) => !reportStatusClosed.has(report.status),
   )
@@ -389,7 +322,7 @@ function RoleContent({
         </div>
       </div>
       {role === "tecnico" ? (
-        <RealOrdersTable data={data} setView={setView} />
+        <RealOrdersTable data={data} setView={setView} onOpenOrder={onOpenOrder} onOpenReport={onOpenReport} />
       ) : (
         <section className="panel orders-panel">
           <div className="panel-head">
@@ -447,19 +380,20 @@ function ReportList({ reports }: { reports: ReportSummary[] }) {
 export function Dashboard({
   profile,
   setView,
+  onOpenOrder, onOpenReport,
 }: {
   profile: Profile
   setView: (view: DashboardView) => void
-}) {
+} & DashboardActions) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [error, setError] = useState("")
   const [reloadToken, setReloadToken] = useState(0)
   const role = profile.role
+  useOperationalRefresh(()=>setReloadToken(value=>value+1),["maintenances","reports","equipment_assets","trainings"])
 
   useEffect(() => {
     let active = true
     setError("")
-    setData(null)
     loadDashboardData(role)
       .then((result) => {
         if (active) setData(result)
@@ -506,8 +440,8 @@ export function Dashboard({
       </section>
     )
   return role === "jefe" ? (
-    <ManagerContent data={data} profile={profile} setView={setView} />
+    <ManagerContent data={data} profile={profile} setView={setView} onOpenOrder={onOpenOrder} onOpenReport={onOpenReport} />
   ) : (
-    <RoleContent data={data} profile={profile} role={role} setView={setView} />
+    <RoleContent data={data} profile={profile} role={role} setView={setView} onOpenOrder={onOpenOrder} onOpenReport={onOpenReport} />
   )
 }

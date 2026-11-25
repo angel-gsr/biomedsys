@@ -494,12 +494,12 @@ export function EquipmentDetail({
 
   return (
     <>
-      <button className="back-link" onClick={onBack}><ArrowLeft size={17} />{" "}{t("Volver al inventario")}</button>
+      <div className="equipment-detail-toolbar"><button className="back-link" onClick={onBack}><ArrowLeft size={17} />{" "}{t("Volver al inventario")}</button>{role === "jefe" && bundle && !loading && !error && <InventoryEquipmentManager prominent equipmentId={bundle.equipment.id} onChanged={(id) => { if (id) setReloadToken((value) => value + 1); else onBack() }} />}</div>
       {!configured ? <PendingConfiguration /> : !equipmentId ? (
         <ErrorState message="No se seleccionó ningún equipo." onRetry={onBack} />
       ) : loading ? <LoadingState message="Cargando ficha del equipo..." /> : error ? (
         <ErrorState message={error} onRetry={() => setReloadToken((value) => value + 1)} />
-      ) : bundle ? <>{role === "jefe" && <InventoryEquipmentManager equipmentId={bundle.equipment.id} onChanged={(id) => { if (id) setReloadToken((value) => value + 1); else onBack() }} />}<DetailContent bundle={bundle} role={role} onChanged={() => setReloadToken((value) => value + 1)} /></> : null}
+      ) : bundle ? <><DetailContent bundle={bundle} role={role} onChanged={() => setReloadToken((value) => value + 1)} /></> : null}
     </>
   );
 }

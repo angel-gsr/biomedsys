@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { calendarEventsOverlap, eventOnDay, localDateKey, type CalendarEvent } from "../lib/generalCalendar"
 const services = vi.hoisted(() => ({ listGeneralCalendar: vi.fn(), generalCalendarOptions: vi.fn(), saveGeneralCalendarEvent: vi.fn().mockResolvedValue("reserva:1"), cancelGeneralCalendarEvent: vi.fn() }))
@@ -8,6 +8,20 @@ afterEach(cleanup)
 const now = new Date(), day = localDateKey(now)
 const sample = (kind: CalendarEvent["kind"], start = `${day}T10:00:00`, end: string | null = `${day}T12:00:00`): CalendarEvent => ({ event_key: kind, kind, title: `${kind} de prueba`, starts_at: start, ends_at: end, location_id: 1, location_name: "Quirófano 1", equipment_ids: ["asset"], status: "programado", blocks_resources: true })
 describe("general calendar", () => {
+  it("filters with the colored buttons and refreshes completion and cancellation from the source",async()=>{
+    const maintenance=sample("mantenimiento",`${day}T10:00:00`,null)
+    services.listGeneralCalendar.mockResolvedValue([maintenance,sample("cirugia")]);services.generalCalendarOptions.mockResolvedValue({locations:[],equipment:[],programs:[],technicians:[]})
+    render(<GeneralCalendar role="jefe"/>)
+    await screen.findByText("mantenimiento de prueba")
+    fireEvent.click(within(screen.getByRole("group",{name:"Filtrar por tipo de evento"})).getByRole("button",{name:"Mantenimiento"}))
+    expect(screen.queryByText("cirugia de prueba")).toBeNull()
+    expect(screen.queryByRole("button",{name:"Ver órdenes de mantenimiento"})).toBeNull()
+    services.listGeneralCalendar.mockResolvedValue([{...maintenance,status:"completado",blocks_resources:false}]);fireEvent.focus(window)
+    expect(await screen.findByText(/Concluido/)).toBeTruthy()
+    expect(screen.queryByText(/eventos sin hora de fin/)).toBeNull()
+    services.listGeneralCalendar.mockResolvedValue([]);fireEvent.focus(window)
+    await waitFor(()=>expect(screen.queryByText("mantenimiento de prueba")).toBeNull())
+  })
   it("uses half-open intervals, room/equipment matching, cancelled resources and unknown end times", () => {
     const event = sample("cirugia")
     expect(calendarEventsOverlap({ ...event, starts_at: `${day}T12:00:00`, ends_at: `${day}T13:00:00` }, event)).toBe(false)

@@ -1,3 +1,4 @@
+import { useOperationalRefresh } from "../lib/useOperationalRefresh"
 import { t } from "../lib/i18n"
 import { useEffect, useMemo, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, X } from "lucide-react"
@@ -9,7 +10,7 @@ const kinds = Object.keys(calendarKindLabels) as CalendarKind[]
 const dateTime = (value: string) => new Date(value).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })
 function localInput(value: string) { const date = new Date(value); return `${localDateKey(date)}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}` }
 
-export function GeneralCalendar({ role, onMaintenance }: { role: Role; onMaintenance: () => void }) {
+export function GeneralCalendar({ role }: { role: Role; onMaintenance?: () => void }) {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
   const [day, setDay] = useState(() => localDateKey(new Date()))
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -30,19 +31,20 @@ export function GeneralCalendar({ role, onMaintenance }: { role: Role; onMainten
     Promise.all([listGeneralCalendar(range.start.toISOString(), range.end.toISOString()), generalCalendarOptions()]).then(([items, catalogs]) => { if (active) { setEvents(items); setOptions(catalogs) } }).catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "No fue posible cargar el calendario.") }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [range, reload])
-  useEffect(() => { const refresh = () => setReload((v) => v + 1); window.addEventListener("focus", refresh); const timer = setInterval(refresh, 60000); return () => { clearInterval(timer); window.removeEventListener("focus", refresh) } }, [])
-  const visible = events.filter((event) => !kind || event.kind === kind)
+  useOperationalRefresh(()=>setReload(value=>value+1),["maintenances","trainings","calendar_bookings"])
+  useEffect(()=>{if(loading || !editor || editor === "new")return;const current=events.find(item=>item.event_key===editor.event_key);if(!current || ["cancelado","cancelada"].includes(current.status))setEditor(null);else if(JSON.stringify(current)!==JSON.stringify(editor))setEditor(current)},[events,loading])
+  const visible = events.filter((event) => !["cancelado","cancelada"].includes(event.status) && (!kind || event.kind === kind))
   const agenda = visible.filter((event) => eventOnDay(event, day))
-  const incomplete = events.filter((event) => event.blocks_resources && !event.ends_at)
+  const incomplete = visible.filter((event) => event.blocks_resources && !event.ends_at)
   function changeMonth(delta: number) { const next = new Date(month.getFullYear(), month.getMonth() + delta, 1); setMonth(next); setDay(localDateKey(next)) }
   return <>
     <PageIntro title={t("Calendario general")} description={t("Cirugías, mantenimiento, capacitaciones y reservas de equipo en una sola agenda.")} action={role === "jefe" ? <Button icon={Plus} onClick={() => setEditor("new")}>{"Programar evento"}</Button> : undefined} />
-    <div className="calendar-legend">{kinds.map((value) => <span key={value} className={`calendar-type type-${value}`}>{calendarKindLabels[value]}</span>)}</div>
+    <div className="calendar-legend" role="group" aria-label={t("Filtrar por tipo de evento")}><button type="button" className="calendar-type calendar-all" aria-pressed={!kind} onClick={()=>setKind("")}>{t("Todos los eventos")}</button>{kinds.map((value) => <button type="button" key={value} className={`calendar-type type-${value}`} aria-pressed={kind===value} onClick={()=>setKind(current=>current===value?"":value)}>{t(calendarKindLabels[value])}</button>)}</div>
     <p className="calendar-help">{t("Horario local del dispositivo:")}{" "}{Intl.DateTimeFormat().resolvedOptions().timeZone}{t(". La disponibilidad se valida por sala y equipo. No registres nombres ni datos de pacientes.")}</p>
     {error && <section className="panel empty-state"><p className="form-error" role="alert">{error}</p><Button onClick={() => setReload((v) => v + 1)}>{t("Reintentar")}</Button></section>}
     {incomplete.length > 0 && <details className="panel calendar-incomplete"><summary>{incomplete.length}{" "}{t("eventos sin hora de fin: disponibilidad pendiente de confirmar")}</summary><p>{t("Un evento activo sin fin mantiene ocupado su equipo o sala hasta que el jefe complete el horario.")}</p>{incomplete.map((event) => <div className="table-actions" key={event.event_key}><span>{event.title} · {dateTime(event.starts_at)}</span><button type="button" className="row-action" onClick={() => setEditor(event)}>{role === "jefe" ? t("Completar horario") : t("Ver evento")}</button></div>)}</details>}
     <section className="panel general-calendar" aria-busy={loading}>
-      <div className="general-calendar-toolbar"><div className="table-actions"><button type="button" className="icon-btn" aria-label={t("Mes anterior")} onClick={() => changeMonth(-1)}><ChevronLeft size={20} /></button><h3>{month.toLocaleDateString("es-MX", { month: "long", year: "numeric" })}</h3><button type="button" className="icon-btn" aria-label={t("Mes siguiente")} onClick={() => changeMonth(1)}><ChevronRight size={20} /></button></div><label className="inventory-select"><span>{t("Mostrar")}</span><select value={kind} onChange={(event) => setKind(event.target.value)}><option value="">{t("Todos los eventos")}</option>{kinds.map((value) => <option key={value} value={value}>{calendarKindLabels[value]}</option>)}</select></label></div>
+      <div className="general-calendar-toolbar"><div className="table-actions"><button type="button" className="icon-btn" aria-label={t("Mes anterior")} onClick={() => changeMonth(-1)}><ChevronLeft size={20} /></button><h3>{month.toLocaleDateString("es-MX", { month: "long", year: "numeric" })}</h3><button type="button" className="icon-btn" aria-label={t("Mes siguiente")} onClick={() => changeMonth(1)}><ChevronRight size={20} /></button></div><label className="inventory-select"><span>{t("Filtrar por tipo de evento")}</span><select value={kind} onChange={(event) => setKind(event.target.value)}><option value="">{t("Todos los eventos")}</option>{kinds.map((value) => <option key={value} value={value}>{t(calendarKindLabels[value])}</option>)}</select></label></div>
       {loading && <p className="calendar-help" role="status">{t("Actualizando agenda...")}</p>}
       <div className="general-calendar-grid" aria-label={t("Fechas del calendario")}>
         {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((label) => <span className="calendar-weekday" key={label}>{label}</span>)}
@@ -50,10 +52,9 @@ export function GeneralCalendar({ role, onMaintenance }: { role: Role; onMainten
       </div>
     </section>
     <section className="panel calendar-agenda"><div className="panel-head"><div><h3>{t("Agenda del")}{" "}{new Date(`${day}T12:00:00`).toLocaleDateString("es-MX", { dateStyle: "long" })}</h3><p>{agenda.length}{" "}{t("eventos registrados")}</p></div><CalendarDays size={22} /></div>
-      {!agenda.length ? <div className="empty-state"><h3>{t("No hay eventos para este día")}</h3><p>{t("La ocupación de los eventos sin hora de fin sigue pendiente de confirmar.")}</p></div> : agenda.map((event) => <article className="calendar-agenda-event" key={event.event_key}><div><span className={`calendar-type type-${event.kind}`}>{calendarKindLabels[event.kind]}</span><h4>{event.title}</h4><p>{dateTime(event.starts_at)} → {event.ends_at ? dateTime(event.ends_at) : t("Fin pendiente")}</p><p>{event.location_name || "Sin sala registrada"} · {event.status}</p>{event.equipment_ids.length > 0 && <small>{event.equipment_ids.map((id) => options?.equipment.find((item) => item.id === id)?.name || id).join(" · ")}</small>}</div><button type="button" className="row-action" onClick={() => setEditor(event)}>{role === "jefe" && event.blocks_resources ? t("Ver / gestionar") : t("Ver evento")}</button></article>)}
+      {!agenda.length ? <div className="empty-state"><h3>{t("No hay eventos para este día")}</h3><p>{t("La ocupación de los eventos sin hora de fin sigue pendiente de confirmar.")}</p></div> : agenda.map((event) => <article className="calendar-agenda-event" key={event.event_key}><div><span className={`calendar-type type-${event.kind}`}>{calendarKindLabels[event.kind]}</span><h4>{event.title}</h4><p>{dateTime(event.starts_at)} → {event.ends_at ? dateTime(event.ends_at) : t(event.blocks_resources ? "Fin pendiente" : "Concluido")}</p><p>{event.location_name || "Sin sala registrada"} · {t(({programado:"Programado",programada:"Programada",en_proceso:"En proceso",en_curso:"En curso",completado:"Completado",completada:"Completada"} as Record<string,string>)[event.status] || event.status)}</p>{event.equipment_ids.length > 0 && <small>{event.equipment_ids.map((id) => options?.equipment.find((item) => item.id === id)?.name || id).join(" · ")}</small>}</div><button type="button" className="row-action" onClick={() => setEditor(event)}>{role === "jefe" && event.blocks_resources ? t("Ver / gestionar") : t("Ver evento")}</button></article>)}
     </section>
-    <div className="table-actions"><Button variant="secondary" onClick={onMaintenance}>{t("Ver órdenes de mantenimiento")}</Button></div>
-    {editor && options && <CalendarEditor role={role} event={editor === "new" ? null : editor} day={day} options={options} events={events} onClose={() => setEditor(null)} onSaved={() => { setEditor(null); setReload((v) => v + 1) }} />}
+    {editor && options && <CalendarEditor key={editor === "new" ? "new" : `${editor.event_key}-${editor.starts_at}-${editor.ends_at}-${editor.status}`} role={role} event={editor === "new" ? null : editor} day={day} options={options} events={events} onClose={() => setEditor(null)} onSaved={() => { setEditor(null); setReload((v) => v + 1) }} />}
   </>
 }
 
@@ -80,7 +81,7 @@ function CalendarEditor({ role, event, day, options, events, onClose, onSaved }:
   }
   return <div className="modal-layer"><section className="modal calendar-editor" role="dialog" aria-modal="true" aria-label={event ? t("Detalle del evento") : t("Programar evento")} onKeyDown={(e) => { if (e.key === "Escape") onClose() }}><div className="modal-head"><h2>{event ? t("Detalle del evento") : t("Programar evento")}</h2><button type="button" className="icon-btn" aria-label={t("Cerrar evento")} onClick={onClose}><X size={22} /></button></div>
     <form onSubmit={save}><fieldset disabled={!editable || busy} className="report-edit-fields"><div className="form-grid">
-      <label className="field"><span>{t("Tipo de evento")}</span><select disabled={Boolean(event)} value={kind} onChange={(e) => { setKind(e.target.value as CalendarKind); setEquipment([]); setProgram("") }}>{kinds.map((value) => <option value={value} key={value}>{calendarKindLabels[value]}</option>)}</select></label>
+      <label className="field"><span>{t("Tipo de evento")}</span><select disabled={Boolean(event)} value={kind} onChange={(e) => { setKind(e.target.value as CalendarKind); setEquipment([]); setProgram("") }}>{kinds.map((value) => <option value={value} key={value}>{t(calendarKindLabels[value])}</option>)}</select></label>
       <label className="field"><span>{t("Título (sin datos de pacientes)")}</span><input required={kind !== "mantenimiento"} readOnly={Boolean(event && ["mantenimiento", "capacitacion"].includes(kind)) || kind === "mantenimiento"} placeholder={kind === "mantenimiento" ? t("Se genera con la orden preventiva") : t("Ej. Cirugía programada")} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
       <label className="field"><span>{t("Inicio")}</span><input required type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} /></label><label className="field"><span>{t("Fin")}</span><input required type="datetime-local" min={start} value={end} onChange={(e) => setEnd(e.target.value)} /></label>
       <label className="field span-2"><span>{t("Sala / ubicación ocupada")}</span><select required={kind === "cirugia"} value={location} onChange={(e) => setLocation(e.target.value)}><option value="">{t("Sin sala específica")}</option>{options.locations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import type { EquipmentInventoryDetail, Profile } from "../lib/supabase"
 
@@ -60,6 +60,16 @@ describe("dashboard real", () => {
     expect(screen.getByText("Sin reportes en el periodo")).toBeTruthy()
     expect(screen.getByText("No hay órdenes abiertas")).toBeTruthy()
     expect(screen.getAllByText("0").length).toBeGreaterThan(0)
+    expect(screen.queryByRole("button",{name:"Nuevo reporte"})).toBeNull()
+  })
+  it("opens a pending order from the summary and refreshes completed work on focus",async()=>{
+    const onOpenOrder=vi.fn()
+    loadDashboardData.mockResolvedValueOnce({equipment:[],reports:[],maintenances:[{id:77,maintenance_number:"MC-77",maintenance_code:"MC",status:"en_proceso",priority:"alta",scheduled_at:"2026-11-25T10:00:00Z"}]}).mockResolvedValue({equipment:[],reports:[],maintenances:[{id:77,maintenance_number:"MC-77",maintenance_code:"MC",status:"completado",priority:"alta",scheduled_at:"2026-11-25T10:00:00Z",completed_at:"2026-11-25T12:00:00Z"}]})
+    render(<Dashboard profile={manager} setView={vi.fn()} onOpenOrder={onOpenOrder}/>)
+    fireEvent.click(await screen.findByRole("button",{name:"Ver orden"}));expect(onOpenOrder).toHaveBeenCalledWith(77)
+    fireEvent.focus(window)
+    expect(await screen.findByText("Atenciones recientes")).toBeTruthy()
+    expect(screen.getByText("Completado")).toBeTruthy()
   })
 
   it("expone el error de Supabase sin sustituirlo por datos falsos", async () => {

@@ -3,13 +3,13 @@ import { useEffect, useState } from "react"
 import { Plus, X, Pencil } from "lucide-react"
 import { archiveEquipmentAsset, equipmentAdminContext, listArchivedEquipment, restoreEquipmentAsset, saveEquipmentAsset, type ArchivedEquipment, type EquipmentAdminContext, type ManagedEquipment } from "../lib/equipmentControl"
 
-export function InventoryEquipmentManager({ equipmentId, onChanged }: { equipmentId?: string; onChanged: (id?: string) => void }) {
+export function InventoryEquipmentManager({ equipmentId, prominent = false, onChanged }: { equipmentId?: string; prominent?: boolean; onChanged: (id?: string) => void }) {
   const [editing, setEditing] = useState(false)
   const [retired, setRetired] = useState<ArchivedEquipment[] | null>(null)
   const [error, setError] = useState("")
   async function loadRetired() { try { setRetired(await listArchivedEquipment()); setError("") } catch (cause) { setError(cause instanceof Error ? cause.message : "No fue posible cargar los equipos retirados.") } }
   return <div className="table-actions" onClick={(event) => event.stopPropagation()}>
-    <button type="button" className={equipmentId ? "btn btn-primary equipment-edit-button" : "row-action"} onClick={() => setEditing(true)}>{equipmentId ? <><Pencil size={22} />{" "}{t("Editar / retirar")}</> : <><Plus size={16} />{" "}{t("Agregar equipo")}</>}</button>
+    <button type="button" className={equipmentId && prominent ? "btn btn-primary equipment-edit-button" : "row-action"} onClick={() => setEditing(true)}>{equipmentId ? <><Pencil size={prominent ? 22 : 16} />{" "}{t("Editar / retirar")}</> : <><Plus size={16} />{" "}{t("Agregar equipo")}</>}</button>
     {!equipmentId && <button type="button" className="row-action" onClick={() => void loadRetired()}>{t("Equipos retirados")}</button>}
     {error && <p className="form-error" role="alert">{error}</p>}
     {editing && <AssetForm id={equipmentId || null} onClose={() => setEditing(false)} onSaved={(id) => { setEditing(false); onChanged(id) }} />}

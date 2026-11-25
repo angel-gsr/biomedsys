@@ -720,7 +720,7 @@ export async function loadDashboardData(role: Role): Promise<DashboardData> {
     .from("maintenances")
 
     .select(
-      "id, maintenance_number, maintenance_code, equipment_identifier, equipment_id, status, scheduled_at, assigned_to, priority, completed_at",
+      "id, maintenance_number, maintenance_code, equipment_identifier, equipment_id, status, scheduled_at, assigned_to, priority, completed_at, source_report_id",
     )
 
     .order("scheduled_at", { ascending: true })

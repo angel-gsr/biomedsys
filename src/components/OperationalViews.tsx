@@ -187,14 +187,14 @@ export function MaintenanceView({ role }: { role: Role }) {
   )
 }
 
-export function ServiceOrdersView({ role, requestedOrderId = null, onBack }: { role: Role; requestedOrderId?: number | null; onBack?: () => void }) {
+export function ServiceOrdersView({ role, requestedOrderId = null, onBack, backLabel = "Volver a Mesa de ayuda" }: { role: Role; requestedOrderId?: number | null; onBack?: () => void; backLabel?: string }) {
   const state = useMaintenanceOverview()
   if (state.loading)
     return <Loading label={t("Consultando órdenes de servicio...")} />
   if (state.error) return <Failure error={state.error} retry={state.retry} />
   if (requestedOrderId !== null) {
     const item = state.maintenances.find(order => order.id === requestedOrderId)
-    return <><Button variant="secondary" icon={ArrowLeft} onClick={onBack}>{t("Volver a Mesa de ayuda")}</Button>{!item ? <section className="panel"><h2>{t("Orden no disponible")}</h2><p>{t("No se encontró la orden o no tienes acceso a ella.")}</p></section> : <><PageIntro title={`Orden ${item.maintenance_number}`} description={t("Orden de servicio confirmada · Vista de consulta")} /><ReadOnlyServiceOrder key={item.id} item={item} /></>}</>
+    return <><Button variant="secondary" icon={ArrowLeft} onClick={onBack}>{t(backLabel)}</Button>{!item ? <section className="panel"><h2>{t("Orden no disponible")}</h2><p>{t("No se encontró la orden o no tienes acceso a ella.")}</p></section> : <><PageIntro title={`Orden ${item.maintenance_number}`} description={t("Orden de servicio confirmada · Vista de consulta")} /><ReadOnlyServiceOrder key={item.id} item={item} /></>}</>
   }
   return (
     <>
