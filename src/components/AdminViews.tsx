@@ -260,6 +260,7 @@ export function UserPermissionsView() {
     return () => { mounted=false; clearInterval(timer); window.removeEventListener("focus",load) }
   }, [])
   const [deleting, setDeleting] = useState<Profile | null>(null)
+  const [profileNotice, setProfileNotice] = useState("")
   const [deleteError, setDeleteError] = useState("")
   const [requestOpen, setRequestOpen] = useState(false)
   const [showIdInfo, setShowIdInfo] = useState(false)
@@ -307,10 +308,11 @@ export function UserPermissionsView() {
           return
         }
       }
+      setProfileNotice(previous?.institutional_id !== updated.institutional_id ? `Rol actualizado. Nuevo ID para iniciar sesión: ${updated.institutional_id}. La contraseña se conserva.` : "Perfil actualizado correctamente.")
       setEditing(null)
       setReason("")
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No fue posible actualizar el perfil.")
+      setError(cause && typeof cause === "object" && "message" in cause ? String(cause.message) : "No fue posible actualizar el perfil.")
     } finally {
       setSaving(false)
     }
@@ -346,6 +348,7 @@ export function UserPermissionsView() {
           <Button icon={UserPlus} onClick={() => setRequestOpen(true)}>Alta de usuario</Button>
         }
       />
+      {profileNotice && <p className="form-success" role="status">{profileNotice}</p>}
       <section className="panel">
         {error ? (
           <QueryError message={error} />
@@ -360,7 +363,7 @@ export function UserPermissionsView() {
             </div>
             <div className="filter-bar">
               <label className="search-box"><Search size={18} /><input aria-label="Buscar usuario" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, ID o departamento..." /></label>
-              <label className="inventory-select"><span>Rol</span><select value={role} onChange={(event) => setRole(event.target.value)}><option value="">Todos</option><option value="usuario">Usuario</option><option value="tecnico">Técnico</option><option value="jefe">Jefe</option></select></label>
+              <label className="inventory-select"><span>Rol</span><select value={role} onChange={(event) => setRole(event.target.value)}><option value="">Todos</option><option value="usuario">Usuario</option><option value="tecnico">Ingeniero biomédico</option><option value="jefe">Jefe</option></select></label>
               <label className="inventory-select"><span>Acceso</span><select value={active} onChange={(event) => setActive(event.target.value)}><option value="">Todos</option><option value="true">Habilitados</option><option value="false">Inhabilitados</option></select></label>
             </div>
             <div className="table-wrap">
@@ -410,7 +413,7 @@ export function UserPermissionsView() {
         <label className="field span-2"><span>Departamento *</span><select required value={request.department} onChange={event => setRequest({ ...request, department: event.target.value })}><option value="">Selecciona un departamento</option>{departments.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
       </div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-footer"><Button variant="secondary" onClick={() => setRequestOpen(false)}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? "Guardando..." : "Registrar usuario"}</Button></div></form></div>}
       {provisioning && <div className="modal-layer"><form className="modal" onSubmit={submitProvision}><div className="modal-head"><div><span className="eyebrow">Backend protegido</span><h2>Crear cuenta {provisioning.institutional_id}</h2><p>La contraseña temporal se envía directamente a la función y no se almacena en React ni PostgreSQL.</p></div></div><label className="field"><span>Contraseña temporal *</span><input required type="password" minLength={6} maxLength={12} autoComplete="new-password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} /><small>Entre 6 y 12 caracteres, con mayúscula, minúscula y número.</small></label>{error && <p className="form-error">{error}</p>}<div className="modal-footer"><Button variant="secondary" onClick={() => { setProvisioning(null); setTemporaryPassword("") }}>Cancelar</Button><Button type="submit">{saving ? "Creando..." : "Crear cuenta"}</Button></div></form></div>}
-      {editing && <div className="modal-layer"><div className="modal"><div className="modal-head"><div><span className="eyebrow">Perfil institucional</span><h2>{editing.full_name}</h2><p>{editing.institutional_id}</p></div></div><div className="form-grid"><label className="field span-2"><span>Nombre completo</span><input value={editing.full_name} onChange={(event) => setEditing({ ...editing, full_name: event.target.value })} /></label><label className="field"><span>Departamento</span><select required value={editing.department || ""} onChange={(event) => setEditing({ ...editing, department: event.target.value || null })}><option value="">Selecciona un departamento</option>{departments.map(name => <option key={name} value={name}>{name}</option>)}</select></label><label className="field"><span>Rol</span><select value={editing.role} onChange={(event) => setEditing({ ...editing, role: event.target.value as Profile["role"] })}><option value="usuario">Usuario</option><option value="tecnico">Técnico</option><option value="jefe">Jefe</option></select></label><label className="field"><span>Acceso a la cuenta</span><select value={String(editing.active)} onChange={(event) => setEditing({ ...editing, active: event.target.value === "true" })}><option value="true">Habilitado</option><option value="false">Inhabilitado</option></select></label><label className="field span-2"><span>Motivo del cambio *</span><textarea required value={reason} onChange={(event) => setReason(event.target.value)} /></label></div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-footer"><Button variant="secondary" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={saveProfile}>{saving ? "Guardando..." : "Guardar cambios"}</Button></div></div></div>}
+      {editing && <div className="modal-layer"><div className="modal"><div className="modal-head"><div><span className="eyebrow">Perfil institucional</span><h2>{editing.full_name}</h2><p>{editing.institutional_id}</p><p>Al cambiar el rol, el prefijo del ID se ajusta automáticamente: 00 jefe, 01 biomédico, 02 usuario. Se conserva la contraseña.</p></div></div><div className="form-grid"><label className="field span-2"><span>Nombre completo</span><input value={editing.full_name} onChange={(event) => setEditing({ ...editing, full_name: event.target.value })} /></label><label className="field"><span>Departamento</span><select required value={editing.department || ""} onChange={(event) => setEditing({ ...editing, department: event.target.value || null })}><option value="">Selecciona un departamento</option>{departments.map(name => <option key={name} value={name}>{name}</option>)}</select></label><label className="field"><span>Rol</span><select value={editing.role} onChange={(event) => setEditing({ ...editing, role: event.target.value as Profile["role"] })}><option value="usuario">Usuario</option><option value="tecnico">Ingeniero biomédico</option><option value="jefe">Jefe</option></select></label><label className="field"><span>Acceso a la cuenta</span><select value={String(editing.active)} onChange={(event) => setEditing({ ...editing, active: event.target.value === "true" })}><option value="true">Habilitado</option><option value="false">Inhabilitado</option></select></label><label className="field span-2"><span>Motivo del cambio *</span><textarea required value={reason} onChange={(event) => setReason(event.target.value)} /></label></div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-footer"><Button variant="secondary" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={saveProfile}>{saving ? "Guardando..." : "Guardar cambios"}</Button></div></div></div>}
     </>
   )
 }

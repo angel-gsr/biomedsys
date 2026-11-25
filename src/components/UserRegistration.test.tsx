@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
-const mocks = vi.hoisted(() => ({ create: vi.fn().mockResolvedValue(undefined), remove: vi.fn().mockResolvedValue(undefined) }))
+const mocks = vi.hoisted(() => ({ create: vi.fn().mockResolvedValue(undefined), remove: vi.fn().mockResolvedValue(undefined), manage: vi.fn() }))
 vi.mock("../lib/supabase", async original => ({
   ...(await original<typeof import("../lib/supabase")>()),
   isOperationalCompletionEnabled: true,
@@ -10,6 +10,7 @@ vi.mock("../lib/supabase", async original => ({
   listUserDepartments: vi.fn().mockResolvedValue(["Urgencias", "CEYE"]),
   createAccessRequest: mocks.create,
   deleteInactiveUser: mocks.remove,
+  manageProfile: mocks.manage,
 }))
 import { UserPermissionsView } from "./AdminViews"
 afterEach(() => { cleanup(); vi.clearAllMocks() })
@@ -30,6 +31,18 @@ it("registers separated personal data with a catalogue and without a client iden
   fireEvent.change(screen.getByLabelText("Departamento *"), { target: { value: "Urgencias" } })
   fireEvent.submit(screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!)
   await waitFor(() => expect(mocks.create).toHaveBeenCalledWith({ firstName: "Ángel José", lastName: "García López", age: "28", phone: "5512345678", department: "Urgencias", role: "tecnico" }))
+})
+it("shows the new login identifier after a role change", async () => {
+  mocks.manage.mockImplementation(async profile => ({ ...profile, institutional_id: "01181001" }))
+  render(<UserPermissionsView />)
+  const row=(await screen.findByText("Cuenta Activa")).closest("tr")!
+  fireEvent.click(within(row).getByRole("button",{name:"Editar"}))
+  const modal=screen.getByRole("heading",{name:"Cuenta Activa"}).closest(".modal") as HTMLElement
+  fireEvent.change(within(modal).getByLabelText("Rol"),{target:{value:"tecnico"}})
+  fireEvent.change(within(modal).getByLabelText("Motivo del cambio *"),{target:{value:"Cambio a biomédico"}})
+  fireEvent.click(within(modal).getByRole("button",{name:"Guardar cambios"}))
+  await waitFor(()=>expect(screen.getByRole("status").textContent).toContain("Nuevo ID para iniciar sesión: 01181001"))
+  expect(mocks.manage).toHaveBeenCalledWith(expect.objectContaining({id:"active",role:"tecnico"}),"Cambio a biomédico")
 })
 it("only offers deletion for inactive accounts and requires confirmation", async () => {
   render(<UserPermissionsView />)
