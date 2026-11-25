@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
+vi.mock("../lib/serviceOrderDocuments",()=>({getServiceOrderDocument:vi.fn().mockResolvedValue(null)}))
 vi.mock("../lib/supabase", async original => ({ ...(await original<typeof import("../lib/supabase")>()),
   isOperationalCompletionEnabled: true,
   listMaintenanceOverview: vi.fn().mockResolvedValue({ catalog: [], maintenances: [
@@ -16,7 +17,7 @@ it("opens only the requested confirmed order in read-only mode with PDF and a re
   expect(screen.queryByText("MC-000002")).toBeNull()
   expect(screen.queryByLabelText("Estado de MC-000001")).toBeNull()
   expect(screen.getByText("Ingeniero Demo")).toBeTruthy()
-  expect(screen.getByRole("button", { name: "Descargar PDF" })).toBeTruthy()
+  expect(screen.getByRole("button", { name: "Ver orden inicial / PDF" })).toBeTruthy()
   fireEvent.click(screen.getByRole("button", { name: "Volver a Mesa de ayuda" }))
   expect(back).toHaveBeenCalledOnce()
 })

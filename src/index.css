@@ -1026,6 +1026,14 @@ td small { color: var(--text-secondary, #8293a2); margin-top: 3px; font-size: 8p
 .corrective-queue-list article p { margin-block:8px; }
 .corrective-queue-list article small { color:var(--text-secondary); }
 .generated-report-document { width:100%;min-width:0;margin-block:18px; }
+.service-order-signoff,.service-order-pdf { padding:18px;margin-block:16px;min-width:0; }
+.service-order-signoff { display:grid;gap:14px; }
+.service-order-signoff p { line-height:1.6;overflow-wrap:anywhere; }
+.service-order-signoff .loan-signature { max-width:650px; }
+.service-order-signoff > .btn { justify-self:start; }
+.service-order-pdf .table-actions { margin-block:14px; }
+.maintenance-detail-row .service-order-grid { white-space:normal; }
+.service-order-section dd { white-space:pre-wrap;overflow-wrap:anywhere; }
 .generated-report-document .table-actions { margin-block:16px; }
 .success-modal:has(.generated-report-document) { width:min(960px,calc(100vw - 24px));max-width:960px;text-align:left; }
 @media(max-width:600px){.corrective-queue-list article { grid-template-columns:minmax(0,1fr) auto; }.corrective-queue-list article > .btn { grid-column:1 / -1;width:100%; }}

@@ -215,13 +215,13 @@ export function ServiceOrdersView({ role, requestedOrderId = null, onBack, onOpe
   )
 }
 
-function ReadOnlyServiceOrder({ item }: { item: MaintenanceSummary }) {
+function ReadOnlyServiceOrder({ item, role="jefe" }: { item: MaintenanceSummary;role?:Role }) {
   const [report,setReport]=useState<ReportSummary | null>(null)
   const [loading,setLoading]=useState(Boolean(item.source_report_id)),[error,setError]=useState("")
   useEffect(()=>{let active=true;if(!item.source_report_id)return;listReports().then(rows=>{if(active){const found=rows.find(r=>r.id===item.source_report_id);if(!found)throw new Error("No fue posible consultar el incidente vinculado");setReport(found)}}).catch(cause=>{if(active)setError(cause.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[item.source_report_id])
   if(loading)return <p>{t("Cargando datos del incidente...")}</p>
   if(error)return <p role="alert" className="form-error">{error}</p>
-  return <ServiceOrderDocument item={item} report={report} />
+  return <ServiceOrderDocument item={item} report={report} role={role} />
 }
 
 function MaintenanceStatusEditor({ item, role, onChanged }: { item: MaintenanceSummary; role: Role; onChanged: () => void }) {
@@ -303,7 +303,7 @@ function MaintenanceTable({ items, role, onChanged, initialExpandedId=null }: { 
               {(role === "jefe" || role === "tecnico") && <td><button type="button" className="row-action" onClick={() => setExpanded((current) => current === item.id ? null : item.id)}>{expanded === item.id ? t("Ocultar") : t("Abrir")}</button></td>}
             </tr>
             {expanded === item.id && (role === "jefe" || role === "tecnico") && (
-              <tr className="maintenance-detail-row"><td colSpan={8}><CorrectiveWorkflowPanel item={item} role={role} onChanged={onChanged} /></td></tr>
+              <tr className="maintenance-detail-row"><td colSpan={8}><ReadOnlyServiceOrder item={item} role={role}/><CorrectiveWorkflowPanel item={item} role={role} onChanged={onChanged} /></td></tr>
             )}
             </Fragment>
           ))}

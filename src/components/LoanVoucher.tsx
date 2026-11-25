@@ -4,7 +4,7 @@ import {equipmentLoanPdf,getEquipmentLoan,loanFolio,type EquipmentLoan,type Loan
 import {Button} from "./ui"
 import {t} from "../lib/i18n"
 
-function SignaturePad({label,onChange}:{label:string;onChange:(value:string|undefined)=>void}){
+export function SignaturePad({label,onChange}:{label:string;onChange:(value:string|undefined)=>void}){
  const canvas=useRef<HTMLCanvasElement>(null),pointer=useRef<number|null>(null)
  useEffect(()=>{const ctx=canvas.current?.getContext("2d");if(ctx){ctx.fillStyle="#fff";ctx.fillRect(0,0,1000,260)}},[])
  function point(event:React.PointerEvent<HTMLCanvasElement>){const rect=event.currentTarget.getBoundingClientRect();return{x:(event.clientX-rect.left)*1000/rect.width,y:(event.clientY-rect.top)*260/rect.height}}
