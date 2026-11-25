@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 import { AlertTriangle, CalendarPlus, CheckCircle2, Save, Settings2 } from "lucide-react"
 import {
@@ -108,20 +109,20 @@ function AssetEditor({ data, onSave }: {
 
   return (
     <form className="panel inventory-admin-card" onSubmit={submit}>
-      <h3><Settings2 size={18} /> Administración del equipo</h3>
-      <p>Administra la ubicación, el estado y los datos del equipo.</p>
+      <h3><Settings2 size={18} />{" "}{t("Administración del equipo")}</h3>
+      <p>{t("Administra la ubicación, el estado y los datos del equipo.")}</p>
       <div className="form-grid">
-        <label className="field"><span>Número de serie</span><input value={asset.serial_number || ""} onChange={(e) => setAsset({ ...asset, serial_number: e.target.value || null })} /></label>
-        <label className="field"><span>Estado</span><select value={asset.status} onChange={(e) => setAsset({ ...asset, status: e.target.value as InventoryAdminAsset["status"] })}><option value="desconocido">Sin confirmar</option><option value="operativo">Operativo</option><option value="en_reparacion">En reparación</option><option value="fuera_de_servicio">Fuera de servicio</option><option value="baja">Baja</option></select></label>
-        <label className="field"><span>Año de fabricación</span><input type="number" min="1950" max="2100" value={asset.manufacture_year ?? ""} onChange={(e) => setAsset({ ...asset, manufacture_year: nullableNumber(e.target.value) })} /></label>
-        <label className="field"><span>Año de adquisición</span><input type="number" min="1950" max="2100" value={asset.acquisition_year ?? ""} onChange={(e) => setAsset({ ...asset, acquisition_year: nullableNumber(e.target.value) })} /></label>
-        <label className="field"><span>Área hospitalaria</span><select value={asset.hospital_area_id} onChange={(e) => setAsset({ ...asset, hospital_area_id: Number(e.target.value), location_id: null })}>{data.areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label>
-        <label className="field"><span>Ubicación específica</span><select value={asset.location_id ?? ""} onChange={(e) => setAsset({ ...asset, location_id: nullableNumber(e.target.value) })}><option value="">Sin ubicación específica</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select></label>
-        <label className="field"><span>Resguardo</span><input value={asset.custodian_location_text || ""} onChange={(e) => setAsset({ ...asset, custodian_location_text: e.target.value || null })} /></label>
-        <label className="check-inline"><input type="checkbox" checked={asset.serial_is_placeholder} onChange={(e) => setAsset({ ...asset, serial_is_placeholder: e.target.checked })} /> Serie provisional o pendiente de confirmar</label>
+        <label className="field"><span>{t("Número de serie")}</span><input value={asset.serial_number || ""} onChange={(e) => setAsset({ ...asset, serial_number: e.target.value || null })} /></label>
+        <label className="field"><span>{t("Estado")}</span><select value={asset.status} onChange={(e) => setAsset({ ...asset, status: e.target.value as InventoryAdminAsset["status"] })}><option value="desconocido">{t("Sin confirmar")}</option><option value="operativo">{t("Operativo")}</option><option value="en_reparacion">{t("En reparación")}</option><option value="fuera_de_servicio">{t("Fuera de servicio")}</option><option value="baja">{t("Baja")}</option></select></label>
+        <label className="field"><span>{t("Año de fabricación")}</span><input type="number" min="1950" max="2100" value={asset.manufacture_year ?? ""} onChange={(e) => setAsset({ ...asset, manufacture_year: nullableNumber(e.target.value) })} /></label>
+        <label className="field"><span>{t("Año de adquisición")}</span><input type="number" min="1950" max="2100" value={asset.acquisition_year ?? ""} onChange={(e) => setAsset({ ...asset, acquisition_year: nullableNumber(e.target.value) })} /></label>
+        <label className="field"><span>{t("Área hospitalaria")}</span><select value={asset.hospital_area_id} onChange={(e) => setAsset({ ...asset, hospital_area_id: Number(e.target.value), location_id: null })}>{data.areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label>
+        <label className="field"><span>{t("Ubicación específica")}</span><select value={asset.location_id ?? ""} onChange={(e) => setAsset({ ...asset, location_id: nullableNumber(e.target.value) })}><option value="">{t("Sin ubicación específica")}</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select></label>
+        <label className="field"><span>{t("Resguardo")}</span><input value={asset.custodian_location_text || ""} onChange={(e) => setAsset({ ...asset, custodian_location_text: e.target.value || null })} /></label>
+        <label className="check-inline"><input type="checkbox" checked={asset.serial_is_placeholder} onChange={(e) => setAsset({ ...asset, serial_is_placeholder: e.target.checked })} />{" "}{t("Serie provisional o pendiente de confirmar")}</label>
       </div>
       {message && <p className="inventory-admin-message" role="status">{message}</p>}
-      <button className="btn btn-primary" disabled={saving} type="submit"><Save size={17} /> {saving ? "Guardando..." : "Guardar cambios"}</button>
+      <button className="btn btn-primary" disabled={saving} type="submit"><Save size={17} /> {saving ? t("Guardando...") : t("Guardar cambios")}</button>
     </form>
   )
 }
@@ -149,7 +150,7 @@ function PreventiveEditor({ equipmentId, bundle, data, api, onChanged }: {
     if (lastConfiguration.current !== next) { lastConfiguration.current = next; setForm(next) }
   }, [data.programs, programId])
 
-  if (!form) return <section className="panel inventory-admin-card"><h3>Mantenimiento preventivo</h3><p>No hay una rutina vinculada que pueda configurarse.</p></section>
+  if (!form) return <section className="panel inventory-admin-card"><h3>{" "}{t("Mantenimiento preventivo")}</h3><p>{t("No hay una rutina vinculada que pueda configurarse.")}</p></section>
 
   async function saveConfiguration(event: FormEvent) {
     event.preventDefault()
@@ -184,28 +185,28 @@ function PreventiveEditor({ equipmentId, bundle, data, api, onChanged }: {
 
   return (
     <section className="panel inventory-admin-card">
-      <h3><CalendarPlus size={18} /> Mantenimiento preventivo</h3>
-      {bundle.enrichment?.maintenance_periodicity && <div className="inventory-source-periodicity"><strong>Periodicidad del inventario actualizado</strong><p>{bundle.enrichment.maintenance_periodicity}</p>{bundle.enrichment.suggested_interval_months ? <button type="button" className="row-action" onClick={() => setForm({ ...form, interval_months: bundle.enrichment!.suggested_interval_months, periodicity_basis: "Periodicidad de referencia del equipo", periodicity_notes: bundle.enrichment!.maintenance_periodicity })}>Usar intervalo de referencia ({bundle.enrichment.suggested_interval_months} meses)</button> : <span className="badge badge-warning">Definir las tareas e intervalos antes de configurar</span>}<small>Revisa los valores y pulsa Guardar periodicidad para confirmarlos. Las fechas existentes se conservan.</small></div>}
-      <label className="field"><span>Rutina vinculada</span><select value={programId} onChange={(e) => setProgramId(Number(e.target.value))}>{data.programs.map((item) => <option key={item.maintenance_program_id} value={item.maintenance_program_id}>{programName(item.maintenance_program_id)}</option>)}</select></label>
+      <h3><CalendarPlus size={18} />{" "}{t("Mantenimiento preventivo")}</h3>
+      {bundle.enrichment?.maintenance_periodicity && <div className="inventory-source-periodicity"><strong>{t("Periodicidad del inventario actualizado")}</strong><p>{bundle.enrichment.maintenance_periodicity}</p>{bundle.enrichment.suggested_interval_months ? <button type="button" className="row-action" onClick={() => setForm({ ...form, interval_months: bundle.enrichment!.suggested_interval_months, periodicity_basis: "Periodicidad de referencia del equipo", periodicity_notes: bundle.enrichment!.maintenance_periodicity })}>{t("Usar intervalo de referencia (")}{bundle.enrichment.suggested_interval_months}{" "}{t("meses)")}</button> : <span className="badge badge-warning">{t("Definir las tareas e intervalos antes de configurar")}</span>}<small>{t("Revisa los valores y pulsa Guardar periodicidad para confirmarlos. Las fechas existentes se conservan.")}</small></div>}
+      <label className="field"><span>{t("Rutina vinculada")}</span><select value={programId} onChange={(e) => setProgramId(Number(e.target.value))}>{data.programs.map((item) => <option key={item.maintenance_program_id} value={item.maintenance_program_id}>{programName(item.maintenance_program_id)}</option>)}</select></label>
       <form onSubmit={saveConfiguration}>
         <div className="form-grid">
-          <label className="field"><span>Periodicidad (meses)</span><input type="number" min="1" value={form.interval_months ?? ""} onChange={(e) => setForm({ ...form, interval_months: nullableNumber(e.target.value) })} /></label>
-          <label className="field"><span>Fundamento</span><input placeholder="Manual, política o criterio aprobado" value={form.periodicity_basis || ""} onChange={(e) => setForm({ ...form, periodicity_basis: e.target.value || null })} /></label>
-          <label className="field"><span>Fecha de referencia</span><input type="date" lang="es-MX" value={form.reference_date || ""} onChange={(e) => setForm({ ...form, reference_date: e.target.value || null })} />{form.reference_date && <small>{formatDateMx(form.reference_date)}</small>}</label>
-          <label className="field"><span>Último mantenimiento</span><input type="date" lang="es-MX" value={form.last_completed_on || ""} onChange={(e) => setForm({ ...form, last_completed_on: e.target.value || null })} />{form.last_completed_on && <small>{formatDateMx(form.last_completed_on)}</small>}</label>
+          <label className="field"><span>{t("Periodicidad (meses)")}</span><input type="number" min="1" value={form.interval_months ?? ""} onChange={(e) => setForm({ ...form, interval_months: nullableNumber(e.target.value) })} /></label>
+          <label className="field"><span>{t("Fundamento")}</span><input placeholder={t("Manual, política o criterio aprobado")} value={form.periodicity_basis || ""} onChange={(e) => setForm({ ...form, periodicity_basis: e.target.value || null })} /></label>
+          <label className="field"><span>{t("Fecha de referencia")}</span><input type="date" lang="es-MX" value={form.reference_date || ""} onChange={(e) => setForm({ ...form, reference_date: e.target.value || null })} />{form.reference_date && <small>{formatDateMx(form.reference_date)}</small>}</label>
+          <label className="field"><span>{t("Último mantenimiento")}</span><input type="date" lang="es-MX" value={form.last_completed_on || ""} onChange={(e) => setForm({ ...form, last_completed_on: e.target.value || null })} />{form.last_completed_on && <small>{formatDateMx(form.last_completed_on)}</small>}</label>
         </div>
-        <label className="field"><span>Notas</span><textarea value={form.periodicity_notes || ""} onChange={(e) => setForm({ ...form, periodicity_notes: e.target.value || null })} /></label>
-        <p>Próximo vencimiento: <strong>{form.next_due_on ? formatDateMx(form.next_due_on) : "Se calculará al guardar si existe una fecha base"}</strong></p>
-        <button className="btn btn-secondary" type="submit"><Save size={17} /> Guardar periodicidad</button>
+        <label className="field"><span>{t("Notas")}</span><textarea value={form.periodicity_notes || ""} onChange={(e) => setForm({ ...form, periodicity_notes: e.target.value || null })} /></label>
+        <p>{t("Próximo vencimiento:")}{" "}<strong>{form.next_due_on ? formatDateMx(form.next_due_on) : t("Se calculará al guardar si existe una fecha base")}</strong></p>
+        <button className="btn btn-secondary" type="submit"><Save size={17} />{" "}{t("Guardar periodicidad")}</button>
       </form>
       <form className="inventory-schedule-form" onSubmit={schedule}>
-        <h4>Crear orden preventiva</h4>
+        <h4>{t("Crear orden preventiva")}</h4>
         <div className="form-grid">
-          <label className="field"><span>Fecha y hora</span><input type="datetime-local" lang="es-MX" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />{scheduledAt && <small>{formatDateMx(scheduledAt, true)}</small>}</label>
-          <label className="field"><span>Técnico</span><select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}><option value="">Sin asignar</option>{data.technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.full_name}</option>)}</select></label>
-          <label className="field"><span>Prioridad</span><select value={priority} onChange={(e) => setPriority(e.target.value as typeof priority)}><option value="ordinaria">Ordinaria</option><option value="alta">Alta</option><option value="critica">Crítica</option></select></label>
+          <label className="field"><span>{t("Fecha y hora")}</span><input type="datetime-local" lang="es-MX" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />{scheduledAt && <small>{formatDateMx(scheduledAt, true)}</small>}</label>
+          <label className="field"><span>{t("Técnico")}</span><select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}><option value="">{t("Sin asignar")}</option>{data.technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.full_name}</option>)}</select></label>
+          <label className="field"><span>{t("Prioridad")}</span><select value={priority} onChange={(e) => setPriority(e.target.value as typeof priority)}><option value="ordinaria">{t("Ordinaria")}</option><option value="alta">{t("Alta")}</option><option value="critica">{t("Crítica")}</option></select></label>
         </div>
-        <button className="btn btn-primary" type="submit"><CalendarPlus size={17} /> Programar mantenimiento</button>
+        <button className="btn btn-primary" type="submit"><CalendarPlus size={17} />{" "}{t("Programar mantenimiento")}</button>
       </form>
       {message && <p className="inventory-admin-message" role="status">{message}</p>}
     </section>
@@ -240,14 +241,14 @@ function IssueReview({ issue, reviews, api, onChanged }: {
     <article className="inventory-issue-review">
       <strong>{inventoryIssueLabel(issue.issue_code)}</strong>
       <p>{inventoryIssueDescription(issue)}</p>
-      <span>Estado: {issue.review_status}</span>
-      {history.length > 0 && <details><summary>Historial ({history.length})</summary>{history.map((review) => <p key={review.id}><b>{review.review_status}</b> · {new Date(review.reviewed_at).toLocaleString("es-MX")}<br />{review.notes}<br /><small>{review.justification}</small></p>)}</details>}
+      <span>{t("Estado:")}{" "}{issue.review_status}</span>
+      {history.length > 0 && <details><summary>{t("Historial (")}{history.length})</summary>{history.map((review) => <p key={review.id}><b>{review.review_status}</b> · {new Date(review.reviewed_at).toLocaleString("es-MX")}<br />{review.notes}<br /><small>{review.justification}</small></p>)}</details>}
       <form onSubmit={submit}>
-        <label className="field"><span>Resultado</span><select value={status} onChange={(e) => setStatus(e.target.value as typeof status)}><option value="" disabled>Seleccionar resultado</option><option value="confirmado">Confirmado</option><option value="corregido">Corregido</option><option value="descartado">Descartado</option></select></label>
-        <label className="field"><span>Observaciones</span><textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
-        <label className="field"><span>Justificación</span><textarea value={justification} onChange={(e) => setJustification(e.target.value)} /></label>
-        <label className="field"><span>Referencia de evidencia (opcional)</span><input value={evidence} onChange={(e) => setEvidence(e.target.value)} /></label>
-        <button className="btn btn-secondary" type="submit"><CheckCircle2 size={17} /> Registrar revisión</button>
+        <label className="field"><span>{t("Resultado")}</span><select value={status} onChange={(e) => setStatus(e.target.value as typeof status)}><option value="" disabled>{t("Seleccionar resultado")}</option><option value="confirmado">{t("Confirmado")}</option><option value="corregido">{t("Corregido")}</option><option value="descartado">{t("Descartado")}</option></select></label>
+        <label className="field"><span>{t("Observaciones")}</span><textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
+        <label className="field"><span>{t("Justificación")}</span><textarea value={justification} onChange={(e) => setJustification(e.target.value)} /></label>
+        <label className="field"><span>{t("Referencia de evidencia (opcional)")}</span><input value={evidence} onChange={(e) => setEvidence(e.target.value)} /></label>
+        <button className="btn btn-secondary" type="submit"><CheckCircle2 size={17} />{" "}{t("Registrar revisión")}</button>
       </form>
       {message && <p className="inventory-admin-message" role="status">{message}</p>}
     </article>
@@ -279,20 +280,20 @@ export function InventoryAdministration({ bundle, enabled = isInventoryAdministr
   if (!enabled) return (
     <section className="panel inventory-admin-disabled" role="status">
       <AlertTriangle size={22} />
-      <div><strong>Administración preparada, pendiente de aprobación</strong><p>La consulta continúa activa, pero editar, programar y revisar se habilitarán únicamente después de desplegar <code>13_inventory_administration.sql</code>.</p></div>
+      <div><strong>{t("Administración preparada, pendiente de aprobación")}</strong><p>{t("La consulta continúa activa, pero editar, programar y revisar se habilitarán únicamente después de desplegar")}{" "}<code>{t("13_inventory_administration.sql")}</code>.</p></div>
     </section>
   )
-  if (error) return <section className="panel inventory-admin-disabled" role="alert"><AlertTriangle size={22} /><div><strong>No fue posible cargar la administración</strong><p>{error}</p></div></section>
-  if (!data) return <section className="panel inventory-admin-disabled"><Settings2 size={22} /><div><strong>Cargando herramientas administrativas...</strong></div></section>
+  if (error) return <section className="panel inventory-admin-disabled" role="alert"><AlertTriangle size={22} /><div><strong>{t("No fue posible cargar la administración")}</strong><p>{error}</p></div></section>
+  if (!data) return <section className="panel inventory-admin-disabled"><Settings2 size={22} /><div><strong>{t("Cargando herramientas administrativas...")}</strong></div></section>
 
   return (
     <div className="inventory-admin-layout">
       <AssetEditor data={data} onSave={async (asset) => { await api.updateAsset(asset); await refresh() }} />
       <PreventiveEditor equipmentId={bundle.equipment.id} bundle={bundle} data={data} api={api} onChanged={refresh} />
       <section className="panel inventory-admin-card inventory-review-panel">
-        <h3>Revisión de incidencias</h3>
-        <p>Los registros dudosos se conservan; cada decisión agrega una entrada al historial.</p>
-        {bundle.issues.length === 0 ? <p>Este equipo no tiene incidencias registradas.</p> : bundle.issues.map((issue) => <IssueReview key={issue.id} issue={issue} reviews={data.issueReviews} api={api} onChanged={refresh} />)}
+        <h3>{t("Revisión de incidencias")}</h3>
+        <p>{t("Los registros dudosos se conservan; cada decisión agrega una entrada al historial.")}</p>
+        {bundle.issues.length === 0 ? <p>{t("Este equipo no tiene incidencias registradas.")}</p> : bundle.issues.map((issue) => <IssueReview key={issue.id} issue={issue} reviews={data.issueReviews} api={api} onChanged={refresh} />)}
       </section>
     </div>
   )

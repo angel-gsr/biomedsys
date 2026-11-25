@@ -15,6 +15,11 @@ export type Profile = {
   department: string | null
 
   active: boolean
+  first_name?: string | null
+  last_name?: string | null
+  age?: number | null
+  phone?: string | null
+  avatar_path?: string | null
   must_change_password?: boolean
 }
 
@@ -37,6 +42,7 @@ export type Training = {
 
   description: string | null
   status: "programada" | "en_curso" | "completada" | "cancelada"
+  instructor_name?: string
   instructor_id: string
   equipment_id?: string | null
 }
@@ -483,7 +489,7 @@ export async function loadActiveProfile(
   const configuredClient = requireSupabase(client)
   const { data, error } = await configuredClient
     .from("profiles")
-    .select("id, institutional_id, full_name, role, department, active, must_change_password")
+    .select("id, institutional_id, full_name, first_name, last_name, age, phone, avatar_path, role, department, active, must_change_password")
     .eq("id", userId)
     .eq("active", true)
     .maybeSingle<Profile>()
@@ -667,7 +673,7 @@ export async function listActiveTechnicians(
   const configuredClient = requireSupabase(client)
   const { data, error } = await configuredClient
     .from("profiles")
-    .select("id, institutional_id, full_name, role, department, active, must_change_password")
+    .select("id, institutional_id, full_name, first_name, last_name, age, phone, avatar_path, role, department, active, must_change_password")
     .eq("role", "tecnico")
     .eq("active", true)
     .order("full_name")
@@ -975,9 +981,11 @@ export async function listTrainings() {
     protocolo: "Protocolo",
   }
 
+  const instructors = await listTrainingInstructors()
   const trainingRows = (data || []) as unknown as Array<Omit<Training, "purposeLabel">>
   return trainingRows.map((training) => ({
     ...training,
+    instructor_name: instructors.find(person=>person.id===training.instructor_id)?.full_name,
     purposeLabel: labels[training.purpose] || training.purpose,
   })) as Training[]
 }
@@ -989,6 +997,7 @@ export async function createTraining(input: {
   scheduledAt: string
   location: string
   description: string
+  instructorId?: string
   equipmentId?: string
 }) {
   if (!supabase) throw new Error("Supabase no está configurado.")
@@ -1014,7 +1023,7 @@ export async function createTraining(input: {
 
       ...(isBusinessCompletionEnabled ? { equipment_id: input.equipmentId || null } : {}),
 
-      instructor_id: session.session.user.id,
+      instructor_id: input.instructorId || session.session.user.id,
     })
     .select(
       `id, training_number, title, purpose, recurrence, scheduled_at, location, description, status, instructor_id${isBusinessCompletionEnabled ? ", equipment_id" : ""}`,
@@ -1042,7 +1051,7 @@ export async function listProfiles() {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, institutional_id, full_name, role, department, active, must_change_password")
+    .select("id, institutional_id, full_name, first_name, last_name, age, phone, avatar_path, role, department, active, must_change_password")
     .is("deleted_at", null)
     .order("institutional_id")
 
@@ -1206,6 +1215,7 @@ export async function createAccessRequest(input: {
   lastName: string
   age: string
   phone: string
+  avatarPath?: string | null
   role: Role
   department: string
 }) {
@@ -1218,6 +1228,7 @@ export async function createAccessRequest(input: {
       last_name: input.lastName.trim(),
       age: Number(input.age),
       phone: input.phone.trim() || null,
+      avatar_path: input.avatarPath || null,
       role: input.role,
       department: input.department || null,
     })
@@ -1533,7 +1544,7 @@ export async function getInventoryAdministrationData(
       .order("reviewed_at", { ascending: false }),
     configuredClient
       .from("profiles")
-      .select("id, institutional_id, full_name, role, department, active, must_change_password")
+      .select("id, institutional_id, full_name, first_name, last_name, age, phone, avatar_path, role, department, active, must_change_password")
       .eq("role", "tecnico")
       .eq("active", true)
       .order("full_name"),
@@ -1718,9 +1729,13 @@ export async function manageProfile(
   client: SupabaseClient | null = supabase,
 ) {
   const configuredClient = requireSupabase(client)
-  const { data, error } = await configuredClient.rpc("manage_profile", {
+  const { data, error } = await configuredClient.rpc("manage_profile_details", {
     target_profile_id: profile.id,
-    new_full_name: profile.full_name,
+    new_first_name: profile.first_name || "",
+    new_last_name: profile.last_name || "",
+    new_age: profile.age ?? null,
+    new_phone: profile.phone || null,
+    new_avatar_path: profile.avatar_path || null,
     new_department: profile.department,
     new_role: profile.role,
     new_active: profile.active,
@@ -1969,4 +1984,10 @@ export async function listUserPresence() {
   const { data, error } = await requireSupabase(supabase).rpc("list_user_presence")
   if (error) throw error
   return (data || []) as { profile_id: string; online: boolean }[]
+}
+
+export async function listTrainingInstructors() {
+ const { data, error } = await requireSupabase(supabase).rpc("list_training_instructors")
+ if(error) throw error
+ return (data || []) as Profile[]
 }

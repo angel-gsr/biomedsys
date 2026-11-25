@@ -5,7 +5,7 @@ vi.mock("../lib/supabase", async original => ({
   ...(await original<typeof import("../lib/supabase")>()),
   isOperationalCompletionEnabled: true,
   listUserPresence: vi.fn().mockResolvedValue([{ profile_id: "active", online: false }]),
-  listProfiles: vi.fn().mockResolvedValue([{ id: "inactive", institutional_id: "02181000", full_name: "Cuenta Inactiva", active: false, role: "usuario" }, { id: "active", institutional_id: "02181001", full_name: "Cuenta Activa", active: true, role: "usuario" }]),
+  listProfiles: vi.fn().mockResolvedValue([{ id: "inactive", institutional_id: "02181000", full_name: "Cuenta Inactiva", active: false, role: "usuario" }, { id: "active", institutional_id: "02181001", full_name: "Cuenta Activa", active: true, first_name: "Cuenta", last_name: "Activa", age: 28, role: "usuario" }]),
   listAccessRequests: vi.fn().mockResolvedValue([]),
   listUserDepartments: vi.fn().mockResolvedValue(["Urgencias", "CEYE"]),
   createAccessRequest: mocks.create,

@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { useEffect, useMemo, useState } from "react"
 import {
   AlertTriangle,
@@ -52,7 +53,7 @@ function Badge({
   children: React.ReactNode
   tone?: string
 }) {
-  return <span className={`badge badge-${tone}`}>{children}</span>
+  return <span className={`badge badge-${tone}`}>{typeof children === "string" ? t(children) : children}</span>
 }
 
 function KpiCard({
@@ -74,9 +75,9 @@ function KpiCard({
         <Icon size={21} />
       </div>
       <div>
-        <span>{label}</span>
+        <span>{t(label!)}</span>
         <strong>{value.toLocaleString("es-MX")}</strong>
-        <small>{note}</small>
+        <small>{t(note)}</small>
       </div>
     </article>
   )
@@ -141,51 +142,49 @@ function ManagerContent({
       <PageIntro
         eyebrow={currentDateLabel()}
         title={`Hola, ${profile.full_name.split(" ")[0] || profile.full_name}`}
-        description="Estado actual calculado con la información disponible en BioMedGest."
+        description={t("Estado actual calculado con la información disponible en BioMedGest.")}
         action={
-          <Button icon={Plus} onClick={() => setView("reportes")}>
-            Nuevo reporte
-          </Button>
+          <Button icon={Plus} onClick={() => setView("reportes")}>{"Nuevo reporte"}</Button>
         }
       />
       <div className="kpi-grid">
         <KpiCard
           icon={MonitorCog}
-          label="Total de equipos"
+          label={t("Total de equipos")}
           value={data.equipment.length}
           note="Activos visibles en inventario"
         />
         <KpiCard
           icon={CheckCircle2}
-          label="Operativos"
+          label={t("Operativos")}
           value={statusCounts.operativo || 0}
           note="Estado confirmado"
           tone="green"
         />
         <KpiCard
           icon={Wrench}
-          label="En reparación"
+          label={t("En reparación")}
           value={statusCounts.en_reparacion || 0}
           note="Estado confirmado"
           tone="amber"
         />
         <KpiCard
           icon={AlertTriangle}
-          label="Fuera de servicio"
+          label={t("Fuera de servicio")}
           value={statusCounts.fuera_de_servicio || 0}
           note="No incluye equipos dados de baja"
           tone="red"
         />
         <KpiCard
           icon={CalendarDays}
-          label="Mant. próximos"
+          label={t("Mant. próximos")}
           value={upcomingMaintenances.length}
           note="Siguientes 7 días"
           tone="violet"
         />
         <KpiCard
           icon={Clock3}
-          label="Reportes pendientes"
+          label={t("Reportes pendientes")}
           value={activeReports.length}
           note="No resueltos ni cerrados"
           tone="amber"
@@ -196,12 +195,8 @@ function ManagerContent({
           <AlertTriangle size={20} />
           <div>
             <strong>
-              {statusCounts.desconocido} equipos con estado desconocido
-            </strong>
-            <span>
-              BioMedGest no supone que estén operativos hasta que su estado sea
-              confirmado.
-            </span>
+              {statusCounts.desconocido}{" "}{t("equipos con estado desconocido")}</strong>
+            <span>{t("BioMedGest no supone que estén operativos hasta que su estado sea confirmado.")}</span>
           </div>
         </div>
       )}
@@ -209,14 +204,14 @@ function ManagerContent({
         <section className="panel chart-panel">
           <div className="panel-head">
             <div>
-              <h3>Reportes por servicio</h3>
-              <p>Últimos 30 días</p>
+              <h3>{t("Reportes por servicio")}</h3>
+              <p>{t("Últimos 30 días")}</p>
             </div>
           </div>
           {reportsByService.length === 0 ? (
             <div className="empty-state">
-              <h3>Sin reportes en el periodo</h3>
-              <p>La gráfica se mostrará cuando existan registros.</p>
+              <h3>{t("Sin reportes en el periodo")}</h3>
+              <p>{t("La gráfica se mostrará cuando existan registros.")}</p>
             </div>
           ) : (
             <div className="bar-chart">
@@ -239,8 +234,8 @@ function ManagerContent({
         <section className="panel priority-panel">
           <div className="panel-head">
             <div>
-              <h3>Semáforo de atención</h3>
-              <p>Reportes activos</p>
+              <h3>{t("Semáforo de atención")}</h3>
+              <p>{t("Reportes activos")}</p>
             </div>
           </div>
           {priorityCounts.map(({ priority, count }) => (
@@ -248,16 +243,14 @@ function ManagerContent({
               <i className={`signal signal-${priorityTone(priority)}`} />
               <div>
                 <strong>{priority}</strong>
-                <span>Prioridad registrada</span>
+                <span>{t("Prioridad registrada")}</span>
               </div>
               <b>{count}</b>
             </div>
           ))}
           <div className="sla">
             <Clock3 size={17} />
-            <span>
-              Los objetivos SLA aún no están modelados en la base de datos.
-            </span>
+            <span>{t("Los objetivos SLA aún no están modelados en la base de datos.")}</span>
           </div>
         </section>
       </div>
@@ -282,29 +275,28 @@ function RealOrdersTable({
     <section className="panel orders-panel">
       <div className="panel-head">
         <div>
-          <h3>Órdenes de mantenimiento</h3>
-          <p>Registros abiertos visibles para tu sesión</p>
+          <h3>{t("Órdenes de mantenimiento")}</h3>
+          <p>{t("Registros abiertos visibles para tu sesión")}</p>
         </div>
-        <Button variant="ghost" onClick={() => setView("calendario")}>
-          Ver mantenimiento <ChevronRight size={16} />
+        <Button variant="ghost" onClick={() => setView("calendario")}>{t("Ver mantenimiento")}{" "}<ChevronRight size={16} />
         </Button>
       </div>
       {active.length === 0 ? (
         <div className="empty-state">
-          <h3>No hay órdenes abiertas</h3>
-          <p>No se muestran órdenes de demostración.</p>
+          <h3>{t("No hay órdenes abiertas")}</h3>
+          <p>{t("No se muestran órdenes de demostración.")}</p>
         </div>
       ) : (
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Orden</th>
-                <th>Equipo</th>
-                <th>Tipo</th>
-                <th>Prioridad</th>
-                <th>Estado</th>
-                <th>Programación</th>
+                <th>{t("Orden")}</th>
+                <th>{t("Equipo")}</th>
+                <th>{t("Tipo")}</th>
+                <th>{t("Prioridad")}</th>
+                <th>{t("Estado")}</th>
+                <th>{t("Programación")}</th>
               </tr>
             </thead>
             <tbody>
@@ -362,11 +354,9 @@ function RoleContent({
       <PageIntro
         eyebrow={currentDateLabel()}
         title={`Hola, ${profile.full_name.split(" ")[0] || profile.full_name}`}
-        description="La información mostrada corresponde a los registros visibles para tu cuenta."
+        description={t("La información mostrada corresponde a los registros visibles para tu cuenta.")}
         action={
-          <Button onClick={() => setView("inventario")}>
-            Consultar inventario
-          </Button>
+          <Button onClick={() => setView("inventario")}>{"Consultar inventario"}</Button>
         }
       />
       <div className="tech-summary">
@@ -375,8 +365,8 @@ function RoleContent({
             <Clock3 size={19} />
           </span>
           <span>
-            <strong>{activeReports.length} reportes activos</strong>
-            <small>Visibles por tus permisos</small>
+            <strong>{activeReports.length}{" "}{t("reportes activos")}</strong>
+            <small>{t("Visibles por tus permisos")}</small>
           </span>
         </div>
         <div>
@@ -384,8 +374,8 @@ function RoleContent({
             <CalendarDays size={19} />
           </span>
           <span>
-            <strong>{openMaintenances.length} mantenimientos</strong>
-            <small>Programados o en proceso</small>
+            <strong>{openMaintenances.length}{" "}{t("mantenimientos")}</strong>
+            <small>{t("Programados o en proceso")}</small>
           </span>
         </div>
         <div>
@@ -393,8 +383,8 @@ function RoleContent({
             <CheckCircle2 size={19} />
           </span>
           <span>
-            <strong>{resolved.length} reportes resueltos</strong>
-            <small>Histórico visible</small>
+            <strong>{resolved.length}{" "}{t("reportes resueltos")}</strong>
+            <small>{t("Histórico visible")}</small>
           </span>
         </div>
       </div>
@@ -404,12 +394,10 @@ function RoleContent({
         <section className="panel orders-panel">
           <div className="panel-head">
             <div>
-              <h3>Mis reportes recientes</h3>
-              <p>Seguimiento real de reportes visibles</p>
+              <h3>{t("Mis reportes recientes")}</h3>
+              <p>{t("Seguimiento real de reportes visibles")}</p>
             </div>
-            <Button variant="ghost" onClick={() => setView("reportes")}>
-              Ver todos
-            </Button>
+            <Button variant="ghost" onClick={() => setView("reportes")}>{t("Ver todos")}</Button>
           </div>
           <ReportList reports={data.reports.slice(0, 5)} />
         </section>
@@ -422,8 +410,8 @@ function ReportList({ reports }: { reports: ReportSummary[] }) {
   if (reports.length === 0)
     return (
       <div className="empty-state">
-        <h3>No hay reportes registrados</h3>
-        <p>Los nuevos reportes aparecerán aquí.</p>
+        <h3>{t("No hay reportes registrados")}</h3>
+        <p>{t("Los nuevos reportes aparecerán aquí.")}</p>
       </div>
     )
   return (
@@ -500,15 +488,13 @@ export function Dashboard({
     return (
       <section className="panel empty-state" role="alert">
         <AlertTriangle size={34} />
-        <h3>No fue posible cargar el panel</h3>
+        <h3>{t("No fue posible cargar el panel")}</h3>
         <p>{error}</p>
         <Button
           icon={RefreshCw}
           variant="secondary"
           onClick={() => setReloadToken((value) => value + 1)}
-        >
-          Reintentar
-        </Button>
+        >{t("Reintentar")}</Button>
       </section>
     )
   if (!data)
@@ -516,7 +502,7 @@ export function Dashboard({
       <section className="panel empty-state" aria-busy="true">
         <RefreshCw className="spin" size={34} />
         <h3>{loadingLabel}</h3>
-        <p>No se utilizarán valores de demostración si la consulta falla.</p>
+        <p>{t("No se utilizarán valores de demostración si la consulta falla.")}</p>
       </section>
     )
   return role === "jefe" ? (

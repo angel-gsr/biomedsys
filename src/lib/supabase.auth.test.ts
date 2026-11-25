@@ -32,7 +32,7 @@ describe("perfiles activos", () => {
 
     await expect(loadActiveProfile(activeProfile.id, mock.client)).resolves.toEqual(activeProfile)
     expect(mock.from).toHaveBeenCalledWith("profiles")
-    expect(mock.select).toHaveBeenCalledWith("id, institutional_id, full_name, role, department, active, must_change_password")
+    expect(mock.select).toHaveBeenCalledWith("id, institutional_id, full_name, first_name, last_name, age, phone, avatar_path, role, department, active, must_change_password")
     expect(mock.eqId).toHaveBeenCalledWith("id", activeProfile.id)
     expect(mock.eqActive).toHaveBeenCalledWith("active", true)
   })

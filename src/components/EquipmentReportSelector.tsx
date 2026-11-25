@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { useEffect, useId, useRef, useState } from "react"
 import { AlertTriangle, CheckCircle2, LoaderCircle, Search } from "lucide-react"
 import {
@@ -84,7 +85,7 @@ export function EquipmentReportSelector({
           required
           readOnly={readOnly}
           role="combobox"
-          aria-label="Buscar equipo registrado"
+          aria-label={t("Buscar equipo registrado")}
           aria-autocomplete="list"
           aria-controls={listboxId}
           aria-expanded={open}
@@ -92,18 +93,18 @@ export function EquipmentReportSelector({
           value={value}
           onChange={(event) => onInputChange(event.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Código, equipo, fabricante o modelo"
+          placeholder={t("Código, equipo, fabricante o modelo")}
           autoComplete="off"
         />
-        {loading && <LoaderCircle className="spin" size={17} aria-label="Buscando equipos" />}
+        {loading && <LoaderCircle className="spin" size={17} aria-label={t("Buscando equipos")} />}
       </div>
 
       {open && (
-        <div className="equipment-selector-results" id={listboxId} role="listbox" aria-label="Equipos encontrados">
+        <div className="equipment-selector-results" id={listboxId} role="listbox" aria-label={t("Equipos encontrados")}>
           {error ? (
             <div className="equipment-selector-state" role="alert"><AlertTriangle size={17} /><span>{error}</span></div>
           ) : results.length === 0 ? (
-            <div className="equipment-selector-state"><span>No se encontraron equipos registrados.</span></div>
+            <div className="equipment-selector-state"><span>{t("No se encontraron equipos registrados.")}</span></div>
           ) : results.map((item) => (
             <button
               key={item.id}
@@ -129,8 +130,7 @@ export function EquipmentReportSelector({
           <div>
             <strong>{selected.inventory_code} · {selected.equipment_type}</strong>
             <span>{equipmentDescription(selected)}</span>
-            <small>
-              Serie: {selected.serial_number || "No visible o no registrada"} · {selected.hospital_area || "Área no registrada"} · {selected.location || "Ubicación no registrada"}
+            <small>{t("Serie:")}{" "}{selected.serial_number || "No visible o no registrada"} · {selected.hospital_area || "Área no registrada"} · {selected.location || "Ubicación no registrada"}
             </small>
           </div>
         </div>

@@ -17,6 +17,17 @@ import { DocumentsBrowser } from "./DocumentsBrowser"
 afterEach(cleanup)
 
 describe("documents by equipment and area", () => {
+  it("filters departments by alphabet letter and clears the letter when choosing an area", async () => {
+    render(<DocumentsBrowser role="jefe" />)
+    await screen.findByRole("button", { name: /EQ-001/ })
+    const alphabet=screen.getByRole("navigation",{name:"Áreas por letra"})
+    expect((within(alphabet).getByRole("button",{name:"Z"}) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(within(alphabet).getByRole("button",{name:"Q"}))
+    expect(screen.getByRole("button",{name:/EQ-001/})).toBeTruthy()
+    expect(screen.queryByRole("button",{name:/EQ-002/})).toBeNull()
+    fireEvent.change(screen.getByLabelText("Área hospitalaria"),{target:{value:"CEYE"}})
+    expect(screen.getByRole("button",{name:/EQ-002/})).toBeTruthy()
+  })
   it("filters by area, shows only the chosen equipment documents and clears selection on filter changes", async () => {
     render(<DocumentsBrowser role="jefe" />)
     await screen.findByRole("button", { name: /EQ-001/ })

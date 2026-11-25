@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { ServiceOrderDocument } from "./ServiceOrderDocument"
 import { FilePicker } from "./FilePicker"
 import { Fragment, useEffect, useMemo, useState } from "react"
@@ -72,11 +73,9 @@ function Failure({ error, retry }: { error: string; retry: () => void }) {
   return (
     <section className="panel empty-state" role="alert">
       <AlertTriangle size={34} />
-      <h3>No fue posible consultar la información</h3>
+      <h3>{t("No fue posible consultar la información")}</h3>
       <p>{error}</p>
-      <Button icon={RefreshCw} variant="secondary" onClick={retry}>
-        Reintentar
-      </Button>
+      <Button icon={RefreshCw} variant="secondary" onClick={retry}>{t("Reintentar")}</Button>
     </section>
   )
 }
@@ -145,43 +144,40 @@ export function MaintenanceView({ role }: { role: Role }) {
       return result
     }, { overdue: 0, upcoming: 0, later: 0 })
   }, [state.maintenances])
-  if (state.loading) return <Loading label="Consultando mantenimientos..." />
+  if (state.loading) return <Loading label={t("Consultando mantenimientos...")} />
   if (state.error) return <Failure error={state.error} retry={state.retry} />
   return (
     <>
       <PageIntro
-        title="Mantenimiento"
-        description="Órdenes y actividades realmente registradas y visibles para tu sesión."
+        title={t("Mantenimiento")}
+        description={t("Órdenes y actividades realmente registradas y visibles para tu sesión.")}
       />
       <section className="maintenance-catalog">
         {state.catalog.map((item) => (
           <article className="panel maintenance-type" key={item.code}>
             <div className="maintenance-code">{item.code}</div>
             <div>
-              <span className="eyebrow">Tipo de mantenimiento</span>
+              <span className="eyebrow">{t("Tipo de mantenimiento")}</span>
               <h3>{item.label}</h3>
               <p>{item.description}</p>
             </div>
             <strong>
               {counts[item.code] || 0}
-              <small>registrados</small>
+              <small>{t("registrados")}</small>
             </strong>
           </article>
         ))}
       </section>
-      <section className="maintenance-catalog preventive-summary"><article className="panel maintenance-type"><div className="maintenance-code">!</div><div><h3>Preventivos vencidos</h3><p>Órdenes programadas cuya fecha ya pasó.</p></div><strong>{preventiveState.overdue}</strong></article><article className="panel maintenance-type"><div className="maintenance-code">30</div><div><h3>Próximos 30 días</h3><p>Fechas registradas, sin periodicidades inferidas.</p></div><strong>{preventiveState.upcoming}</strong></article><article className="panel maintenance-type"><div className="maintenance-code">+</div><div><h3>Posteriores</h3><p>Preventivos pendientes fuera de la ventana inmediata.</p></div><strong>{preventiveState.later}</strong></article></section>
+      <section className="maintenance-catalog preventive-summary"><article className="panel maintenance-type"><div className="maintenance-code">!</div><div><h3>{t("Preventivos vencidos")}</h3><p>{t("Órdenes programadas cuya fecha ya pasó.")}</p></div><strong>{preventiveState.overdue}</strong></article><article className="panel maintenance-type"><div className="maintenance-code">{t("30")}</div><div><h3>{t("Próximos 30 días")}</h3><p>{t("Fechas registradas, sin periodicidades inferidas.")}</p></div><strong>{preventiveState.upcoming}</strong></article><article className="panel maintenance-type"><div className="maintenance-code">+</div><div><h3>{t("Posteriores")}</h3><p>{t("Preventivos pendientes fuera de la ventana inmediata.")}</p></div><strong>{preventiveState.later}</strong></article></section>
       <section className="panel orders-panel">
         <div className="panel-head">
           <div>
             <h3>
               {role === "tecnico"
-                ? "Mis mantenimientos"
-                : "Mantenimientos programados"}
+                ? t("Mis mantenimientos")
+                : t("Mantenimientos programados")}
             </h3>
-            <p>
-              No se generan eventos de calendario a partir de rutinas sin
-              periodicidad.
-            </p>
+            <p>{t("No se generan eventos de calendario a partir de rutinas sin periodicidad.")}</p>
           </div>
           <CalendarDays size={21} />
         </div>
@@ -194,17 +190,17 @@ export function MaintenanceView({ role }: { role: Role }) {
 export function ServiceOrdersView({ role, requestedOrderId = null, onBack }: { role: Role; requestedOrderId?: number | null; onBack?: () => void }) {
   const state = useMaintenanceOverview()
   if (state.loading)
-    return <Loading label="Consultando órdenes de servicio..." />
+    return <Loading label={t("Consultando órdenes de servicio...")} />
   if (state.error) return <Failure error={state.error} retry={state.retry} />
   if (requestedOrderId !== null) {
     const item = state.maintenances.find(order => order.id === requestedOrderId)
-    return <><Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Volver a Mesa de ayuda</Button>{!item ? <section className="panel"><h2>Orden no disponible</h2><p>No se encontró la orden o no tienes acceso a ella.</p></section> : <><PageIntro title={`Orden ${item.maintenance_number}`} description="Orden de servicio confirmada · Vista de consulta" /><ReadOnlyServiceOrder key={item.id} item={item} /></>}</>
+    return <><Button variant="secondary" icon={ArrowLeft} onClick={onBack}>{t("Volver a Mesa de ayuda")}</Button>{!item ? <section className="panel"><h2>{t("Orden no disponible")}</h2><p>{t("No se encontró la orden o no tienes acceso a ella.")}</p></section> : <><PageIntro title={`Orden ${item.maintenance_number}`} description={t("Orden de servicio confirmada · Vista de consulta")} /><ReadOnlyServiceOrder key={item.id} item={item} /></>}</>
   }
   return (
     <>
       <PageIntro
-        title="Órdenes de servicio"
-        description="Mantenimientos creados en Supabase; los formularios técnicos detallados se habilitarán cuando exista una orden seleccionada."
+        title={t("Órdenes de servicio")}
+        description={t("Mantenimientos creados en Supabase; los formularios técnicos detallados se habilitarán cuando exista una orden seleccionada.")}
       />
       <section className="panel orders-panel">
         <MaintenanceTable items={state.maintenances} role={role} onChanged={state.retry} />
@@ -217,7 +213,7 @@ function ReadOnlyServiceOrder({ item }: { item: MaintenanceSummary }) {
   const [report,setReport]=useState<ReportSummary | null>(null)
   const [loading,setLoading]=useState(Boolean(item.source_report_id)),[error,setError]=useState("")
   useEffect(()=>{let active=true;if(!item.source_report_id)return;listReports().then(rows=>{if(active){const found=rows.find(r=>r.id===item.source_report_id);if(!found)throw new Error("No fue posible consultar el incidente vinculado");setReport(found)}}).catch(cause=>{if(active)setError(cause.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[item.source_report_id])
-  if(loading)return <p>Cargando datos del incidente...</p>
+  if(loading)return <p>{t("Cargando datos del incidente...")}</p>
   if(error)return <p role="alert" className="form-error">{error}</p>
   return <ServiceOrderDocument item={item} report={report} />
 }
@@ -232,7 +228,7 @@ function MaintenanceStatusEditor({ item, role, onChanged }: { item: MaintenanceS
 
   useEffect(() => setStatus((options[0] || item.status) as MaintenanceSummary["status"]), [item.status, role])
 
-  if (options.length === 0) return <span className="muted-copy">Sin transición disponible</span>
+  if (options.length === 0) return <span className="muted-copy">{t("Sin transición disponible")}</span>
 
   async function save() {
     setSaving(true)
@@ -250,10 +246,10 @@ function MaintenanceStatusEditor({ item, role, onChanged }: { item: MaintenanceS
   return (
     <div className="maintenance-status-editor">
       <select aria-label={`Estado de ${item.maintenance_number}`} value={status} onChange={(event) => setStatus(event.target.value as MaintenanceSummary["status"])}>
-        {options.map((option) => <option key={option} value={option}>{option === "en_proceso" ? "Iniciar" : "Cancelar"}</option>)}
+        {options.map((option) => <option key={option} value={option}>{option === "en_proceso" ? t("Iniciar") : t("Cancelar")}</option>)}
       </select>
       <button type="button" className="row-action" disabled={saving} onClick={save}>
-        {saving ? "Guardando..." : "Aplicar"}
+        {saving ? t("Guardando...") : t("Aplicar")}
       </button>
       {error && <small className="form-error" role="alert">{error}</small>}
     </div>
@@ -266,8 +262,8 @@ function MaintenanceTable({ items, role, onChanged }: { items: MaintenanceSummar
     return (
       <div className="empty-state">
         <Wrench size={34} />
-        <h3>No hay mantenimientos registrados</h3>
-        <p>No se muestran órdenes ni fechas simuladas.</p>
+        <h3>{t("No hay mantenimientos registrados")}</h3>
+        <p>{t("No se muestran órdenes ni fechas simuladas.")}</p>
       </div>
     )
   return (
@@ -275,14 +271,14 @@ function MaintenanceTable({ items, role, onChanged }: { items: MaintenanceSummar
       <table>
         <thead>
           <tr>
-            <th>Orden</th>
-            <th>Equipo</th>
-            <th>Tipo</th>
-            <th>Estado</th>
-            <th>Prioridad</th>
-            <th>Programación</th>
-            {(role === "jefe" || role === "tecnico") && <th>Actualizar</th>}
-            {(role === "jefe" || role === "tecnico") && <th>Expediente</th>}
+            <th>{t("Orden")}</th>
+            <th>{t("Equipo")}</th>
+            <th>{t("Tipo")}</th>
+            <th>{t("Estado")}</th>
+            <th>{t("Prioridad")}</th>
+            <th>{t("Programación")}</th>
+            {(role === "jefe" || role === "tecnico") && <th>{t("Actualizar")}</th>}
+            {(role === "jefe" || role === "tecnico") && <th>{t("Expediente")}</th>}
           </tr>
         </thead>
         <tbody>
@@ -298,7 +294,7 @@ function MaintenanceTable({ items, role, onChanged }: { items: MaintenanceSummar
               <td>{item.priority || "Sin registrar"}</td>
               <td>{formatDate(item.scheduled_at)}</td>
               {(role === "jefe" || role === "tecnico") && <td><MaintenanceStatusEditor item={item} role={role} onChanged={onChanged} /></td>}
-              {(role === "jefe" || role === "tecnico") && <td><button type="button" className="row-action" onClick={() => setExpanded((current) => current === item.id ? null : item.id)}>{expanded === item.id ? "Ocultar" : "Abrir"}</button></td>}
+              {(role === "jefe" || role === "tecnico") && <td><button type="button" className="row-action" onClick={() => setExpanded((current) => current === item.id ? null : item.id)}>{expanded === item.id ? t("Ocultar") : t("Abrir")}</button></td>}
             </tr>
             {expanded === item.id && (role === "jefe" || role === "tecnico") && (
               <tr className="maintenance-detail-row"><td colSpan={8}><CorrectiveWorkflowPanel item={item} role={role} onChanged={onChanged} /></td></tr>
@@ -369,45 +365,45 @@ function CorrectiveWorkflowPanel({ item, role, onChanged }: { item: MaintenanceS
   }
 
   if (item.maintenance_code !== "MC")
-    return <div className="corrective-workflow"><p>Esta orden no corresponde a mantenimiento correctivo.</p></div>
+    return <div className="corrective-workflow"><p>{t("Esta orden no corresponde a mantenimiento correctivo.")}</p></div>
 
   return (
     <section className="corrective-workflow">
       <div className="corrective-summary">
-        <strong>{item.report_number ? `Reporte ${item.report_number}` : "Sin reporte vinculado"}</strong>
-        <span>Estado del reporte: {item.report_status || "No disponible"}</span>
-        <span>Técnico asignado: {item.assigned_to_name || "No disponible"}</span>
-        {item.equipment && <span>Equipo: {item.equipment.inventory_code} · {item.equipment.equipment_type} · {item.equipment.manufacturer} {item.equipment.model} · {item.equipment.hospital_area || "Área sin registrar"}</span>}
-        <span>La evidencia documental depende de configurar Supabase Storage; no se simularán archivos.</span>
+        <strong>{item.report_number ? `Reporte ${item.report_number}` : t("Sin reporte vinculado")}</strong>
+        <span>{t("Estado del reporte:")}{" "}{item.report_status || "No disponible"}</span>
+        <span>{t("Técnico asignado:")}{" "}{item.assigned_to_name || "No disponible"}</span>
+        {item.equipment && <span>{t("Equipo:")}{" "}{item.equipment.inventory_code} · {item.equipment.equipment_type} · {item.equipment.manufacturer} {item.equipment.model} · {item.equipment.hospital_area || "Área sin registrar"}</span>}
+        <span>{t("La evidencia documental depende de configurar Supabase Storage; no se simularán archivos.")}</span>
       </div>
-      {role === "tecnico" && item.status === "programado" && <p>Inicia la orden antes de registrar la intervención.</p>}
+      {role === "tecnico" && item.status === "programado" && <p>{t("Inicia la orden antes de registrar la intervención.")}</p>}
       {role === "tecnico" && item.status === "en_proceso" && (
         <div className="corrective-form">
-          <label><span>Inicio *</span><input type="datetime-local" value={startedAt} onChange={(event) => setStartedAt(event.target.value)} /></label>
-          <label><span>Finalización</span><input type="datetime-local" value={completedAt} onChange={(event) => setCompletedAt(event.target.value)} /></label>
-          <label className="span-2"><span>Diagnóstico *</span><textarea value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} /></label>
-          <label className="span-2"><span>Trabajo realizado *</span><textarea value={workPerformed} onChange={(event) => setWorkPerformed(event.target.value)} /></label>
-          <label className="span-2"><span>Resultados de pruebas *</span><textarea value={testResults} onChange={(event) => setTestResults(event.target.value)} /></label>
-          <label><span>Condición final *</span><select value={condition} onChange={(event) => setCondition(event.target.value as typeof condition)}><option value="">Seleccionar</option><option value="operativo">Operativo</option><option value="en_reparacion">En reparación</option><option value="fuera_de_servicio">Fuera de servicio</option></select></label>
-          <label className="span-2"><span>Observaciones técnicas</span><textarea value={technicalNotes} onChange={(event) => setTechnicalNotes(event.target.value)} /></label>
-          <div className="corrective-actions"><button type="button" className="row-action" disabled={saving || !startedAt} onClick={() => save(false)}>Guardar borrador</button><button type="button" className="row-action" disabled={saving || !startedAt} onClick={() => save(true)}>Enviar para validación</button></div>
+          <label><span>{t("Inicio *")}</span><input type="datetime-local" value={startedAt} onChange={(event) => setStartedAt(event.target.value)} /></label>
+          <label><span>{t("Finalización")}</span><input type="datetime-local" value={completedAt} onChange={(event) => setCompletedAt(event.target.value)} /></label>
+          <label className="span-2"><span>{t("Diagnóstico *")}</span><textarea value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} /></label>
+          <label className="span-2"><span>{t("Trabajo realizado *")}</span><textarea value={workPerformed} onChange={(event) => setWorkPerformed(event.target.value)} /></label>
+          <label className="span-2"><span>{t("Resultados de pruebas *")}</span><textarea value={testResults} onChange={(event) => setTestResults(event.target.value)} /></label>
+          <label><span>{t("Condición final *")}</span><select value={condition} onChange={(event) => setCondition(event.target.value as typeof condition)}><option value="">{t("Seleccionar")}</option><option value="operativo">{t("Operativo")}</option><option value="en_reparacion">{t("En reparación")}</option><option value="fuera_de_servicio">{t("Fuera de servicio")}</option></select></label>
+          <label className="span-2"><span>{t("Observaciones técnicas")}</span><textarea value={technicalNotes} onChange={(event) => setTechnicalNotes(event.target.value)} /></label>
+          <div className="corrective-actions"><button type="button" className="row-action" disabled={saving || !startedAt} onClick={() => save(false)}>{t("Guardar borrador")}</button><button type="button" className="row-action" disabled={saving || !startedAt} onClick={() => save(true)}>{t("Enviar para validación")}</button></div>
         </div>
       )}
       {record && role === "jefe" && (
         <div className="technical-record-summary">
-          <strong>Expediente técnico</strong>
-          <span>Inicio: {record.started_at ? formatDate(record.started_at) : "Pendiente"}</span>
-          <span>Finalización: {record.completed_at ? formatDate(record.completed_at) : "Pendiente"}</span>
-          <p><b>Diagnóstico:</b> {record.diagnosis || "Pendiente"}</p>
-          <p><b>Trabajo:</b> {record.work_performed || "Pendiente"}</p>
-          <p><b>Pruebas:</b> {record.test_results || "Pendiente"}</p>
-          <p><b>Condición:</b> {record.equipment_condition || "Pendiente"}</p>
+          <strong>{t("Expediente técnico")}</strong>
+          <span>{t("Inicio:")}{" "}{record.started_at ? formatDate(record.started_at) : t("Pendiente")}</span>
+          <span>{t("Finalización:")}{" "}{record.completed_at ? formatDate(record.completed_at) : t("Pendiente")}</span>
+          <p><b>{t("Diagnóstico:")}</b> {record.diagnosis || "Pendiente"}</p>
+          <p><b>{t("Trabajo:")}</b> {record.work_performed || "Pendiente"}</p>
+          <p><b>{t("Pruebas:")}</b> {record.test_results || "Pendiente"}</p>
+          <p><b>{t("Condición:")}</b> {record.equipment_condition || "Pendiente"}</p>
         </div>
       )}
       {role === "jefe" && item.status === "en_proceso" && (
-        <div className="closure-panel"><label><span>Observaciones de validación</span><textarea value={closureNotes} onChange={(event) => setClosureNotes(event.target.value)} /></label><button type="button" className="row-action" disabled={saving || !record?.completed_at} onClick={close}>Validar y cerrar</button>{!record?.completed_at && <small>El técnico debe finalizar primero el expediente.</small>}</div>
+        <div className="closure-panel"><label><span>{t("Observaciones de validación")}</span><textarea value={closureNotes} onChange={(event) => setClosureNotes(event.target.value)} /></label><button type="button" className="row-action" disabled={saving || !record?.completed_at} onClick={close}>{t("Validar y cerrar")}</button>{!record?.completed_at && <small>{t("El técnico debe finalizar primero el expediente.")}</small>}</div>
       )}
-      {item.validated_at && <p>Validado el {formatDate(item.validated_at)}.</p>}
+      {item.validated_at && <p>{t("Validado el")}{" "}{formatDate(item.validated_at)}.</p>}
       {isOperationalCompletionEnabled && <AttachmentPanel maintenanceId={item.id} attachments={item.attachments || []} onChanged={onChanged} />}
       {message && <p className="form-success" role="status">{message}</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
@@ -431,7 +427,7 @@ function PreventiveWorkflowPanel({ item, role, onChanged }: { item: MaintenanceS
   const [error, setError] = useState("")
 
   if (!isOperationalCompletionEnabled)
-    return <div className="corrective-workflow"><p>El flujo preventivo detallado requiere desplegar y habilitar la migración 16.</p></div>
+    return <div className="corrective-workflow"><p>{t("El flujo preventivo detallado requiere desplegar y habilitar la migración 16.")}</p></div>
 
   const activities = activitiesText.split(/\r?\n/).map((activity) => activity.trim()).filter(Boolean)
 
@@ -469,26 +465,26 @@ function PreventiveWorkflowPanel({ item, role, onChanged }: { item: MaintenanceS
   return (
     <section className="corrective-workflow">
       <div className="corrective-summary">
-        <strong>Rutina preventiva</strong>
-        <span>Técnico asignado: {item.assigned_to_name || "No disponible"}</span>
-        {item.equipment && <span>Equipo: {item.equipment.inventory_code} · {item.equipment.equipment_type} · {item.equipment.hospital_area}</span>}
+        <strong>{t("Rutina preventiva")}</strong>
+        <span>{t("Técnico asignado:")}{" "}{item.assigned_to_name || "No disponible"}</span>
+        {item.equipment && <span>{t("Equipo:")}{" "}{item.equipment.inventory_code} · {item.equipment.equipment_type} · {item.equipment.hospital_area}</span>}
       </div>
-      {role === "tecnico" && item.status === "programado" && <p>Inicia la orden antes de registrar la rutina.</p>}
+      {role === "tecnico" && item.status === "programado" && <p>{t("Inicia la orden antes de registrar la rutina.")}</p>}
       {role === "tecnico" && item.status === "en_proceso" && (
         <div className="corrective-form">
-          <label><span>Inicio *</span><input type="datetime-local" value={startedAt} onChange={(event) => setStartedAt(event.target.value)} /></label>
-          <label><span>Finalización</span><input type="datetime-local" value={completedAt} onChange={(event) => setCompletedAt(event.target.value)} /></label>
-          <label className="span-2"><span>Actividades ejecutadas, una por línea *</span><textarea value={activitiesText} onChange={(event) => setActivitiesText(event.target.value)} /></label>
-          <label className="span-2"><span>Hallazgos / diagnóstico *</span><textarea value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} /></label>
-          <label className="span-2"><span>Trabajo realizado *</span><textarea value={workPerformed} onChange={(event) => setWorkPerformed(event.target.value)} /></label>
-          <label className="span-2"><span>Resultados de pruebas *</span><textarea value={testResults} onChange={(event) => setTestResults(event.target.value)} /></label>
-          <label><span>Condición final *</span><select value={condition} onChange={(event) => setCondition(event.target.value as typeof condition)}><option value="">Seleccionar</option><option value="operativo">Operativo</option><option value="en_reparacion">En reparación</option><option value="fuera_de_servicio">Fuera de servicio</option></select></label>
-          <label className="span-2"><span>Observaciones</span><textarea value={technicalNotes} onChange={(event) => setTechnicalNotes(event.target.value)} /></label>
-          <div className="corrective-actions"><button type="button" className="row-action" disabled={saving || !startedAt} onClick={() => save(false)}>Guardar borrador</button><button type="button" className="row-action" disabled={saving || !startedAt || activities.length === 0} onClick={() => save(true)}>Enviar para validación</button></div>
+          <label><span>{t("Inicio *")}</span><input type="datetime-local" value={startedAt} onChange={(event) => setStartedAt(event.target.value)} /></label>
+          <label><span>{t("Finalización")}</span><input type="datetime-local" value={completedAt} onChange={(event) => setCompletedAt(event.target.value)} /></label>
+          <label className="span-2"><span>{t("Actividades ejecutadas, una por línea *")}</span><textarea value={activitiesText} onChange={(event) => setActivitiesText(event.target.value)} /></label>
+          <label className="span-2"><span>{t("Hallazgos / diagnóstico *")}</span><textarea value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} /></label>
+          <label className="span-2"><span>{t("Trabajo realizado *")}</span><textarea value={workPerformed} onChange={(event) => setWorkPerformed(event.target.value)} /></label>
+          <label className="span-2"><span>{t("Resultados de pruebas *")}</span><textarea value={testResults} onChange={(event) => setTestResults(event.target.value)} /></label>
+          <label><span>{t("Condición final *")}</span><select value={condition} onChange={(event) => setCondition(event.target.value as typeof condition)}><option value="">{t("Seleccionar")}</option><option value="operativo">{t("Operativo")}</option><option value="en_reparacion">{t("En reparación")}</option><option value="fuera_de_servicio">{t("Fuera de servicio")}</option></select></label>
+          <label className="span-2"><span>{t("Observaciones")}</span><textarea value={technicalNotes} onChange={(event) => setTechnicalNotes(event.target.value)} /></label>
+          <div className="corrective-actions"><button type="button" className="row-action" disabled={saving || !startedAt} onClick={() => save(false)}>{t("Guardar borrador")}</button><button type="button" className="row-action" disabled={saving || !startedAt || activities.length === 0} onClick={() => save(true)}>{t("Enviar para validación")}</button></div>
         </div>
       )}
-      {record && role === "jefe" && <div className="technical-record-summary"><strong>Expediente preventivo</strong><span>Inicio: {record.started_at ? formatDate(record.started_at) : "Pendiente"}</span><span>Finalización: {record.completed_at ? formatDate(record.completed_at) : "Pendiente"}</span><p><b>Hallazgos:</b> {record.diagnosis || "Pendiente"}</p><p><b>Trabajo:</b> {record.work_performed || "Pendiente"}</p><p><b>Pruebas:</b> {record.test_results || "Pendiente"}</p>{(item.activities || []).map((activity) => <p key={activity.id}><b>Actividad:</b> {activity.activity} · {activity.completed ? "completada" : "pendiente"}</p>)}</div>}
-      {role === "jefe" && item.status === "en_proceso" && <div className="closure-panel"><label><span>Observaciones de validación</span><textarea value={closureNotes} onChange={(event) => setClosureNotes(event.target.value)} /></label><button type="button" className="row-action" disabled={saving || !record?.completed_at} onClick={close}>Validar preventivo</button></div>}
+      {record && role === "jefe" && <div className="technical-record-summary"><strong>{t("Expediente preventivo")}</strong><span>{t("Inicio:")}{" "}{record.started_at ? formatDate(record.started_at) : t("Pendiente")}</span><span>{t("Finalización:")}{" "}{record.completed_at ? formatDate(record.completed_at) : t("Pendiente")}</span><p><b>{t("Hallazgos:")}</b> {record.diagnosis || "Pendiente"}</p><p><b>{t("Trabajo:")}</b> {record.work_performed || "Pendiente"}</p><p><b>{t("Pruebas:")}</b> {record.test_results || "Pendiente"}</p>{(item.activities || []).map((activity) => <p key={activity.id}><b>{t("Actividad:")}</b> {activity.activity} · {activity.completed ? t("completada") : t("pendiente")}</p>)}</div>}
+      {role === "jefe" && item.status === "en_proceso" && <div className="closure-panel"><label><span>{t("Observaciones de validación")}</span><textarea value={closureNotes} onChange={(event) => setClosureNotes(event.target.value)} /></label><button type="button" className="row-action" disabled={saving || !record?.completed_at} onClick={close}>{t("Validar preventivo")}</button></div>}
       <AttachmentPanel maintenanceId={item.id} attachments={item.attachments || []} onChanged={onChanged} />
       {message && <p className="form-success" role="status">{message}</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
@@ -526,5 +522,5 @@ function AttachmentPanel({ maintenanceId, attachments, onChanged }: { maintenanc
     finally { setBusy(false) }
   }
 
-  return <div className="attachment-panel"><strong>Evidencias privadas</strong><div className="attachment-upload"><FilePicker label="Archivo de evidencia" file={file} onChange={setFile} disabled={busy} /><input aria-label="Descripción de evidencia" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Descripción" /><button type="button" className="row-action" disabled={!file || busy} onClick={upload}><Save size={15} /> {busy ? "Subiendo..." : "Guardar archivo"}</button></div>{attachments.map((attachment) => <div className="attachment-row" key={attachment.id}><button type="button" className="attachment-link" onClick={() => download(attachment)}>{attachment.original_name} · {(attachment.size_bytes / 1024).toFixed(1)} KB</button><button type="button" className="row-action" disabled={busy} onClick={() => remove(attachment)}>Eliminar</button></div>)}{error && <small className="form-error" role="alert">{error}</small>}</div>
+  return <div className="attachment-panel"><strong>{t("Evidencias privadas")}</strong><div className="attachment-upload"><FilePicker label={t("Archivo de evidencia")} file={file} onChange={setFile} disabled={busy} /><input aria-label={t("Descripción de evidencia")} value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t("Descripción")} /><button type="button" className="row-action" disabled={!file || busy} onClick={upload}><Save size={15} /> {busy ? t("Subiendo...") : t("Guardar archivo")}</button></div>{attachments.map((attachment) => <div className="attachment-row" key={attachment.id}><button type="button" className="attachment-link" onClick={() => download(attachment)}>{attachment.original_name} · {(attachment.size_bytes / 1024).toFixed(1)}{" "}{t("KB")}</button><button type="button" className="row-action" disabled={busy} onClick={() => remove(attachment)}>{t("Eliminar")}</button></div>)}{error && <small className="form-error" role="alert">{error}</small>}</div>
 }

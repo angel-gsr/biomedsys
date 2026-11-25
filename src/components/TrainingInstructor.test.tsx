@@ -1,0 +1,30 @@
+import {cleanup,fireEvent,render,screen,waitFor,within} from "@testing-library/react"
+import {afterEach,expect,it,vi} from "vitest"
+const services=vi.hoisted(()=>({create:vi.fn().mockResolvedValue({id:7,title:"Prueba"})}))
+vi.mock("../lib/supabase",()=>({createTraining:services.create,isBusinessCompletionEnabled:false,getCurrentProfile:vi.fn().mockResolvedValue({id:"self",full_name:"Ingeniero actual",role:"tecnico"}),listTrainingInstructors:vi.fn().mockResolvedValue([{id:"chief",full_name:"Jefe de prueba",role:"jefe",active:true},{id:"other",full_name:"Otro ingeniero",role:"tecnico",active:true}])}))
+import {TrainingForm} from "./TrainingViews"
+afterEach(()=>{cleanup();vi.clearAllMocks()})
+it("separates manager and engineer instructor lists",async()=>{
+ render(<TrainingForm role="jefe" onCancel={vi.fn()} onCreated={vi.fn()}/>)
+ await screen.findByRole("option",{name:"Jefe de prueba"})
+ expect(screen.queryByRole("option",{name:"Otro ingeniero"})).toBeNull()
+ fireEvent.click(screen.getByRole("button",{name:"Ingeniero biomédico"}))
+ const list=screen.getByLabelText("Ingeniero que imparte *")
+ expect(within(list).getByRole("option",{name:"Otro ingeniero"})).toBeTruthy()
+ expect(within(list).queryByRole("option",{name:"Jefe de prueba"})).toBeNull()
+ fireEvent.change(list,{target:{value:"other"}})
+ fireEvent.change(screen.getByLabelText("Título *"),{target:{value:"Uso de monitor"}})
+ fireEvent.change(screen.getByLabelText("Fecha y hora *"),{target:{value:"2026-11-26T10:00"}})
+ fireEvent.click(screen.getByRole("button",{name:"Guardar capacitación"}))
+ await waitFor(()=>expect(services.create).toHaveBeenCalledWith(expect.objectContaining({instructorId:"other"})))
+})
+it("automatically uses the signed-in engineer without exposing an instructor selector",async()=>{
+ render(<TrainingForm role="tecnico" onCancel={vi.fn()} onCreated={vi.fn()}/>)
+ expect(await screen.findByText("Ingeniero actual")).toBeTruthy()
+ expect(screen.queryByRole("button",{name:"Jefe"})).toBeNull()
+ expect(screen.queryByLabelText("Ingeniero que imparte *")).toBeNull()
+ fireEvent.change(screen.getByLabelText("Título *"),{target:{value:"Capacitación propia"}})
+ fireEvent.change(screen.getByLabelText("Fecha y hora *"),{target:{value:"2026-11-26T10:00"}})
+ fireEvent.click(screen.getByRole("button",{name:"Guardar capacitación"}))
+ await waitFor(()=>expect(services.create).toHaveBeenCalledWith(expect.objectContaining({instructorId:undefined})))
+})

@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { useEffect, useState } from "react"
 
 import { CalendarDays, CheckCircle2, GraduationCap, Plus } from "lucide-react"
@@ -7,6 +8,8 @@ import { PrivateAttachmentPanel } from "./PrivateAttachmentPanel"
 
 import {
   createTraining,
+  getCurrentProfile,
+  listTrainingInstructors,
   isBusinessCompletionEnabled,
   listActiveProfileDirectory,
   listEquipmentInventory,
@@ -44,16 +47,14 @@ export function TrainingCalendar({ role }: { role: Role }) {
   return (
     <>
       <PageIntro
-        title="Capacitaciones"
-        description="Administra las capacitaciones; sus fechas también aparecen en el calendario general."
+        title={t("Capacitaciones")}
+        description={t("Administra las capacitaciones; sus fechas también aparecen en el calendario general.")}
         action={
-          <Button icon={Plus} onClick={() => setShowForm(true)}>
-            Programar capacitación
-          </Button>
+          <Button icon={Plus} onClick={() => setShowForm(true)}>{"Programar capacitación"}</Button>
         }
       />
       {showForm && (
-        <TrainingForm
+        <TrainingForm role={role}
           onCreated={(training) => {
             setTrainings((current) => [training, ...current])
             setShowForm(false)
@@ -65,18 +66,16 @@ export function TrainingCalendar({ role }: { role: Role }) {
       <section className="panel training-calendar">
         <div className="panel-head">
           <div>
-            <h3>Capacitaciones programadas</h3>
-            <p>
-              Equipo nuevo, personal nuevo, necesidades detectadas y protocolos.
-            </p>
+            <h3>{t("Capacitaciones programadas")}</h3>
+            <p>{t("Equipo nuevo, personal nuevo, necesidades detectadas y protocolos.")}</p>
           </div>
           <GraduationCap size={22} />
         </div>
         {trainings.length === 0 ? (
           <div className="empty-state">
             <CalendarDays size={34} />
-            <h3>No hay capacitaciones registradas</h3>
-            <p>Programa la primera sesión usando el botón superior.</p>
+            <h3>{t("No hay capacitaciones registradas")}</h3>
+            <p>{t("Programa la primera sesión usando el botón superior.")}</p>
           </div>
         ) : (
           <div className="training-list">
@@ -92,8 +91,9 @@ export function TrainingCalendar({ role }: { role: Role }) {
                     {new Date(training.scheduled_at).toLocaleString("es-MX")} ·{" "}
                     {training.location || "Por definir"}
                   </small>
+                  <small>{t("Impartido por:")} {training.instructor_name || t("No disponible")}</small>
                   <span>
-                    {training.purposeLabel} · Recurrencia {training.recurrence} · Estado {training.status}
+                    {training.purposeLabel}{" "}{t("· Recurrencia")}{" "}{training.recurrence}{" "}{t("· Estado")}{" "}{training.status}
                   </span>
                 </div>
                 <CheckCircle2 size={18} />
@@ -129,16 +129,23 @@ function TrainingAdminPanel({ training, onChanged }: { training: Training; onCha
   async function attendance(row: TrainingParticipant, status: TrainingParticipant["attendance_status"]) { try { await updateTrainingAttendance(training.id, row.participant_id, status); await load() } catch (cause) { setError(cause instanceof Error ? cause.message : "No fue posible registrar asistencia.") } }
   async function transition(status: Training["status"]) { try { onChanged(await updateTrainingStatus(training.id, status)) } catch (cause) { setError(cause instanceof Error ? cause.message : "No fue posible cambiar el estado.") } }
 
-  return <div className="training-admin"><button type="button" className="row-action" onClick={toggle}>{open ? "Cerrar gestión" : "Gestionar"}</button>{open && <div className="training-admin-panel"><label className="field"><span>Participantes activos</span><select multiple value={selected} onChange={(event) => setSelected(Array.from(event.target.selectedOptions, (option) => option.value))}>{profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name} · {profile.role}</option>)}</select></label><button type="button" className="row-action" onClick={saveParticipants}>Guardar participantes</button><div className="participant-list">{participants.map((row) => <label key={row.participant_id}><span>{row.profile?.full_name || row.participant_id}</span><select value={row.attendance_status} onChange={(event) => attendance(row, event.target.value as TrainingParticipant["attendance_status"])}><option value="convocado">Convocado</option><option value="confirmado">Confirmado</option><option value="asistio">Asistió</option><option value="no_asistio">No asistió</option></select></label>)}</div><div className="qr-actions">{training.status === "programada" && <><button type="button" className="row-action" onClick={() => transition("en_curso")}>Iniciar</button><button type="button" className="row-action" onClick={() => transition("cancelada")}>Cancelar</button></>}{training.status === "en_curso" && <button type="button" className="row-action" onClick={() => transition("completada")}>Completar</button>}</div><PrivateAttachmentPanel relation={{ trainingId: training.id }} title="Evidencias de capacitación" />{error && <small className="form-error">{error}</small>}</div>}</div>
+  return <div className="training-admin"><button type="button" className="row-action" onClick={toggle}>{open ? t("Cerrar gestión") : t("Gestionar")}</button>{open && <div className="training-admin-panel"><label className="field"><span>{t("Participantes activos")}</span><select multiple value={selected} onChange={(event) => setSelected(Array.from(event.target.selectedOptions, (option) => option.value))}>{profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name} · {profile.role}</option>)}</select></label><button type="button" className="row-action" onClick={saveParticipants}>{t("Guardar participantes")}</button><div className="participant-list">{participants.map((row) => <label key={row.participant_id}><span>{row.profile?.full_name || row.participant_id}</span><select value={row.attendance_status} onChange={(event) => attendance(row, event.target.value as TrainingParticipant["attendance_status"])}><option value="convocado">{t("Convocado")}</option><option value="confirmado">{t("Confirmado")}</option><option value="asistio">{t("Asistió")}</option><option value="no_asistio">{t("No asistió")}</option></select></label>)}</div><div className="qr-actions">{training.status === "programada" && <><button type="button" className="row-action" onClick={() => transition("en_curso")}>{t("Iniciar")}</button><button type="button" className="row-action" onClick={() => transition("cancelada")}>{t("Cancelar")}</button></>}{training.status === "en_curso" && <button type="button" className="row-action" onClick={() => transition("completada")}>{t("Completar")}</button>}</div><PrivateAttachmentPanel relation={{ trainingId: training.id }} title={t("Evidencias de capacitación")} />{error && <small className="form-error">{error}</small>}</div>}</div>
 }
 
 export function TrainingForm({
   onCreated,
   onCancel,
+  role = "tecnico",
 }: {
   onCreated: (training: Training) => void
   onCancel: () => void
+  role?: Role
 }) {
+  const [instructors, setInstructors] = useState<Profile[]>([])
+  const [instructorId, setInstructorId] = useState("")
+  const [instructorType, setInstructorType] = useState<"jefe"|"tecnico">("jefe")
+  const [self, setSelf] = useState<Profile | null>(null)
+  useEffect(() => { getCurrentProfile().then(setSelf).catch(() => undefined); if(role === "jefe") listTrainingInstructors().then(setInstructors).catch(cause => setError(cause.message)) }, [role])
   const [title, setTitle] = useState("")
 
   const [purpose, setPurpose] = useState("equipo_nuevo")
@@ -154,16 +161,19 @@ export function TrainingForm({
   const [equipment, setEquipment] = useState<EquipmentInventoryDetail[]>([])
 
   const [error, setError] = useState("")
+  const [saving,setSaving] = useState(false)
 
   useEffect(() => { if (isBusinessCompletionEnabled) listEquipmentInventory("tecnico").then(setEquipment).catch(() => setEquipment([])) }, [])
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-
+    if(saving)return
+    setSaving(true);setError("")
     try {
       onCreated(
         await createTraining({
           title,
+          instructorId: role === "jefe" ? instructorId : undefined,
           purpose,
           recurrence,
           scheduledAt,
@@ -178,51 +188,52 @@ export function TrainingForm({
           ? cause.message
           : "No fue posible guardar la capacitación.",
       )
-    }
+    } finally { setSaving(false) }
   }
 
   return (
     <form className="panel training-form" onSubmit={submit}>
       <div className="panel-head">
-        <h3>Nueva capacitación</h3>
+        <h3>{t("Nueva capacitación")}</h3>
       </div>
       <div className="form-grid">
+        {role === "jefe" ? <fieldset className="field span-2"><legend>{t("Impartido por")}</legend><div className="table-actions"><button type="button" aria-pressed={instructorType==="jefe"} className={`btn btn-${instructorType==="jefe"?"primary":"secondary"}`} onClick={()=>{setInstructorType("jefe");setInstructorId("")}}>{t("Jefe")}</button><button type="button" aria-pressed={instructorType==="tecnico"} className={`btn btn-${instructorType==="tecnico"?"primary":"secondary"}`} onClick={()=>{setInstructorType("tecnico");setInstructorId("")}}>{t("Ingeniero biomédico")}</button></div><label className="field"><span>{t(instructorType==="jefe"?"Jefe que imparte":"Ingeniero que imparte")} *</span><select required value={instructorId} onChange={e=>setInstructorId(e.target.value)}><option value="">{t("Selecciona quién imparte")}</option>{instructors.filter(p=>p.role===instructorType && p.active).map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select></label></fieldset> : <div className="field span-2"><span>{t("Impartido por")}</span><strong>{self?.full_name || t("Ingeniero de la sesión actual")}</strong><small>{t("La capacitación se asigna automáticamente a tu cuenta.")}</small></div>}
         <label className="field span-2">
-          <span>Título *</span>
+          <span>{t("Título *")}</span>
           <input
             required
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Ej. Uso seguro del nuevo monitor"
+            placeholder={t("Ej. Uso seguro del nuevo monitor")}
           />
         </label>
         <label className="field">
-          <span>Motivo *</span>
+          <span>{t("Motivo *")}</span>
           <select
             value={purpose}
             onChange={(event) => setPurpose(event.target.value)}
           >
-            <option value="equipo_nuevo">Equipo nuevo</option>
-            <option value="personal_nuevo">Personal nuevo</option>
-            <option value="necesidad_detectada">Necesidad detectada</option>
-            <option value="protocolo">Protocolo</option>
+            <option value="equipo_nuevo">{t("Equipo nuevo")}</option>
+            <option value="personal_nuevo">{t("Personal nuevo")}</option>
+            <option value="necesidad_detectada">{t("Necesidad detectada")}</option>
+            <option value="protocolo">{t("Protocolo")}</option>
           </select>
         </label>
         <label className="field">
-          <span>Periodicidad *</span>
+          <span>{t("Periodicidad *")}</span>
           <select
             value={recurrence}
             onChange={(event) => setRecurrence(event.target.value)}
           >
-            <option value="unica">Única</option>
-            <option value="semanal">Semanal</option>
-            <option value="mensual">Mensual</option>
-            <option value="semestral">Semestral</option>
-            <option value="anual">Anual</option>
+            <option value="unica">{t("Única")}</option>
+            <option value="semanal">{t("Semanal")}</option>
+            <option value="mensual">{t("Mensual")}</option>
+            <option value="semestral">{t("Semestral")}</option>
+            <option value="anual">{t("Anual")}</option>
           </select>
         </label>
         <label className="field">
-          <span>Fecha y hora *</span>
+          <span>{t("Fecha y hora *")}</span>
           <input
             required
             type="datetime-local"
@@ -231,28 +242,26 @@ export function TrainingForm({
           />
         </label>
         <label className="field">
-          <span>Ubicación</span>
+          <span>{t("Ubicación")}</span>
           <input
             value={location}
             onChange={(event) => setLocation(event.target.value)}
-            placeholder="Aula o servicio"
+            placeholder={t("Aula o servicio")}
           />
         </label>
         <label className="field span-2">
-          <span>Descripción</span>
+          <span>{t("Descripción")}</span>
           <textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
           />
         </label>
-        {isBusinessCompletionEnabled && <label className="field span-2"><span>Equipo relacionado</span><select value={equipmentId} onChange={(event) => setEquipmentId(event.target.value)}><option value="">Sin equipo específico</option>{equipment.map((row) => <option key={row.id} value={row.id}>{row.inventory_code} · {row.equipment_type}</option>)}</select></label>}
+        {isBusinessCompletionEnabled && <label className="field span-2"><span>{t("Equipo relacionado")}</span><select value={equipmentId} onChange={(event) => setEquipmentId(event.target.value)}><option value="">{t("Sin equipo específico")}</option>{equipment.map((row) => <option key={row.id} value={row.id}>{row.inventory_code} · {row.equipment_type}</option>)}</select></label>}
       </div>
       {error && <p className="form-error">{error}</p>}
       <div className="form-footer">
-        <Button variant="secondary" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button type="submit">Guardar capacitación</Button>
+        <Button variant="secondary" onClick={onCancel}>{t("Cancelar")}</Button>
+        <Button type="submit" disabled={saving || (role === "jefe" && !instructorId)}>{t("Guardar capacitación")}</Button>
       </div>
     </form>
   )
@@ -271,8 +280,8 @@ export function NoticesView() {
     <>
       <PageIntro
         eyebrow="Portal clínico"
-        title="Avisos"
-        description="Capacitaciones próximas comunicadas por Ingeniería Biomédica."
+        title={t("Avisos")}
+        description={t("Capacitaciones próximas comunicadas por Ingeniería Biomédica.")}
       />
       <section className="panel">
         <div className="notice-list">
@@ -292,14 +301,14 @@ export function NoticesView() {
                     "Consulta los detalles con Ingeniería Biomédica."}
                 </small>
               </div>
-              <span className="badge badge-blue">Próxima</span>
+              <span className="badge badge-blue">{t("Próxima")}</span>
             </article>
           ))}
         </div>
         {trainings.length === 0 && (
           <div className="empty-state">
-            <h3>No hay avisos por ahora</h3>
-            <p>Las próximas capacitaciones aparecerán aquí.</p>
+            <h3>{t("No hay avisos por ahora")}</h3>
+            <p>{t("Las próximas capacitaciones aparecerán aquí.")}</p>
           </div>
         )}
       </section>

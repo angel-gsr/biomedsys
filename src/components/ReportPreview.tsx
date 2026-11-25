@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { useEffect, useRef, useState } from "react"
 import { X } from "lucide-react"
 import { createReportPdf, editReportIncident, getReportPreview, remainingEditSeconds, type IncidentChanges, type ReportPreviewData } from "../lib/reportManagement"
@@ -48,29 +49,29 @@ export function ReportPreview({ reportId, onClose, onChanged }: { reportId: numb
     } catch (cause) { if (alive.current) setError(cause instanceof Error ? cause.message : "No fue posible generar el PDF.") }
     finally { if (alive.current) setBusy(false) }
   }
-  return <div className="modal-layer"><div className="modal report-preview" role="dialog" aria-modal="true" aria-label="Vista previa del reporte" onKeyDown={(event) => { if (event.key === "Escape") onClose() }}>
-    <div className="modal-head"><div><span className="eyebrow">Vista previa</span><h2>{report?.report_number || "Cargando reporte..."}</h2></div><button className="icon-btn" type="button" aria-label="Cerrar vista previa" onClick={onClose}><X size={21} /></button></div>
+  return <div className="modal-layer"><div className="modal report-preview" role="dialog" aria-modal="true" aria-label={t("Vista previa del reporte")} onKeyDown={(event) => { if (event.key === "Escape") onClose() }}>
+    <div className="modal-head"><div><span className="eyebrow">{t("Vista previa")}</span><h2>{report?.report_number || "Cargando reporte..."}</h2></div><button className="icon-btn" type="button" aria-label={t("Cerrar vista previa")} onClick={onClose}><X size={21} /></button></div>
     {error && <p className="form-error" role="alert">{error}</p>}
     {report && <>
       <dl className="report-preview-data">
         {Object.entries({ Equipo: report.equipment_snapshot?.equipment_type || report.equipment_identifier, Inventario: report.equipment_identifier, Fabricante: report.manufacturer, Modelo: report.equipment_snapshot?.model, Serie: report.equipment_snapshot?.serial_number, "Modelo / serie registrado": report.model_serial, Área: report.service, "Ubicación al reportar": report.location, "Fecha del evento": report.event_date, "Tipo de incidente": report.event_type, "Incidente del equipo": report.incident_label, Descripción: report.description, Observaciones: report.observations, "Resultado para el paciente": report.patient_outcome, "Acción tomada": report.action_taken, Estado: report.status, "Creado": new Date(report.created_at).toLocaleString("es-MX") }).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "No registrado"}</dd></div>)}
       </dl>
-      <p role="status">{seconds ? `Puedes corregir el incidente durante ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} más. Los datos del equipo están bloqueados.` : "Edición cerrada. El reporte conserva sus datos; el seguimiento técnico continúa por separado."}</p>
-      {!editing && seconds > 0 && <Button variant="secondary" onClick={() => { setChanges({ event_date: report.event_date, event_type: report.event_type, description: report.description, patient_outcome: report.patient_outcome, action_taken: report.action_taken, incident_option_id: report.incident_option_id, incident_label: report.incident_label, observations: report.observations }); clearPdf(); setEditing(true) }}>Corregir incidente</Button>}
+      <p role="status">{seconds ? `Puedes corregir el incidente durante ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} más. Los datos del equipo están bloqueados.` : t("Edición cerrada. El reporte conserva sus datos; el seguimiento técnico continúa por separado.")}</p>
+      {!editing && seconds > 0 && <Button variant="secondary" onClick={() => { setChanges({ event_date: report.event_date, event_type: report.event_type, description: report.description, patient_outcome: report.patient_outcome, action_taken: report.action_taken, incident_option_id: report.incident_option_id, incident_label: report.incident_label, observations: report.observations }); clearPdf(); setEditing(true) }}>{t("Corregir incidente")}</Button>}
       {editing && changes && <form onSubmit={save}>
         <fieldset disabled={!seconds || busy} className="report-edit-fields">
-          <label className="field"><span>Fecha del evento</span><input required type="date" value={changes.event_date} onChange={(e) => setChanges({ ...changes, event_date: e.target.value })} /></label>
-          <label className="field"><span>Tipo de incidente</span><input required value={changes.event_type} onChange={(e) => setChanges({ ...changes, event_type: e.target.value })} /></label>
-          <label className="field"><span>Incidente específico del equipo</span><input readOnly value={changes.incident_label || changes.description} /></label>
-          <label className="field"><span>Observaciones (opcional)</span><textarea value={changes.observations || ""} onChange={(e) => setChanges({ ...changes, observations: e.target.value })} /></label>
-          <label className="field"><span>Resultado para el paciente</span><input value={changes.patient_outcome || ""} onChange={(e) => setChanges({ ...changes, patient_outcome: e.target.value })} /></label>
-          <label className="field"><span>Acción tomada</span><input value={changes.action_taken || ""} onChange={(e) => setChanges({ ...changes, action_taken: e.target.value })} /></label>
-          <Button type="submit">{busy ? "Guardando..." : "Guardar corrección"}</Button>
-        </fieldset><Button variant="secondary" onClick={() => setEditing(false)}>Cerrar edición</Button>
+          <label className="field"><span>{t("Fecha del evento")}</span><input required type="date" value={changes.event_date} onChange={(e) => setChanges({ ...changes, event_date: e.target.value })} /></label>
+          <label className="field"><span>{t("Tipo de incidente")}</span><input required value={changes.event_type} onChange={(e) => setChanges({ ...changes, event_type: e.target.value })} /></label>
+          <label className="field"><span>{t("Incidente específico del equipo")}</span><input readOnly value={changes.incident_label || changes.description} /></label>
+          <label className="field"><span>{t("Observaciones (opcional)")}</span><textarea value={changes.observations || ""} onChange={(e) => setChanges({ ...changes, observations: e.target.value })} /></label>
+          <label className="field"><span>{t("Resultado para el paciente")}</span><input value={changes.patient_outcome || ""} onChange={(e) => setChanges({ ...changes, patient_outcome: e.target.value })} /></label>
+          <label className="field"><span>{t("Acción tomada")}</span><input value={changes.action_taken || ""} onChange={(e) => setChanges({ ...changes, action_taken: e.target.value })} /></label>
+          <Button type="submit">{busy ? t("Guardando...") : t("Guardar corrección")}</Button>
+        </fieldset><Button variant="secondary" onClick={() => setEditing(false)}>{t("Cerrar edición")}</Button>
       </form>}
-      {!editing && <div className="qr-actions"><button type="button" className="btn btn-primary" disabled={busy} onClick={previewPdf}>{busy ? "Preparando..." : "Vista previa PDF"}</button>{pdfUrl && <><a className="btn btn-secondary" href={pdfUrl} target="_blank" rel="noreferrer">Abrir PDF</a><a className="btn btn-secondary" href={pdfUrl} download={`${report.report_number}.pdf`}>Descargar PDF</a></>}</div>}
+      {!editing && <div className="qr-actions"><button type="button" className="btn btn-primary" disabled={busy} onClick={previewPdf}>{busy ? t("Preparando...") : t("Vista previa PDF")}</button>{pdfUrl && <><a className="btn btn-secondary" href={pdfUrl} target="_blank" rel="noreferrer">{t("Abrir PDF")}</a><a className="btn btn-secondary" href={pdfUrl} download={`${report.report_number}.pdf`}>{t("Descargar PDF")}</a></>}</div>}
       {!editing && isOperationalCompletionEnabled && <ReportAttachments reportId={reportId} />}
-      {pdfUrl && <iframe className="report-pdf-preview" title="Vista previa PDF del reporte" src={pdfUrl} />}
+      {pdfUrl && <iframe className="report-pdf-preview" title={t("Vista previa PDF del reporte")} src={pdfUrl} />}
     </>}
   </div></div>
 }

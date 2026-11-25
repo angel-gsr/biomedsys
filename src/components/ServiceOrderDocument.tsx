@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { useState } from "react"
 import { Download } from "lucide-react"
 import type { MaintenanceSummary, ReportSummary } from "../lib/supabase"
@@ -35,5 +36,5 @@ export async function serviceOrderPdf(item: MaintenanceSummary, report?: ReportS
 export function ServiceOrderDocument({ item, report }: { item: MaintenanceSummary; report?: ReportSummary | null }) {
   const [busy,setBusy]=useState(false),[error,setError]=useState("")
   async function download(){setBusy(true);setError("");try{const url=URL.createObjectURL(await serviceOrderPdf(item,report));const a=document.createElement("a");a.href=url;a.download=`Orden-${item.maintenance_number.replace(/[^a-z0-9_-]/gi,"_")}.pdf`;a.click();window.setTimeout(()=>URL.revokeObjectURL(url),30000)}catch{setError("No fue posible generar el PDF. Intenta nuevamente.")}finally{setBusy(false)}}
-  return <><div className="service-order-toolbar"><span className="badge badge-success">Asignación confirmada</span><Button icon={Download} disabled={busy} onClick={() => void download()}>{busy ? "Generando PDF..." : "Descargar PDF"}</Button></div><div className="service-order-grid">{serviceOrderSections(item,report).map(section=><section className="panel service-order-section" key={section.title}><h3>{section.title}</h3><dl>{section.fields.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value || "Sin registrar"}</dd></div>)}</dl></section>)}</div>{error && <p role="alert" className="form-error">{error}</p>}</>
+  return <><div className="service-order-toolbar"><span className="badge badge-success">{t("Asignación confirmada")}</span><Button icon={Download} disabled={busy} onClick={() => void download()}>{busy ? t("Generando PDF...") : t("Descargar PDF")}</Button></div><div className="service-order-grid">{serviceOrderSections(item,report).map(section=><section className="panel service-order-section" key={section.title}><h3>{t(section.title)}</h3><dl>{section.fields.map(([label,value])=><div key={label}><dt>{t(label!)}</dt><dd>{value || "Sin registrar"}</dd></div>)}</dl></section>)}</div>{error && <p role="alert" className="form-error">{error}</p>}</>
 }

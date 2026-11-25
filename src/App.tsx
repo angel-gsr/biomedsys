@@ -1,3 +1,7 @@
+import { PreferencesPanel } from "./components/PreferencesPanel"
+import { usePreferences, themeAt } from "./lib/preferences"
+import { t } from "./lib/i18n"
+import { ProfileAvatar } from "./components/ProfileAvatar"
 import { ServiceOrderAssignment } from "./components/ServiceOrderAssignment"
 import { UserPresence } from "./components/UserPresence"
 import { HospitalAlertHub } from "./components/HospitalAlertHub"
@@ -155,7 +159,7 @@ function Button({
       className={`btn btn-${variant} ${className}`}
     >
       {Icon && <Icon size={18} aria-hidden="true" />}
-      {children}
+      {typeof children === "string" ? t(children) : children}
     </button>
   )
 }
@@ -169,7 +173,7 @@ function Badge({
 }) {
   const resolved = tone || statusTone[String(children)] || "neutral"
 
-  return <span className={`badge badge-${resolved}`}>{children}</span>
+  return <span className={`badge badge-${resolved}`}>{typeof children === "string" ? t(children) : children}</span>
 }
 
 function Brand({ compact = false }: { compact?: boolean }) {
@@ -180,8 +184,8 @@ function Brand({ compact = false }: { compact?: boolean }) {
       </div>
       {!compact && (
         <div>
-          <strong>BioMedGest</strong>
-          <span>Ingeniería Clínica</span>
+          <strong>{t("BioMedGest")}</strong>
+          <span>{t("Ingeniería Clínica")}</span>
         </div>
       )}
     </div>
@@ -272,20 +276,13 @@ function Login({ onLogin, notice }: { onLogin: (profile: Profile) => void; notic
         <div className="login-story-inner">
           <Brand />
           <div className="story-copy">
-            <Badge tone="blue">Plataforma hospitalaria segura</Badge>
-            <h1>
-              Equipos disponibles.
-              <br />
-              Atención sin interrupciones.
-            </h1>
-            <p>
-              Una sola plataforma para cuidar el ciclo de vida del equipo médico
-              y mantener la continuidad clínica.
-            </p>
+            <Badge tone="blue">{t("Plataforma hospitalaria segura")}</Badge>
+            <h1>{t("Equipos disponibles.")}<br />{t("Atención sin interrupciones.")}</h1>
+            <p>{t("Una sola plataforma para cuidar el ciclo de vida del equipo médico y mantener la continuidad clínica.")}</p>
           </div>
           <div className="trust-row">
             <ShieldCheck size={20} />
-            <span>Alineado a NOM y estándares CSG</span>
+            <span>{t("Alineado a NOM y estándares CSG")}</span>
           </div>
         </div>
       </section>
@@ -294,21 +291,16 @@ function Login({ onLogin, notice }: { onLogin: (profile: Profile) => void; notic
           <div className="mobile-brand">
             <Brand />
           </div>
-          <div className="eyebrow">Acceso institucional</div>
-          <h2>Te damos la bienvenida</h2>
-          <p className="muted">
-            Ingresa tu ID institucional de 8 dígitos y contraseña.
-          </p>
+          <div className="eyebrow">{t("Acceso institucional")}</div>
+          <h2>{t("Te damos la bienvenida")}</h2>
+          <p className="muted">{t("Ingresa tu ID institucional de 8 dígitos y contraseña.")}</p>
           {notice && <p className="form-success" role="status">{notice}</p>}
           {!isSupabaseConfigured && (
-            <p className="form-error" role="alert">
-              Falta configurar Supabase. Copia `.env.example` a `.env.local` y
-              agrega las credenciales públicas del proyecto.
-            </p>
+            <p className="form-error" role="alert">{t("Falta configurar Supabase. Copia `.env.example` a `.env.local` y agrega las credenciales públicas del proyecto.")}</p>
           )}
           <form onSubmit={submit}>
             <label className="field">
-              <span>ID Institucional</span>
+              <span>{t("ID Institucional")}</span>
               <input
                 value={id}
                 onChange={(event) =>
@@ -316,14 +308,12 @@ function Login({ onLogin, notice }: { onLogin: (profile: Profile) => void; notic
                 }
                 inputMode="numeric"
                 maxLength={8}
-                placeholder="00XXXXXX"
+                placeholder={t("00XXXXXX")}
               />
-              <small className="field-help">
-                Utiliza el identificador asignado a tu cuenta.
-              </small>
+              <small className="field-help">{t("Utiliza el identificador asignado a tu cuenta.")}</small>
             </label>
             <label className="field">
-              <span>Contraseña</span>
+              <span>{t("Contraseña")}</span>
               <input
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -336,12 +326,10 @@ function Login({ onLogin, notice }: { onLogin: (profile: Profile) => void; notic
               </p>
             )}
             <Button type="submit" className="full-width">
-              {loading ? "Validando..." : "Iniciar sesión"}
+              {loading ? t("Validando...") : t("Iniciar sesión")}
             </Button>
           </form>
-          <p className="privacy">
-            Acceso exclusivo para personal autorizado · v2.4
-          </p>
+          <p className="privacy">{t("Acceso exclusivo para personal autorizado · v2.4")}</p>
         </div>
       </section>
     </main>
@@ -380,8 +368,8 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <Brand />
-      <nav className="side-nav" aria-label="Navegación principal">
-        <span className="nav-label">OPERACIÓN</span>
+      <nav className="side-nav" aria-label={t("Navegación principal")}>
+        <span className="nav-label">{t("OPERACIÓN")}</span>
         {navigation[role].map(({ label, view: itemView, icon: Icon }) => (
           <button
             key={label}
@@ -389,25 +377,25 @@ export function Sidebar({
             onClick={() => setView(itemView)}
           >
             <Icon size={19} />
-            <span>{label}</span>
+            <span>{t(label)}</span>
           </button>
         ))}
         {role === "jefe" && (
           <>
-            <span className="nav-label">ADMINISTRACIÓN</span>
-            {administrationNavigation.map(({ label, view: next, icon: Icon }) => <button type="button" key={next} className={view === next ? "active" : ""} aria-current={view === next ? "page" : undefined} onClick={() => setView(next)}><Icon size={19} /><span>{label}</span></button>)}
+            <span className="nav-label">{t("ADMINISTRACIÓN")}</span>
+            {administrationNavigation.map(({ label, view: next, icon: Icon }) => <button type="button" key={next} className={view === next ? "active" : ""} aria-current={view === next ? "page" : undefined} onClick={() => setView(next)}><Icon size={19} /><span>{t(label)}</span></button>)}
           </>
         )}
       </nav>
       <div className="profile">
-        <button type="button" className="profile-main" aria-label="Ver mi perfil" onClick={onProfile}>
-        <span className="avatar">{initials}</span>
+        <button type="button" className="profile-main" aria-label={t("Ver mi perfil")} onClick={onProfile}>
+        <ProfileAvatar profile={profile} />
         <span>
           <strong>{profile.full_name}</strong>
-          <small>{roleMeta[role].label}</small>
+          <small>{t(roleMeta[role].label)}</small>
         </span>
         </button>
-        <button type="button" className="icon-btn" aria-label="Cerrar sesión" title="Cerrar sesión" onClick={onLogout}><LogOut size={17} /></button>
+        <button type="button" className="icon-btn" aria-label={t("Cerrar sesión")} title={t("Cerrar sesión")} onClick={onLogout}><LogOut size={17} /></button>
       </div>
     </aside>
   )
@@ -430,21 +418,19 @@ function AppHeader({ profile, title, onNotifications }: { profile: Profile; titl
         <Brand compact />
       </div>
       <div>
-        <span className="breadcrumb">
-          BioMedGest{profile.department ? ` / ${profile.department}` : ""}
+        <span className="breadcrumb">{t("BioMedGest")}{profile.department ? ` / ${profile.department}` : ""}
         </span>
-        <h1>{title}</h1>
+        <h1>{t(title)}</h1>
       </div>
       <div className="header-actions">
         <HospitalAlertHub profile={profile} onNotifications={onNotifications} />
         <div className="connection">
-          <Wifi size={15} /> En línea
-        </div>
+          <Wifi size={15} />{" "}{t("En línea")}</div>
         <div className="header-user">
-          <span className="avatar">{initials}</span>
+          <ProfileAvatar profile={profile} />
           <span>
             <strong>{profile.full_name}</strong>
-            <small>{roleMeta[role].short}</small>
+            <small>{t(roleMeta[role].short)}</small>
           </span>
         </div>
       </div>
@@ -472,9 +458,9 @@ function PageIntro({
   return (
     <div className="page-intro">
       <div>
-        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-        <h2>{title}</h2>
-        <p>{description}</p>
+        {eyebrow && <span className="eyebrow">{t(eyebrow)}</span>}
+        <h2>{t(title)}</h2>
+        <p>{t(description)}</p>
       </div>
       {action}
     </div>
@@ -562,11 +548,11 @@ function ReportTray({
   return (
     <>
       <PageIntro
-        title={role === "usuario" ? "Mis reportes" : "Mesa de ayuda"}
+        title={role === "usuario" ? t("Mis reportes") : t("Mesa de ayuda")}
         description={
           role === "usuario"
-            ? "Seguimiento de solicitudes y fallas reportadas."
-            : "Clasifica, prioriza y asigna reportes de equipamiento médico."
+            ? t("Seguimiento de solicitudes y fallas reportadas.")
+            : t("Clasifica, prioriza y asigna reportes de equipamiento médico.")
         }
         action={
           <Button icon={Plus} onClick={openReport}>
@@ -581,34 +567,34 @@ function ReportTray({
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar folio, equipo o servicio..."
+              placeholder={t("Buscar folio, equipo o servicio...")}
             />
           </label>
           <label className="inventory-select">
-            <span>Prioridad</span>
+            <span>{t("Prioridad")}</span>
             <select
               value={priority}
               onChange={(event) => setPriority(event.target.value)}
             >
-              <option value="">Todas</option>
-              <option>Crítica</option>
-              <option>Alta</option>
-              <option>Ordinaria</option>
+              <option value="">{t("Todas")}</option>
+              <option value={"Crítica"}>{t("Crítica")}</option>
+              <option value={"Alta"}>{t("Alta")}</option>
+              <option value={"Ordinaria"}>{t("Ordinaria")}</option>
             </select>
           </label>
           <label className="inventory-select">
-            <span>Estado</span>
+            <span>{t("Estado")}</span>
             <select
               value={status}
               onChange={(event) => setStatus(event.target.value)}
             >
-              <option value="">Todos</option>
-              <option>Recibido</option>
-              <option>Clasificado</option>
-              <option>Asignado</option>
-              <option>En atención</option>
-              <option>Resuelto</option>
-              <option>Cerrado</option>
+              <option value="">{t("Todos")}</option>
+              <option value={"Recibido"}>{t("Recibido")}</option>
+              <option value={"Clasificado"}>{t("Clasificado")}</option>
+              <option value={"Asignado"}>{t("Asignado")}</option>
+              <option value={"En atención"}>{t("En atención")}</option>
+              <option value={"Resuelto"}>{t("Resuelto")}</option>
+              <option value={"Cerrado"}>{t("Cerrado")}</option>
             </select>
           </label>
         </div>
@@ -619,15 +605,15 @@ function ReportTray({
         )}
         {loading ? (
           <div className="empty-state">
-            <h3>Cargando reportes...</h3>
+            <h3>{t("Cargando reportes...")}</h3>
           </div>
         ) : filteredReports.length === 0 ? (
           <div className="empty-state">
-            <h3>No hay reportes para mostrar</h3>
+            <h3>{t("No hay reportes para mostrar")}</h3>
             <p>
               {reports.length === 0
-                ? "No existen registros visibles para tu cuenta."
-                : "Prueba con otros filtros."}
+                ? t("No existen registros visibles para tu cuenta.")
+                : t("Prueba con otros filtros.")}
             </p>
           </div>
         ) : (
@@ -653,17 +639,17 @@ function ReportTray({
                     {report.equipment_identifier} · {report.service}
                   </small>
                   <details className="report-detail">
-                    <summary>Ver detalle</summary>
+                    <summary>{t("Ver detalle")}</summary>
                     <span>{report.event_type} · {report.event_date}</span>
                     <span>{report.manufacturer || "Fabricante no registrado"} · {report.model_serial || "Modelo/serie no registrado"}</span>
                     <span>{report.location || "Ubicación no registrada"}</span>
-                    <span>Consecuencia: {report.patient_outcome || "No registrada"}</span>
-                    <span>Acción inicial: {report.action_taken || "No registrada"}</span>
+                    <span>{t("Consecuencia:")}{" "}{report.patient_outcome || "No registrada"}</span>
+                    <span>{t("Acción inicial:")}{" "}{report.action_taken || "No registrada"}</span>
                   </details>
                 </div>
-                {role === "jefe" && (report.maintenance_id ? <div className="report-workflow-editor"><span className="badge badge-success">Orden vinculada</span><Badge>{report.status}</Badge></div> : <Button variant="secondary" onClick={() => onAssignOrder(report.id)}>Clasificar y crear orden</Button>)}
+                {role === "jefe" && (report.maintenance_id ? <div className="report-workflow-editor"><span className="badge badge-success">{t("Orden vinculada")}</span><Badge>{report.status}</Badge></div> : <Button variant="secondary" onClick={() => onAssignOrder(report.id)}>{t("Clasificar y crear orden")}</Button>)}
                 {role !== "jefe" && <><Badge>{report.priority}</Badge><Badge>{report.status}</Badge></>}
-                {role !== "usuario" && report.maintenance_id && <Button variant="secondary" onClick={() => onOpenOrder(report.maintenance_id!)}>Ver orden</Button>}
+                {role !== "usuario" && report.maintenance_id && <Button variant="secondary" onClick={() => onOpenOrder(report.maintenance_id!)}>{t("Ver orden")}</Button>}
                 <button type="button" className="icon-btn" aria-label={role === "usuario" ? `Ver reporte ${report.report_number}` : `Abrir Tecnovigilancia de ${report.report_number}`} onClick={() => role === "usuario" ? setPreviewId(report.id) : onOpenTechnovigilance(report.id)}><ChevronRight size={18} /></button>
               </article>
             ))}
@@ -796,16 +782,13 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
           <div className="success-mark">
             <Check size={30} />
           </div>
-          <h2>Reporte recibido</h2>
-          <p>El equipo quedó fuera de servicio para revisión de Ingeniería Biomédica.</p>
-          <p>
-            El folio <strong>{reportNumber}</strong> fue enviado a Ingeniería
-            Clínica. Te notificaremos cada avance.
-          </p>
+          <h2>{t("Reporte recibido")}</h2>
+          <p>{t("El equipo quedó fuera de servicio para revisión de Ingeniería Biomédica.")}</p>
+          <p>{t("El folio")}{" "}<strong>{reportNumber}</strong>{" "}{t("fue enviado a Ingeniería Clínica. Te notificaremos cada avance.")}</p>
           {photos.length > 0 && <IncidentPhotos files={photos} onChange={setPhotos} disabled={uploading} />}
-          {photos.length > 0 && <button type="button" className="btn btn-primary" disabled={uploading} onClick={() => void retryPhotos()}>{uploading ? "Guardando fotos..." : "Reintentar guardar fotos"}</button>}
+          {photos.length > 0 && <button type="button" className="btn btn-primary" disabled={uploading} onClick={() => void retryPhotos()}>{uploading ? t("Guardando fotos...") : t("Reintentar guardar fotos")}</button>}
           {uploadError && <p className="form-error" role="alert">{uploadError}</p>}
-          <Button onClick={onClose}>Entendido</Button>
+          <Button onClick={onClose}>{t("Entendido")}</Button>
         </div>
       </div>
     )
@@ -815,9 +798,9 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
       <form className="modal report-modal" onSubmit={submit}>
         <div className="modal-head">
           <div>
-            <span className="eyebrow">Nuevo reporte</span>
-            <h2>Reportar falla de equipo</h2>
-            <p>Cuéntanos qué sucede. Los campos con * son obligatorios.</p>
+            <span className="eyebrow">{t("Nuevo reporte")}</span>
+            <h2>{t("Reportar falla de equipo")}</h2>
+            <p>{t("Cuéntanos qué sucede. Los campos con * son obligatorios.")}</p>
           </div>
           <button type="button" className="icon-btn" onClick={onClose}>
             <X size={21} />
@@ -825,7 +808,7 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
         </div>
         <div className="form-grid">
           <div className="field span-2">
-            <span>Equipo o número de inventario *</span>
+            <span>{t("Equipo o número de inventario *")}</span>
             <EquipmentReportSelector
               role={role}
               readOnly={Boolean(selectedEquipment) || identityLoading}
@@ -847,10 +830,10 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
               />
             </div>
           </div>
-          {identityLoading && <p role="status">Verificando los datos del equipo...</p>}
-          {selectedEquipment && <p role="status">Datos del equipo verificados y bloqueados. Completa únicamente la información del incidente.</p>}
+          {identityLoading && <p role="status">{t("Verificando los datos del equipo...")}</p>}
+          {selectedEquipment && <p role="status">{t("Datos del equipo verificados y bloqueados. Completa únicamente la información del incidente.")}</p>}
           <label className="field">
-            <span>Fecha del evento *</span>
+            <span>{t("Fecha del evento *")}</span>
             <input
               required
               type="date"
@@ -867,59 +850,57 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
             )}
           </label>
           <label className="field">
-            <span>Tipo de evento *</span>
+            <span>{t("Tipo de evento *")}</span>
             <select
               required
               value={form.eventType}
               onChange={(event) => updateField("eventType", event.target.value)}
             >
-              <option value="" disabled>
-                Selecciona una opción
-              </option>
-              <option>Falla</option>
-              <option>Incidente</option>
-              <option>Mal funcionamiento</option>
-              <option>Lesión asociada</option>
+              <option value="" disabled>{t("Selecciona una opción")}</option>
+              <option value={"Falla"}>{t("Falla")}</option>
+              <option value={"Incidente"}>{t("Incidente")}</option>
+              <option value={"Mal funcionamiento"}>{t("Mal funcionamiento")}</option>
+              <option value={"Lesión asociada"}>{t("Lesión asociada")}</option>
             </select>
           </label>
-          <label className="field"><span>Área / servicio del equipo *</span><input required readOnly value={form.service} placeholder="Se completa al localizar el equipo" /></label>
-          <label className="field span-2"><span>Incidente del equipo *</span><select aria-label="Incidente del equipo *" required disabled={!selectedEquipment || identityLoading} value={incidentChoice} onChange={(event) => { const value=event.target.value; setIncidentChoice(value); const option=incidentOptions.find((item) => String(item.id)===value); setForm((current) => ({ ...current,incidentOptionId:option?.id || null,incidentLabel:option?.label || (value === "other" ? "Otro incidente" : "") })) }}><option value="" disabled>Selecciona el incidente del equipo localizado</option>{incidentOptions.some((item) => item.report_count>0) && <optgroup label="Reportados anteriormente en este equipo">{incidentOptions.filter((item) => item.report_count>0).map((item) => <option key={item.id} value={item.id}>{formatIncidentLabel(item.label)} · {item.report_count} reporte(s)</option>)}</optgroup>}{incidentOptions.some((item) => item.report_count===0) && <optgroup label="Posibles problemas disponibles">{incidentOptions.filter((item) => item.report_count===0).map((item) => <option key={item.id} value={item.id}>{formatIncidentLabel(item.label)}</option>)}</optgroup>}<option value="other">Otro incidente</option></select><small>Las opciones corresponden únicamente al equipo seleccionado. No se muestran descripciones ni datos de otros pacientes.</small></label>
+          <label className="field"><span>{t("Área / servicio del equipo *")}</span><input required readOnly value={form.service} placeholder={t("Se completa al localizar el equipo")} /></label>
+          <label className="field span-2"><span>{t("Incidente del equipo *")}</span><select aria-label={t("Incidente del equipo *")} required disabled={!selectedEquipment || identityLoading} value={incidentChoice} onChange={(event) => { const value=event.target.value; setIncidentChoice(value); const option=incidentOptions.find((item) => String(item.id)===value); setForm((current) => ({ ...current,incidentOptionId:option?.id || null,incidentLabel:option?.label || (value === "other" ? "Otro incidente" : "") })) }}><option value="" disabled>{t("Selecciona el incidente del equipo localizado")}</option>{incidentOptions.some((item) => item.report_count>0) && <optgroup label={t("Reportados anteriormente en este equipo")}>{incidentOptions.filter((item) => item.report_count>0).map((item) => <option key={item.id} value={item.id}>{formatIncidentLabel(item.label)} · {item.report_count}{" "}{t("reporte(s)")}</option>)}</optgroup>}{incidentOptions.some((item) => item.report_count===0) && <optgroup label={t("Posibles problemas disponibles")}>{incidentOptions.filter((item) => item.report_count===0).map((item) => <option key={item.id} value={item.id}>{formatIncidentLabel(item.label)}</option>)}</optgroup>}<option value="other">{t("Otro incidente")}</option></select><small>{t("Las opciones corresponden únicamente al equipo seleccionado. No se muestran descripciones ni datos de otros pacientes.")}</small></label>
 
           <label className="field">
-            <span>Ubicación</span>
+            <span>{t("Ubicación")}</span>
             <input
               readOnly
               value={form.location}
               onChange={(event) => updateField("location", event.target.value)}
-              placeholder="Ej. Cubículo 3"
+              placeholder={t("Ej. Cubículo 3")}
             />
           </label>
           <label className="field">
-            <span>Fabricante</span>
+            <span>{t("Fabricante")}</span>
             <input
               readOnly
               value={form.manufacturer}
               onChange={(event) =>
                 updateField("manufacturer", event.target.value)
               }
-              placeholder="Fabricante del equipo"
+              placeholder={t("Fabricante del equipo")}
             />
           </label>
-          <label className="field"><span>Nombre del equipo</span><input readOnly value={selectedEquipment?.equipment_type || ""} /></label>
-          <label className="field"><span>Modelo</span><input readOnly value={selectedEquipment?.model || ""} /></label>
-          <label className="field"><span>Número de serie</span><input readOnly value={selectedEquipment?.serial_number || "No registrado"} /></label>
+          <label className="field"><span>{t("Nombre del equipo")}</span><input readOnly value={selectedEquipment?.equipment_type || ""} /></label>
+          <label className="field"><span>{t("Modelo")}</span><input readOnly value={selectedEquipment?.model || ""} /></label>
+          <label className="field"><span>{t("Número de serie")}</span><input readOnly value={selectedEquipment?.serial_number || "No registrado"} /></label>
           <label className="field span-2">
-            <span>Observaciones (opcional)</span>
+            <span>{t("Observaciones (opcional)")}</span>
             <textarea
               value={form.description}
               onChange={(event) =>
                 updateField("description", event.target.value)
               }
-              placeholder="Agrega solo algún detalle extra, si es necesario."
+              placeholder={t("Agrega solo algún detalle extra, si es necesario.")}
             />
           </label>
           <label className="field">
-            <span>Resultado para el paciente</span>
+            <span>{t("Resultado para el paciente")}</span>
             <select
               value={form.patientOutcome}
               onChange={(event) =>
@@ -927,34 +908,35 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
               }
             >
 
-              <option>Sin lesión</option>
-              <option>Lesión temporal</option>
-              <option>Lesión grave</option>
-              <option>Fallecimiento</option>
-              <option>No aplica</option>
+              <option value={"Sin lesión"}>{t("Sin lesión")}</option>
+              <option value={"Lesión temporal"}>{t("Lesión temporal")}</option>
+              <option value={"Lesión grave"}>{t("Lesión grave")}</option>
+              <option value={"Fallecimiento"}>{t("Fallecimiento")}</option>
+              <option value={"No aplica"}>{t("No aplica")}</option>
             </select>
           </label>
-          <label className="field"><span>Acción tomada</span><select value={form.actionTaken} onChange={(event) => updateField("actionTaken",event.target.value)}><option>Equipo aislado y retirado de uso</option><option>Se informó a Ingeniería Biomédica</option><option>No aplica</option></select></label>
+          <label className="field"><span>{t("Acción tomada")}</span><select value={form.actionTaken} onChange={(event) => updateField("actionTaken",event.target.value)}><option value={"Equipo aislado y retirado de uso"}>{t("Equipo aislado y retirado de uso")}</option><option value={"Se informó a Ingeniería Biomédica"}>{t("Se informó a Ingeniería Biomédica")}</option><option value={"No aplica"}>{t("No aplica")}</option></select></label>
         </div>
         {error && (
           <p className="form-error" role="alert">
             {error}
           </p>
         )}
-        <fieldset className="report-priority"><legend>Prioridad del incidente</legend><div role="radiogroup" aria-label="Prioridad del incidente">{([{value:"Crítica",tone:"critical",description:"Atención inmediata"},{value:"Alta",tone:"high",description:"Atención prioritaria"},{value:"Ordinaria",tone:"ordinary",description:"Revisión programada"}] as const).map(option => <label key={option.value} className={`priority-choice priority-choice-${option.tone} ${form.priority === option.value ? "is-selected" : ""}`}><input type="radio" name="report-priority" value={option.value} checked={form.priority===option.value} onChange={() => setForm(current => ({...current,priority:option.value}))} /><span className="priority-color" aria-hidden="true" /><span><strong>{option.value}</strong><small>{option.description}</small></span></label>)}</div></fieldset>
+        <fieldset className="report-priority"><legend>{t("Prioridad del incidente")}</legend><div role="radiogroup" aria-label={t("Prioridad del incidente")}>{([{value:"Crítica",tone:"critical",description:"Atención inmediata"},{value:"Alta",tone:"high",description:"Atención prioritaria"},{value:"Ordinaria",tone:"ordinary",description:"Revisión programada"}] as const).map(option => <label key={option.value} className={`priority-choice priority-choice-${option.tone} ${form.priority === option.value ? "is-selected" : ""}`}><input type="radio" name="report-priority" value={option.value} checked={form.priority===option.value} onChange={() => setForm(current => ({...current,priority:option.value}))} /><span className="priority-color" aria-hidden="true" /><span><strong>{option.value}</strong><small>{option.description}</small></span></label>)}</div></fieldset>
         {isOperationalCompletionEnabled && <IncidentPhotos files={photos} onChange={setPhotos} disabled={saving} />}
         <div className="modal-footer">
-          <Button variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
+          <Button variant="secondary" onClick={onClose}>{t("Cancelar")}</Button>
           <Button type="submit" disabled={saving}>
-            {saving ? "Guardando..." : "Enviar reporte"}
+            {saving ? t("Guardando...") : t("Enviar reporte")}
           </Button>
         </div>
       </form>
     </div>
   )
 }
+
+navigation.tecnico.push({ label: "Configuración", view: "configuracion", icon: Settings })
+navigation.usuario.push({ label: "Configuración", view: "configuracion", icon: Settings })
 
 const administrationNavigation: { label: string; view: View; icon: React.ElementType }[] = [
   { label: "Usuarios y permisos", view: "usuarios", icon: Users },
@@ -978,7 +960,7 @@ export function BottomNav({
   const primaryViews: View[] = role === "jefe" ? ["dashboard", "reportes", "inventario", "calendario"] : role === "tecnico" ? ["dashboard", "reportes", "orden", "inventario"] : ["dashboard", "reportes", "inventario", "avisos"]
   const labels: Partial<Record<View, string>> = { dashboard: "Inicio", reportes: "Reportes", inventario: "Equipos", orden: "Órdenes", notificaciones: "Alertas" }
   return (
-    <><nav className="bottom-nav" aria-label="Navegación móvil">
+    <><nav className="bottom-nav" aria-label={t("Navegación móvil")}>
       {primaryViews.map((key) => navigation[role].find((item) => item.view === key)!).map(({ label, view: v, icon: Icon }) => (
         <button
           type="button"
@@ -988,10 +970,10 @@ export function BottomNav({
           onClick={() => setView(v)}
         >
           <Icon size={20} />
-          <span>{labels[v] || label}</span>
+          <span>{t(labels[v] || label)}</span>
         </button>
       ))}
-      <button type="button" className={menuOpen || !primaryViews.includes(view) ? "active" : ""} aria-haspopup="dialog" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Menu size={20} /><span>Menú</span></button>
+      <button type="button" className={menuOpen || !primaryViews.includes(view) ? "active" : ""} aria-haspopup="dialog" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Menu size={20} /><span>{t("Menú")}</span></button>
     </nav>
     {menuOpen && <MobileNavigationMenu role={role} view={view} onClose={() => setMenuOpen(false)} onNavigate={(next) => { setMenuOpen(false); setView(next) }} onLogout={() => { setMenuOpen(false); onLogout() }} />}
     </>
@@ -1012,18 +994,21 @@ function MobileNavigationMenu({ role, view, onClose, onNavigate, onLogout }: { r
     desktop.addEventListener("change", resize)
     return () => { desktop.removeEventListener("change", resize); document.body.style.overflow = previousOverflow; element.close() }
   }, [])
-  return <dialog ref={dialog} className="mobile-navigation-menu" aria-label="Todas las opciones" onCancel={(event) => { event.preventDefault(); onClose() }} onClick={(event) => { if (event.target === dialog.current) onClose() }}>
-    <header className="mobile-menu-header"><h2>Todas las opciones</h2><button type="button" className="icon-btn" aria-label="Cerrar menú" onClick={onClose}><X size={22} /></button></header>
-    <nav className="side-nav mobile-menu-options" aria-label="Todas las secciones">
-      <span className="nav-label">OPERACIÓN</span>
-      {navigation[role].map(({ label, view: next, icon: Icon }) => <button type="button" key={next} aria-current={view === next ? "page" : undefined} className={view === next ? "active" : ""} onClick={() => onNavigate(next)}><Icon size={20} /><span>{label}</span></button>)}
-      {role === "jefe" && <><span className="nav-label">ADMINISTRACIÓN</span>{administrationNavigation.map(({ label, view: next, icon: Icon }) => <button type="button" key={next} aria-current={view === next ? "page" : undefined} className={view === next ? "active" : ""} onClick={() => onNavigate(next)}><Icon size={20} /><span>{label}</span></button>)}</>}
+  return <dialog ref={dialog} className="mobile-navigation-menu" aria-label={t("Todas las opciones")} onCancel={(event) => { event.preventDefault(); onClose() }} onClick={(event) => { if (event.target === dialog.current) onClose() }}>
+    <header className="mobile-menu-header"><h2>{t("Todas las opciones")}</h2><button type="button" className="icon-btn" aria-label={t("Cerrar menú")} onClick={onClose}><X size={22} /></button></header>
+    <nav className="side-nav mobile-menu-options" aria-label={t("Todas las secciones")}>
+      <span className="nav-label">{t("OPERACIÓN")}</span>
+      {navigation[role].map(({ label, view: next, icon: Icon }) => <button type="button" key={next} aria-current={view === next ? "page" : undefined} className={view === next ? "active" : ""} onClick={() => onNavigate(next)}><Icon size={20} /><span>{t(label)}</span></button>)}
+      {role === "jefe" && <><span className="nav-label">{t("ADMINISTRACIÓN")}</span>{administrationNavigation.map(({ label, view: next, icon: Icon }) => <button type="button" key={next} aria-current={view === next ? "page" : undefined} className={view === next ? "active" : ""} onClick={() => onNavigate(next)}><Icon size={20} /><span>{t(label)}</span></button>)}</>}
     </nav>
-    <footer className="mobile-menu-account"><button type="button" className="btn btn-secondary" onClick={() => onNavigate("perfil")}><Users size={18} /> Mi perfil</button><button type="button" className="btn btn-secondary" onClick={onLogout}><LogOut size={18} /> Cerrar sesión</button></footer>
+    <footer className="mobile-menu-account"><button type="button" className="btn btn-secondary" onClick={() => onNavigate("perfil")}><Users size={18} />{" "}{t("Mi perfil")}</button><button type="button" className="btn btn-secondary" onClick={onLogout}><LogOut size={18} />{" "}{t("Cerrar sesión")}</button></footer>
   </dialog>
 }
 
 export default function App() {
+  const displayPreferences = usePreferences()
+  useEffect(() => { const apply = () => { document.documentElement.dataset.theme=themeAt(new Date(),displayPreferences.theme); document.documentElement.lang=displayPreferences.language }; apply(); const timer=window.setInterval(apply,60000); window.addEventListener("focus",apply); return()=>{clearInterval(timer);window.removeEventListener("focus",apply)} },[displayPreferences])
+
   const [profile, setProfile] = useState<Profile | null>(null)
   const [passwordChangePending, setPasswordChangePending] = useState(false)
   const [loginNotice, setLoginNotice] = useState("")
@@ -1076,10 +1061,12 @@ export default function App() {
       }
     })
     window.addEventListener("focus", refreshProfile)
+    window.addEventListener("biomedgest:profile-updated", refreshProfile)
 
     return () => {
       mounted = false
       window.removeEventListener("focus", refreshProfile)
+      window.removeEventListener("biomedgest:profile-updated", refreshProfile)
       authSubscription?.data.subscription.unsubscribe()
     }
   }, [])
@@ -1134,7 +1121,7 @@ export default function App() {
   )
 
   if (loadingSession)
-    return <main className="session-loading">Cargando sesión...</main>
+    return <main className="session-loading">{t("Cargando sesión...")}</main>
 
   if (!profile || !role)
     return (
@@ -1197,7 +1184,7 @@ export default function App() {
           {view === "avisos" && <NoticesView />}
           {view === "capacitaciones" && <TrainingCalendar role={role} />}
           {view === "notificaciones" && <NotificationsView />}
-          {view === "configuracion" && role === "jefe" && <InstitutionSettingsView />}
+          {view === "configuracion" && <><PreferencesPanel />{role === "jefe" && <InstitutionSettingsView />}</>}
           {view === "perfil" && <ProfileView profile={profile} onUpdated={setProfile} />}
           {view === "cotizaciones" && <QuotationsView />}
           {view === "usuarios" && <UserPermissionsView />}

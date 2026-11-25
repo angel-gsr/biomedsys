@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { useEffect, useState } from "react"
 import { Image } from "lucide-react"
 import { createAttachmentDownloadUrl, listPrivateAttachments, type FileAttachment } from "../lib/supabase"
@@ -20,5 +21,5 @@ export function ReportAttachments({ reportId }: { reportId: number }) {
     } catch { tab?.close(); setError("No fue posible abrir el archivo adjunto.") }
   }
   if (!files.length && !error) return null
-  return <section className="attachment-panel"><strong>Fotos y archivos del incidente</strong>{files.map(file => <button type="button" className="attachment-link" key={file.id} onClick={() => void open(file)}><Image size={18} aria-hidden="true" /> {file.original_name}</button>)}{error && <p className="form-error" role="alert">{error}</p>}</section>
+  return <section className="attachment-panel"><strong>{t("Fotos y archivos del incidente")}</strong>{files.map(file => <button type="button" className="attachment-link" key={file.id} onClick={() => void open(file)}><Image size={18} aria-hidden="true" /> {file.original_name}</button>)}{error && <p className="form-error" role="alert">{error}</p>}</section>
 }

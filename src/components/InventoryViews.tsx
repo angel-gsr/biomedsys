@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { EquipmentQrScanner } from "./EquipmentQrScanner";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
@@ -66,17 +67,15 @@ function riskTone(risk: RiskLevel | null) {
 }
 
 function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: string }) {
-  return <span className={`badge badge-${tone}`}>{children}</span>;
+  return <span className={`badge badge-${tone}`}>{typeof children === "string" ? t(children) : children}</span>;
 }
 
 function PendingConfiguration() {
   return (
     <section className="panel empty-state inventory-message" role="status">
       <ShieldCheck size={38} />
-      <h3>Conexión con Supabase pendiente</h3>
-      <p>
-        El inventario está preparado para datos reales, pero todavía faltan
-        <code> VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_ANON_KEY</code> en <code>.env.local</code>.
+      <h3>{t("Conexión con Supabase pendiente")}</h3>
+      <p>{t("El inventario está preparado para datos reales, pero todavía faltan")}<code>{" "}{t("VITE_SUPABASE_URL")}</code> y <code>{t("VITE_SUPABASE_ANON_KEY")}</code>{" "}{t("en")}{" "}<code>{t(".env.local")}</code>.
       </p>
     </section>
   );
@@ -87,7 +86,7 @@ function LoadingState({ message }: { message: string }) {
     <section className="panel empty-state inventory-message" aria-busy="true" aria-live="polite">
       <RefreshCw className="spin" size={34} />
       <h3>{message}</h3>
-      <p>La información se consulta respetando los permisos de tu sesión.</p>
+      <p>{t("La información se consulta respetando los permisos de tu sesión.")}</p>
     </section>
   );
 }
@@ -96,9 +95,9 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <section className="panel empty-state inventory-message" role="alert">
       <AlertTriangle size={38} />
-      <h3>No fue posible consultar el inventario</h3>
+      <h3>{t("No fue posible consultar el inventario")}</h3>
       <p>{message}</p>
-      <Button variant="secondary" icon={RefreshCw} onClick={onRetry}>Reintentar</Button>
+      <Button variant="secondary" icon={RefreshCw} onClick={onRetry}>{t("Reintentar")}</Button>
     </section>
   );
 }
@@ -187,40 +186,40 @@ export function Inventory({
   return (
     <>
       <PageIntro
-        title={role === "usuario" ? "Consultar equipo" : "Inventario de activos"}
+        title={role === "usuario" ? t("Consultar equipo") : t("Inventario de activos")}
         action={role === "jefe" && configured ? <InventoryEquipmentManager onChanged={() => setReloadToken((value) => value + 1)} /> : undefined}
         description={role === "usuario"
-          ? "Consulta disponibilidad, identificación y ubicación sin exponer datos técnicos restringidos."
-          : "Consulta los equipos médicos, su riesgo y la información técnica validada."}
+          ? t("Consulta disponibilidad, identificación y ubicación sin exponer datos técnicos restringidos.")
+          : t("Consulta los equipos médicos, su riesgo y la información técnica validada.")}
       />
       {!configured ? <PendingConfiguration /> : (
         <section className="panel inventory-panel">
-          <div className="filter-bar" aria-label="Filtros de inventario">
+          <div className="filter-bar" aria-label={t("Filtros de inventario")}>
             <EquipmentQrScanner role={role} onSelect={(item) => onSelectEquipment(item.id)} />
             <label className="search-box">
               <Search size={17} />
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Código, equipo, fabricante o modelo"
-                aria-label="Buscar equipo"
+                placeholder={t("Código, equipo, fabricante o modelo")}
+                aria-label={t("Buscar equipo")}
               />
             </label>
             <label className="inventory-select">
-              <span>Área</span>
+              <span>{t("Área")}</span>
               <select value={hospitalArea} onChange={(event) => setHospitalArea(event.target.value)}>
-                <option value="">Todas las áreas</option>
+                <option value="">{t("Todas las áreas")}</option>
                 {areas.map((area) => <option key={area}>{area}</option>)}
               </select>
             </label>
             {capabilities.canViewRisk && (
               <label className="inventory-select">
-                <span>Riesgo</span>
+                <span>{t("Riesgo")}</span>
                 <select value={riskLevel} onChange={(event) => setRiskLevel(event.target.value as RiskLevel | "")}>
-                  <option value="">Todos los niveles</option>
-                  <option value="alto">Alto</option>
-                  <option value="medio">Medio</option>
-                  <option value="bajo">Bajo</option>
+                  <option value="">{t("Todos los niveles")}</option>
+                  <option value="alto">{t("Alto")}</option>
+                  <option value="medio">{t("Medio")}</option>
+                  <option value="bajo">{t("Bajo")}</option>
                 </select>
               </label>
             )}
@@ -231,8 +230,8 @@ export function Inventory({
           ) : equipment.length === 0 ? (
             <div className="empty-state inventory-inline-empty">
               <PackageOpen size={34} />
-              <h3>No hay equipos para mostrar</h3>
-              <p>Prueba con otros criterios de búsqueda o registra un equipo.</p>
+              <h3>{t("No hay equipos para mostrar")}</h3>
+              <p>{t("Prueba con otros criterios de búsqueda o registra un equipo.")}</p>
             </div>
           ) : (
             <>
@@ -240,8 +239,8 @@ export function Inventory({
                 <table>
                   <thead>
                     <tr>
-                      <th>Código</th><th>Equipo</th><th>Fabricante / modelo</th><th>Área / ubicación</th>
-                      {capabilities.canViewRisk && <th>Riesgo</th>}<th>Estado</th><th />
+                      <th>{t("Código")}</th><th>{t("Equipo")}</th><th>{t("Fabricante / modelo")}</th><th>{t("Área / ubicación")}</th>
+                      {capabilities.canViewRisk && <th>{t("Riesgo")}</th>}<th>{t("Estado")}</th><th />
                     </tr>
                   </thead>
                   <tbody>
@@ -252,21 +251,21 @@ export function Inventory({
                         <td><strong>{item.manufacturer}</strong><small>{item.model}</small></td>
                         <td><strong>{item.hospital_area || "Sin área"}</strong><small>{item.location || "Sin ubicación específica"}</small></td>
                         {capabilities.canViewRisk && (
-                          <td><Badge tone={riskTone(item.current_risk_category)}>{item.current_risk_category ? riskLabels[item.current_risk_category] : "Sin evaluación"}</Badge></td>
+                          <td><Badge tone={riskTone(item.current_risk_category)}>{item.current_risk_category ? riskLabels[item.current_risk_category] : t("Sin evaluación")}</Badge></td>
                         )}
                         <td><Badge tone={statusTone(item.status)}>{statusLabels[item.status]}</Badge></td>
-                        <td><div className="table-actions"><button type="button" className="row-action" aria-label={`Abrir ficha ${item.inventory_code}`}>Ver ficha</button>{role === "jefe" && <InventoryEquipmentManager equipmentId={item.id} onChanged={() => setReloadToken((value) => value + 1)} />}</div></td>
+                        <td><div className="table-actions"><button type="button" className="row-action" aria-label={`Abrir ficha ${item.inventory_code}`}>{t("Ver ficha")}</button>{role === "jefe" && <InventoryEquipmentManager equipmentId={item.id} onChanged={() => setReloadToken((value) => value + 1)} />}</div></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               <div className="pagination">
-                <span>{equipment.length} equipo{equipment.length === 1 ? "" : "s"} encontrado{equipment.length === 1 ? "" : "s"}</span>
+                <span>{equipment.length}{" "}{t("equipo")}{equipment.length === 1 ? "" : "s"}{" "}{t("encontrado")}{equipment.length === 1 ? "" : "s"}</span>
                 <div>
-                  <button disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Anterior</button>
+                  <button disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>{t("Anterior")}</button>
                   <button className="current">{page} / {totalPages}</button>
-                  <button disabled={page === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Siguiente</button>
+                  <button disabled={page === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>{t("Siguiente")}</button>
                 </div>
               </div>
             </>
@@ -310,7 +309,7 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
           <div>
             <Badge tone={statusTone(equipment.status)}>{statusLabels[equipment.status]}</Badge>
             <span>{equipment.inventory_code}</span>
-            {equipment.requires_review && <Badge tone="warning">Revisión pendiente</Badge>}
+            {equipment.requires_review && <Badge tone="warning">{t("Revisión pendiente")}</Badge>}
           </div>
           <h2>{equipment.equipment_type}</h2>
           <p>{equipment.manufacturer} · {equipment.model} · {equipment.hospital_area || "Área no especificada"}</p>
@@ -320,14 +319,14 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
       {restricted && (
         <div className="inventory-access-note">
           <ShieldCheck size={20} />
-          <div><strong>Ficha clínica limitada</strong><span>Los datos técnicos, riesgos, manuales y rutinas están disponibles únicamente para Ingeniería Clínica.</span></div>
+          <div><strong>{t("Ficha clínica limitada")}</strong><span>{t("Los datos técnicos, riesgos, manuales y rutinas están disponibles únicamente para Ingeniería Clínica.")}</span></div>
         </div>
       )}
 
       <div className="equipment-layout inventory-detail-layout">
         <section className="panel detail-main">
           <div className="detail-section">
-            <h3>Identificación del equipo</h3>
+            <h3>{t("Identificación del equipo")}</h3>
             <div className="data-grid">
               {[
                 ["Fabricante", equipment.manufacturer],
@@ -338,15 +337,15 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
                 ["Estado", statusLabels[equipment.status]],
                 ["Año de fabricación", equipment.manufacture_year?.toString() || "No registrado"],
                 ["Año de adquisición", equipment.acquisition_year?.toString() || "No registrado"],
-              ].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+              ].map(([label, value]) => <div key={label}><span>{t(label!)}</span><strong>{value}</strong></div>)}
             </div>
           </div>
           <div className="detail-section">
-            <h3>Ubicación</h3>
+            <h3>{t("Ubicación")}</h3>
             <div className="data-grid">
-              <div><span>Área hospitalaria</span><strong>{equipment.hospital_area || "No registrada"}</strong></div>
-              <div><span>Ubicación específica</span><strong>{equipment.location || "No registrada"}</strong></div>
-              <div><span>Resguardo del equipo</span><strong>{equipment.custodian_location_text || "No registrado"}</strong></div>
+              <div><span>{t("Área hospitalaria")}</span><strong>{equipment.hospital_area || "No registrada"}</strong></div>
+              <div><span>{t("Ubicación específica")}</span><strong>{equipment.location || "No registrada"}</strong></div>
+              <div><span>{t("Resguardo del equipo")}</span><strong>{equipment.custodian_location_text || "No registrado"}</strong></div>
             </div>
           </div>
 
@@ -354,27 +353,27 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
             <>
               <InventoryEnrichmentDetails data={bundle.enrichment} />
               <div className="detail-section">
-                <h3>Evaluación de riesgo</h3>
-                {!currentRisk ? <p className="detail-empty">No existe una evaluación de riesgo visible.</p> : (
+                <h3>{t("Evaluación de riesgo")}</h3>
+                {!currentRisk ? <p className="detail-empty">{t("No existe una evaluación de riesgo visible.")}</p> : (
                   <div className="risk-summary">
                     <Badge tone={riskTone(currentRisk.category)}>{riskLabels[currentRisk.category]}</Badge>
-                    <strong>{currentRisk.total_score} puntos</strong>
-                    <span>Función {currentRisk.function_score} · Aplicación clínica {currentRisk.clinical_application_score} · Mantenimiento {currentRisk.maintenance_requirement_score}</span>
+                    <strong>{currentRisk.total_score}{" "}{t("puntos")}</strong>
+                    <span>{t("Función")}{" "}{currentRisk.function_score}{" "}{t("· Aplicación clínica")}{" "}{currentRisk.clinical_application_score}{" "}{t("· Mantenimiento")}{" "}{currentRisk.maintenance_requirement_score}</span>
                     <small>{currentRisk.methodology_name} · {currentRisk.methodology_version}</small>
                   </div>
                 )}
               </div>
               <div className="detail-section">
-                <h3>Manuales y documentos</h3>
-                {documents.length === 0 ? <p className="detail-empty">No hay documentos vinculados.</p> : (
+                <h3>{t("Manuales y documentos")}</h3>
+                {documents.length === 0 ? <p className="detail-empty">{t("No hay documentos vinculados.")}</p> : (
                   <div className="document-list">
                     {documents.map((document) => {
                       const href = safeDocumentUrl(document.url);
                       return (
                         <article key={document.id}>
                           <FileText size={20} />
-                          <div><strong>{document.title || (document.document_type === "manual_usuario" ? "Manual de usuario" : "Manual de servicio")}</strong><span>{document.document_type.replace(/_/g, " ")} · Vínculo registrado · {document.review_status}</span></div>
-                          {href ? <a href={href} target="_blank" rel="noreferrer" title="Abrir el vínculo registrado; la disponibilidad del archivo depende del sitio externo">Abrir vínculo <ExternalLink size={14} /></a> : <Badge tone="warning">Enlace por revisar</Badge>}
+                          <div><strong>{document.title || (document.document_type === "manual_usuario" ? "Manual de usuario" : "Manual de servicio")}</strong><span>{document.document_type.replace(/_/g, " ")}{" "}{t("· Vínculo registrado ·")}{" "}{document.review_status}</span></div>
+                          {href ? <a href={href} target="_blank" rel="noreferrer" title={t("Abrir el vínculo registrado; la disponibilidad del archivo depende del sitio externo")}>{t("Abrir vínculo")}{" "}<ExternalLink size={14} /></a> : <Badge tone="warning">{t("Enlace por revisar")}</Badge>}
                         </article>
                       );
                     })}
@@ -382,15 +381,15 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
                 )}
               </div>
               <div className="detail-section">
-                <h3>Rutinas de mantenimiento</h3>
-                {programs.length === 0 ? <p className="detail-empty">No hay rutinas vinculadas.</p> : (
+                <h3>{t("Rutinas de mantenimiento")}</h3>
+                {programs.length === 0 ? <p className="detail-empty">{t("No hay rutinas vinculadas.")}</p> : (
                   <div className="program-list">
                     {programs.map((program) => (
                       <article className="maintenance-routine-card" key={program.id}>
-                        <button type="button" className="row-action routine-download" aria-label={`Descargar checklist: ${program.name}`} title="Descargar checklist TXT" onClick={() => downloadRoutine(program)}><Download size={18} /></button>
-                        <div className="routine-heading"><Wrench size={18} /><strong>{program.name}</strong>{program.requires_review && <Badge tone="warning">Revisión pendiente</Badge>}</div>
+                        <button type="button" className="row-action routine-download" aria-label={`Descargar checklist: ${program.name}`} title={t("Descargar checklist TXT")} onClick={() => downloadRoutine(program)}><Download size={18} /></button>
+                        <div className="routine-heading"><Wrench size={18} /><strong>{program.name}</strong>{program.requires_review && <Badge tone="warning">{t("Revisión pendiente")}</Badge>}</div>
                         <p>{program.procedure_text}</p>
-                        <span>{program.interval_months ? `Cada ${program.interval_months} meses` : "Periodicidad pendiente de definición"}</span>
+                        <span>{program.interval_months ? `Cada ${program.interval_months} meses` : t("Periodicidad pendiente de definición")}</span>
                       </article>
                     ))}
                   </div>
@@ -402,24 +401,24 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
 
         <aside className="detail-aside">
           <EquipmentQr equipmentId={equipment.id} inventoryCode={equipment.inventory_code} />
-          {isOperationalCompletionEnabled && role !== "usuario" && <PrivateAttachmentPanel relation={{ equipmentId: equipment.id }} title="Archivos privados del equipo" />}
+          {isOperationalCompletionEnabled && role !== "usuario" && <PrivateAttachmentPanel relation={{ equipmentId: equipment.id }} title={t("Archivos privados del equipo")} />}
           {isBusinessCompletionEnabled && role !== "usuario" && <EquipmentTimeline equipmentId={equipment.id} />}
           <section className="panel inventory-summary-card">
-            <h3>Resumen técnico</h3>
-            <div><span>Nivel de riesgo</span><strong>{equipment.current_risk_category ? riskLabels[equipment.current_risk_category] : "No visible"}</strong></div>
-            <div><span>Puntuación</span><strong>{equipment.current_risk_score ?? "—"}</strong></div>
-            <div><span>Documentos</span><strong>{restricted ? "Restringidos" : documents.length}</strong></div>
-            <div><span>Rutinas</span><strong>{restricted ? "Restringidas" : programs.length}</strong></div>
+            <h3>{t("Resumen técnico")}</h3>
+            <div><span>{t("Nivel de riesgo")}</span><strong>{equipment.current_risk_category ? riskLabels[equipment.current_risk_category] : t("No visible")}</strong></div>
+            <div><span>{t("Puntuación")}</span><strong>{equipment.current_risk_score ?? "—"}</strong></div>
+            <div><span>{t("Documentos")}</span><strong>{restricted ? t("Restringidos") : documents.length}</strong></div>
+            <div><span>{t("Rutinas")}</span><strong>{restricted ? t("Restringidas") : programs.length}</strong></div>
           </section>
           {role === "jefe" && pendingIssues.length > 0 && (
             <section className="panel inventory-issues-card">
-              <h3>Incidencias del inventario</h3>
+              <h3>{t("Incidencias del inventario")}</h3>
               {pendingIssues.map((issue) => (
                 <article key={issue.id}>
                   <Badge tone={issue.severity === "error" ? "danger" : issue.severity === "advertencia" ? "warning" : "info"}>{issue.severity}</Badge>
                   <strong>{inventoryIssueLabel(issue.issue_code)}</strong>
                   <p>{inventoryIssueDescription(issue)}</p>
-                  <small>Estado de revisión: {issue.review_status}</small>
+                  <small>{t("Estado de revisión:")}{" "}{issue.review_status}</small>
                 </article>
               ))}
             </section>
@@ -435,7 +434,7 @@ function EquipmentTimeline({ equipmentId }: { equipmentId: string }) {
   const [rows, setRows] = useState<ActivityTimelineEntry[]>([]);
   const [error, setError] = useState("");
   useEffect(() => { getEquipmentActivity(equipmentId).then(setRows).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "No fue posible cargar el historial.")); }, [equipmentId]);
-  return <section className="panel"><h3>Historial del equipo</h3><div className="audit-list">{rows.map((row, index) => <article key={`${row.event_type}-${row.reference}-${index}`}><div><strong>{row.reference}</strong><small>{new Date(row.event_time).toLocaleString("es-MX")} · {row.event_type} · {row.description}</small></div></article>)}</div>{rows.length === 0 && !error && <small>Sin actividad registrada.</small>}{error && <small className="form-error">{error}</small>}</section>;
+  return <section className="panel"><h3>{t("Historial del equipo")}</h3><div className="audit-list">{rows.map((row, index) => <article key={`${row.event_type}-${row.reference}-${index}`}><div><strong>{row.reference}</strong><small>{new Date(row.event_time).toLocaleString("es-MX")} · {row.event_type} · {row.description}</small></div></article>)}</div>{rows.length === 0 && !error && <small>{t("Sin actividad registrada.")}</small>}{error && <small className="form-error">{error}</small>}</section>;
 }
 
 function EquipmentQr({ equipmentId, inventoryCode }: { equipmentId: string; inventoryCode: string }) {
@@ -458,7 +457,7 @@ function EquipmentQr({ equipmentId, inventoryCode }: { equipmentId: string; inve
     popup.document.close();
   }
 
-  return <section className="panel equipment-qr"><h3><QrCode size={18} /> Etiqueta QR</h3>{image && <img src={image} alt={`Código QR del equipo ${inventoryCode}`} />}<p>El código contiene únicamente un enlace con el identificador técnico del equipo.</p><div className="qr-actions"><a className="row-action" href={image} download={`BioMedGest-${inventoryCode}.png`}>Exportar PNG</a><button type="button" className="row-action" onClick={printLabel}>Imprimir</button></div>{error && <small className="form-error">{error}</small>}</section>;
+  return <section className="panel equipment-qr"><h3><QrCode size={18} />{" "}{t("Etiqueta QR")}</h3>{image && <img src={image} alt={`Código QR del equipo ${inventoryCode}`} />}<p>{t("El código contiene únicamente un enlace con el identificador técnico del equipo.")}</p><div className="qr-actions"><a className="row-action" href={image} download={`BioMedGest-${inventoryCode}.png`}>{t("Exportar PNG")}</a><button type="button" className="row-action" onClick={printLabel}>{t("Imprimir")}</button></div>{error && <small className="form-error">{error}</small>}</section>;
 }
 
 export function EquipmentDetail({
@@ -495,7 +494,7 @@ export function EquipmentDetail({
 
   return (
     <>
-      <button className="back-link" onClick={onBack}><ArrowLeft size={17} /> Volver al inventario</button>
+      <button className="back-link" onClick={onBack}><ArrowLeft size={17} />{" "}{t("Volver al inventario")}</button>
       {!configured ? <PendingConfiguration /> : !equipmentId ? (
         <ErrorState message="No se seleccionó ningún equipo." onRetry={onBack} />
       ) : loading ? <LoadingState message="Cargando ficha del equipo..." /> : error ? (

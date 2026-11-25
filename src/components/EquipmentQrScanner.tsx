@@ -1,3 +1,4 @@
+import { t } from "../lib/i18n"
 import { useEffect, useRef, useState } from "react"
 import { QrCode, X } from "lucide-react"
 import jsQR from "jsqr"
@@ -9,7 +10,7 @@ export function EquipmentQrScanner({ role, onSelect }: { role: Role; onSelect: (
   const trigger = useRef<HTMLButtonElement>(null)
   function close() { setOpen(false); trigger.current?.focus() }
   return <>
-    <button ref={trigger} type="button" className="btn btn-secondary qr-scan-trigger" onClick={() => setOpen(true)}><QrCode size={28} /> Escanear QR</button>
+    <button ref={trigger} type="button" className="btn btn-secondary qr-scan-trigger" onClick={() => setOpen(true)}><QrCode size={28} />{" "}{t("Escanear QR")}</button>
     {open && <Scanner role={role} onClose={close} onSelect={(equipment) => { close(); onSelect(equipment) }} />}
   </>
 }
@@ -85,7 +86,7 @@ function Scanner({ role, onClose, onSelect }: { role: Role; onClose: () => void;
 
   useEffect(() => { dialog.current?.querySelector<HTMLButtonElement>("button")?.focus() }, [])
   return <div className="modal-layer qr-scanner-layer" onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
-    <div ref={dialog} className="modal qr-scanner" role="dialog" aria-modal="true" aria-label="Escanear QR de equipo" onKeyDown={(event) => {
+    <div ref={dialog} className="modal qr-scanner" role="dialog" aria-modal="true" aria-label={t("Escanear QR de equipo")} onKeyDown={(event) => {
       if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose() }
       if (event.key === "Tab") {
         const buttons = dialog.current?.querySelectorAll<HTMLButtonElement>("button")
@@ -95,11 +96,11 @@ function Scanner({ role, onClose, onSelect }: { role: Role; onClose: () => void;
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
       }
     }}>
-      <div className="modal-head"><h2>Escanear equipo</h2><button type="button" className="icon-btn" aria-label="Cerrar lector QR" onClick={onClose}><X size={21} /></button></div>
-      <video ref={video} autoPlay muted playsInline aria-label="Vista previa de la cámara" />
+      <div className="modal-head"><h2>{t("Escanear equipo")}</h2><button type="button" className="icon-btn" aria-label={t("Cerrar lector QR")} onClick={onClose}><X size={21} /></button></div>
+      <video ref={video} autoPlay muted playsInline aria-label={t("Vista previa de la cámara")} />
       {error ? <p className="form-error" role="alert">{error}</p> : <p role="status">{status}</p>}
-      <p>También puedes cerrar el lector y buscar el código manualmente.</p>
-      {error && <button type="button" className="btn btn-primary" onClick={() => setRetry((value) => value + 1)}>Reintentar</button>}
+      <p>{t("También puedes cerrar el lector y buscar el código manualmente.")}</p>
+      {error && <button type="button" className="btn btn-primary" onClick={() => setRetry((value) => value + 1)}>{t("Reintentar")}</button>}
     </div>
   </div>
 }
