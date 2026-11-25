@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { AlertTriangle, History, Search, UserPlus, Users } from "lucide-react"
+import { AlertTriangle, History, Info, Search, UserPlus, Users } from "lucide-react"
 
 import { Button, PageIntro } from "./ui"
 import { PrivateAttachmentPanel } from "./PrivateAttachmentPanel"
@@ -250,6 +250,7 @@ export function UserPermissionsView() {
   const [reason, setReason] = useState("")
   const [saving, setSaving] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
+  const [showIdInfo, setShowIdInfo] = useState(false)
   const [requests, setRequests] = useState<AccessRequest[]>([])
   const [request, setRequest] = useState({ firstName: "", lastName: "", age: "", phone: "", role: "usuario" as Profile["role"], department: "" })
   const [departments, setDepartments] = useState<string[]>([])
@@ -387,8 +388,7 @@ export function UserPermissionsView() {
       </section>
       <section className="panel"><div className="panel-head"><div><h3>Solicitudes de alta</h3><p>La identidad Auth se crea únicamente mediante la función backend protegida.</p></div><UserPlus size={21} /></div><div className="table-wrap"><table><thead><tr><th>ID institucional</th><th>Nombre</th><th>Rol solicitado</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{requests.map((row) => <tr key={row.id}><td>{row.institutional_id}</td><td>{row.full_name}</td><td>{row.role}</td><td>{row.status}</td><td>{row.status === "pendiente" ? <button type="button" className="row-action" onClick={() => { setProvisioning(row); setTemporaryPassword(""); setError("") }}>Crear cuenta Auth</button> : "—"}</td></tr>)}</tbody></table></div>{requests.length === 0 && <div className="empty-state"><h3>Sin solicitudes</h3></div>}</section>
       {requestOpen && <div className="modal-layer"><form className="modal" onSubmit={submitAccessRequest}><div className="modal-head"><div><span className="eyebrow">Alta de usuario</span><h2>Datos de la nueva cuenta</h2><p>El identificador se asigna automáticamente al guardar. Después podrás establecer la contraseña temporal.</p></div></div><div className="form-grid">
-        <label className="field"><span>Rol *</span><select value={request.role} onChange={event => setRequest({ ...request, role: event.target.value as Profile["role"] })}><option value="usuario">Usuario</option><option value="tecnico">Ingeniero biomédico</option><option value="jefe">Jefe / administrador</option></select></label>
-        <div className="field"><span>ID automático</span><strong>{request.role === "jefe" ? "00" : request.role === "tecnico" ? "01" : "02"} + consecutivo desde 181000</strong><small>Se confirma al registrar; no es editable.</small></div>
+        <div className="field span-2"><div style={{ display: "flex", alignItems: "center", gap: 8 }}><label htmlFor="registration-role">Rol *</label><button type="button" className="icon-btn" aria-label="Información del identificador automático" aria-expanded={showIdInfo} aria-controls="registration-id-info" onClick={() => setShowIdInfo(value => !value)}><Info size={18} /></button></div><select id="registration-role" value={request.role} onChange={event => setRequest({ ...request, role: event.target.value as Profile["role"] })}><option value="usuario">Usuario</option><option value="tecnico">Ingeniero biomédico</option><option value="jefe">Jefe / administrador</option></select>{showIdInfo && <p id="registration-id-info" role="note">ID automático: {request.role === "jefe" ? "00" : request.role === "tecnico" ? "01" : "02"} + consecutivo desde 181000. Se confirma al registrar; no es editable.</p>}</div>
         <label className="field"><span>Nombres *</span><input required minLength={2} maxLength={80} autoComplete="given-name" pattern="[\p{L}][\p{L} '.’\-]*[\p{L}]" value={request.firstName} onChange={event => setRequest({ ...request, firstName: event.target.value })} /></label>
         <label className="field"><span>Apellidos *</span><input required minLength={2} maxLength={100} autoComplete="family-name" pattern="[\p{L}][\p{L} '.’\-]*[\p{L}]" value={request.lastName} onChange={event => setRequest({ ...request, lastName: event.target.value })} /></label>
         <label className="field"><span>Edad *</span><input required type="number" min={18} max={100} step={1} value={request.age} onChange={event => setRequest({ ...request, age: event.target.value })} /></label>
