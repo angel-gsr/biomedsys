@@ -122,7 +122,7 @@ function useMaintenanceOverview() {
   }
 }
 
-export function MaintenanceView({ role }: { role: Role }) {
+export function MaintenanceView({ role, onOpenOrder }: { role: Role; onOpenOrder?: (id:number)=>void }) {
   const state = useMaintenanceOverview()
   const [showPlanner,setShowPlanner]=useState(false)
   const counts = useMemo(
@@ -155,7 +155,7 @@ export function MaintenanceView({ role }: { role: Role }) {
         title={t("Mantenimiento")}
         description={t("Órdenes y actividades realmente registradas y visibles para tu sesión.")}
       />
-      {showPlanner && <MaintenancePlanner onClose={()=>setShowPlanner(false)} onSaved={()=>{setShowPlanner(false);state.retry()}}/>}
+      {showPlanner && <MaintenancePlanner onOpenOrder={onOpenOrder} onClose={()=>setShowPlanner(false)} onSaved={()=>{setShowPlanner(false);state.retry()}}/>}
       <section className="maintenance-catalog">
         {state.catalog.map((item) => (
           <article className="panel maintenance-type" key={item.code}>

@@ -11,6 +11,7 @@ Actualización del 25 de noviembre de 2026.
 - Las capacitaciones se programan desde su módulo, con hora de fin y perfiles destinatarios. El jefe y el instructor siempre pueden consultarlas; también los perfiles seleccionados y los participantes individuales registrados.
 - Calendario ofrece únicamente Organizar evento: título, descripción, ubicación, intervalo y destinatarios (jefes, ingenieros biomédicos y usuarios). Solo el jefe crea, edita o cancela estos eventos. Los demás perfiles consultan los que les corresponden.
 - Los mantenimientos y capacitaciones conservan su fuente original, sin duplicar eventos. Se actualizan al entrar, recuperar el foco y cada 15 segundos. Los cancelados desaparecen de la agenda.
+- Si el servidor rechaza una programación, el formulario conserva su explicación, incluso cuando PostgREST devuelve un objeto de error en lugar de `Error`. Los conflictos con mantenimiento muestran el folio y un botón para consultar la orden que bloquea el horario, con regreso a Mantenimiento. La protección contra traslapes se conserva; esta mejora no concluye ni modifica las órdenes existentes.
 
 ## Supabase
 

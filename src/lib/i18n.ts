@@ -630,6 +630,11 @@ Object.assign(dictionary,{
  "Revisa la separación sugerida del nombre y completa solo los datos que conozcas.":"Review the suggested name split and complete only the information you know.",
  "Departamento actual":"Current department",
 })
+Object.assign(dictionary,{
+ "No se pudo programar el mantenimiento":"Maintenance could not be scheduled",
+ "Ver orden que bloquea el horario":"View the order blocking this time slot",
+ "Volver a Mantenimiento":"Back to Maintenance",
+})
 export function t(value:string):string {
  if(preferences().language!=="en")return value
  const exact=dictionary[value];if(exact)return exact

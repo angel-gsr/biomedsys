@@ -1195,9 +1195,9 @@ export default function App() {
               }}
             />
           )}
-          {view === "orden" && (orderReportId !== null && role === "jefe" ? <ServiceOrderAssignment backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : "Volver a Mesa de ayuda"} key={orderReportId} reportId={orderReportId} onBack={() => { setOrderReportId(null); setView(orderReturnView) }} onConfirmed={id => { setRequestedOrderId(id); setOrderReportId(null) }} /> : <ServiceOrdersView backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : "Volver a Mesa de ayuda"} role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView(orderReturnView) }} />)}
+          {view === "orden" && (orderReportId !== null && role === "jefe" ? <ServiceOrderAssignment backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : orderReturnView === "mantenimiento" ? "Volver a Mantenimiento" : "Volver a Mesa de ayuda"} key={orderReportId} reportId={orderReportId} onBack={() => { setOrderReportId(null); setView(orderReturnView) }} onConfirmed={id => { setRequestedOrderId(id); setOrderReportId(null) }} /> : <ServiceOrdersView backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : orderReturnView === "mantenimiento" ? "Volver a Mantenimiento" : "Volver a Mesa de ayuda"} role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView(orderReturnView) }} />)}
           {view === "calendario" && <GeneralCalendar role={role} onMaintenance={id=>{setRequestedOrderId(id);setOrderReportId(null);setOrderReturnView("calendario");setView("orden")}} />}
-          {view === "mantenimiento" && <MaintenanceView role={role} />}
+          {view === "mantenimiento" && <MaintenanceView role={role} onOpenOrder={id=>{setOrderReturnView("mantenimiento");setRequestedOrderId(id);setOrderReportId(null);setView("orden")}} />}
           {view === "avisos" && <NoticesView />}
           {view === "capacitaciones" && <TrainingCalendar role={role} />}
           {view === "notificaciones" && <NotificationsView />}
