@@ -187,10 +187,10 @@ export function Inventory({
   return (
     <>
       <PageIntro
-        title={role === "usuario" ? t("Consultar equipo") : t("Inventario de activos")}
+        title={role === "usuario" ? t("Solicitud de equipo") : t("Inventario de activos")}
         action={configured && role === "usuario" ? <EquipmentUseRequest/> : role === "jefe" && configured ? <InventoryEquipmentManager onChanged={() => setReloadToken((value) => value + 1)} /> : undefined}
         description={role === "usuario"
-          ? t("Consulta disponibilidad, identificación y ubicación sin exponer datos técnicos restringidos.")
+          ? t("Usa el botón Solicitar equipo para reservar un horario y generar tu vale de préstamo en PDF.")
           : t("Consulta los equipos médicos, su riesgo y la información técnica validada.")}
       />
       {!configured ? <PendingConfiguration /> : (

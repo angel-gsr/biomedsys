@@ -17,3 +17,15 @@ Validación realizada:
 - Cruces solicitud/mantenimiento en ambas direcciones, reutilización del horario al cancelar, rechazo de equipos fuera de servicio y fechas/ubicación inválidas.
 - TypeScript, compilación y 136 pruebas automatizadas.
 - Chrome con datos simulados a 1280 y 390 px: solicitud → calendario → cancelación y contraste oscuro. No se generaron solicitudes reales mediante las pruebas.
+
+## Vale de préstamo
+
+La migración 38 añade un vale por reserva, con folio `VP-año-ID`, datos automáticos del equipo y solicitante, ubicación de destino, periodo y estado. Al registrar la solicitud se conserva una instantánea de la identificación. Las reservas anteriores usan los datos disponibles al consultar el vale y se identifican como tales. No se inventan datos no registrados ni se solicitan datos de pacientes.
+
+Al guardar una solicitud se abre su vale con vista previa del PDF. Desde Calendario → Uso de equipo → Ver evento → Ver vale / PDF también puede consultarse después. La consulta está autorizada para el solicitante y el personal biomédico; otros usuarios clínicos solo ven la disponibilidad del equipo.
+
+El PDF A4 usa el símbolo vectorial de la app como logo y marca de agua; no reutiliza sellos o marcas institucionales de los ejemplos. Incluye espacios de entrega y recepción para firmar en papel o dibujar firmas opcionales en el navegador. Las firmas dibujadas solo se incorporan a la copia PDF generada, sin cargarse a Supabase. Al cerrar el vale se descartan; descargar el PDF permite conservarlas. La consulta posterior permite generar otra copia sin firmas. No constituye un mecanismo de firma electrónica certificada.
+
+Incluye descarga, impresión desde la vista PDF y compartir mediante la función nativa del dispositivo cuando soporte archivos; en otros navegadores descarga el archivo para enviarlo manualmente. La app no envía documentos a terceros por sí sola.
+
+Pruebas adicionales: respaldo completo y migración 38 con comprobación de permisos e identificación inmutable; 138 pruebas automatizadas; generación y descarga de PDF firmado en Chrome a 1280 y 390 px. Los PDF de prueba se verificaron como A4 de una página, con imagen de firma y texto dentro de los márgenes, además de revisión visual del documento.

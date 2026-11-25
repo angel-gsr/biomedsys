@@ -1,6 +1,7 @@
 import {cleanup,fireEvent,render,screen,waitFor} from "@testing-library/react"
 import {afterEach,expect,it,vi} from "vitest"
-const service=vi.hoisted(()=>({request:vi.fn().mockResolvedValue(undefined)}))
+const service=vi.hoisted(()=>({request:vi.fn().mockResolvedValue(99)}))
+vi.mock("./LoanVoucher",()=>({LoanVoucher:({bookingId}:{bookingId:number})=><p>Vale automático {bookingId}</p>}))
 vi.mock("../lib/generalCalendar",()=>({requestEquipmentUse:service.request}))
 vi.mock("./EquipmentReportSelector",()=>({EquipmentReportSelector:()=>null}))
 vi.mock("./EquipmentQrScanner",()=>({EquipmentQrScanner:({onSelect}:{onSelect:(item:unknown)=>void})=><button type="button" onClick={()=>onSelect({id:"asset",inventory_code:"EQ-1",status:"operativo"})}>QR de prueba</button>}))
@@ -11,7 +12,8 @@ it("reserves the selected equipment without accepting a requester supplied by th
  render(<EquipmentUseRequest/>);fill();fireEvent.click(screen.getByRole("button",{name:"Registrar solicitud"}))
  await screen.findByRole("status")
  expect(service.request).toHaveBeenCalledWith({equipmentId:"asset",start:new Date("2030-01-01T10:00").toISOString(),end:new Date("2030-01-01T11:00").toISOString(),location:"Quirófano 1"})
- expect(screen.queryByRole("dialog")).toBeNull()
+ expect(screen.getByRole("dialog",{name:"Vale de préstamo"})).toBeTruthy()
+ expect(screen.getByText("Vale automático 99")).toBeTruthy()
  expect(screen.getByRole("status").textContent).toContain("Calendario → Uso de equipo")
 })
 it("keeps the request open and displays the server conflict when the slot is occupied",async()=>{

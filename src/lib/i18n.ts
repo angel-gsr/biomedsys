@@ -643,6 +643,13 @@ Object.assign(dictionary,{
  "No fue posible registrar la solicitud.":"Unable to register the request.","Cancelar solicitud":"Cancel request",
  "¿Cancelar esta solicitud y liberar el equipo?":"Cancel this request and release the equipment?","No fue posible cancelar la solicitud.":"Unable to cancel the request.",
 })
+Object.assign(dictionary,{
+ "Vale de préstamo":"Equipment loan voucher","Ver vale / PDF":"View voucher / PDF","Cerrar vale":"Close voucher","Cargando vale...":"Loading voucher...",
+ "Firmar documento":"Sign document","Ocultar firmas":"Hide signatures","Firma de quien entrega":"Signature of the person handing over","Firma de quien recibe":"Signature of the recipient",
+ "Borrar firma":"Clear signature","Compartir PDF":"Share PDF","Vista previa del vale de préstamo":"Loan voucher preview","Abrir vista previa del PDF":"Open PDF preview",
+ "Firma dibujada opcional: usa el dedo, lápiz o mouse. También puedes dejar los espacios vacíos y firmar en papel. Descarga el PDF para conservar las firmas.":"Optional drawn signature: use your finger, pen or mouse. You can also leave the spaces blank and sign on paper. Download the PDF to keep the signatures.",
+ "Usa el botón Solicitar equipo para reservar un horario y generar tu vale de préstamo en PDF.":"Use Request equipment to reserve a time slot and generate your loan voucher as a PDF.",
+})
 export function t(value:string):string {
  if(preferences().language!=="en")return value
  const exact=dictionary[value];if(exact)return exact

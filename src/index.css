@@ -991,3 +991,17 @@ td small { color: var(--text-secondary, #8293a2); margin-top: 3px; font-size: 8p
 .calendar-audience .table-actions label { display:flex;align-items:center;gap:8px;min-height:44px; }
 .calendar-audience input[type="checkbox"] { width:20px;min-height:20px;height:20px;padding:0;accent-color:var(--primary); }
 .event-details p { margin-block:14px;overflow-wrap:anywhere; }
+.page-intro:has(.loan-request-button) { align-items:center; }
+.loan-voucher-modal { width:min(1100px,calc(100vw - 24px));max-width:1100px; }
+.loan-voucher { padding:18px;min-width:0; }
+.loan-voucher .modal-head { align-items:flex-start;gap:12px; }
+.loan-voucher .table-actions { margin-block:16px; }
+.loan-voucher .table-actions .btn { flex:1 1 150px; }
+.loan-pdf-preview { width:100%;height:65vh;min-height:340px;border:1px solid var(--line);border-radius:10px;background:#fff; }
+.loan-signatures { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-block:18px; }
+.loan-signatures[hidden] { display:none; }
+.loan-signatures > p { grid-column:1 / -1; }
+.loan-signature { display:grid;gap:10px;min-width:0; }
+.loan-signature canvas { width:100%;height:140px;border:1px dashed #64748b;border-radius:10px;background:#fff;touch-action:none;cursor:crosshair; }
+.loan-request-button { min-height:52px;padding:14px 22px; }
+@media(max-width:600px){.loan-signatures { grid-template-columns:1fr; }.loan-voucher { padding:12px; }.loan-voucher .table-actions .btn { flex-basis:calc(50% - 10px); }.loan-pdf-preview { min-height:380px; }}
