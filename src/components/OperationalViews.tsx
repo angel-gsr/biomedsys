@@ -2,6 +2,7 @@ import { FilePicker } from "./FilePicker"
 import { Fragment, useEffect, useMemo, useState } from "react"
 import {
   AlertTriangle,
+  ArrowLeft,
   CalendarDays,
   RefreshCw,
   Save,
@@ -187,11 +188,15 @@ export function MaintenanceView({ role }: { role: Role }) {
   )
 }
 
-export function ServiceOrdersView({ role }: { role: Role }) {
+export function ServiceOrdersView({ role, requestedOrderId = null, onBack }: { role: Role; requestedOrderId?: number | null; onBack?: () => void }) {
   const state = useMaintenanceOverview()
   if (state.loading)
     return <Loading label="Consultando órdenes de servicio..." />
   if (state.error) return <Failure error={state.error} retry={state.retry} />
+  if (requestedOrderId !== null) {
+    const item = state.maintenances.find(order => order.id === requestedOrderId)
+    return <><Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Volver a Mesa de ayuda</Button>{!item ? <section className="panel"><h2>Orden no disponible</h2><p>No se encontró la orden o no tienes acceso a ella.</p></section> : <><PageIntro title={`Orden ${item.maintenance_number}`} description={`${item.equipment_identifier || "Equipo vinculado"} · ${item.maintenance_code} · ${item.status.replace(/_/g," ")}`} /><section className="panel"><p>Prioridad: {item.priority || "Sin registrar"}</p><p>Programación: {formatDate(item.scheduled_at)}</p><p>Técnico: {item.assigned_to_name || "Sin asignar"}</p><MaintenanceStatusEditor key={`${item.id}-${item.status}`} item={item} role={role} onChanged={state.retry} /><CorrectiveWorkflowPanel key={item.id} item={item} role={role} onChanged={state.retry} /></section></>}</>
+  }
   return (
     <>
       <PageIntro

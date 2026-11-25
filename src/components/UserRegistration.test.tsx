@@ -1,13 +1,14 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
-const mocks = vi.hoisted(() => ({ create: vi.fn().mockResolvedValue(undefined) }))
+const mocks = vi.hoisted(() => ({ create: vi.fn().mockResolvedValue(undefined), remove: vi.fn().mockResolvedValue(undefined) }))
 vi.mock("../lib/supabase", async original => ({
   ...(await original<typeof import("../lib/supabase")>()),
   isOperationalCompletionEnabled: true,
-  listProfiles: vi.fn().mockResolvedValue([]),
+  listProfiles: vi.fn().mockResolvedValue([{ id: "inactive", institutional_id: "02181000", full_name: "Cuenta Inactiva", active: false, role: "usuario" }, { id: "active", institutional_id: "02181001", full_name: "Cuenta Activa", active: true, role: "usuario" }]),
   listAccessRequests: vi.fn().mockResolvedValue([]),
   listUserDepartments: vi.fn().mockResolvedValue(["Urgencias", "CEYE"]),
   createAccessRequest: mocks.create,
+  deleteInactiveUser: mocks.remove,
 }))
 import { UserPermissionsView } from "./AdminViews"
 afterEach(() => { cleanup(); vi.clearAllMocks() })
@@ -28,4 +29,19 @@ it("registers separated personal data with a catalogue and without a client iden
   fireEvent.change(screen.getByLabelText("Departamento *"), { target: { value: "Urgencias" } })
   fireEvent.submit(screen.getByRole("button", { name: "Registrar usuario" }).closest("form")!)
   await waitFor(() => expect(mocks.create).toHaveBeenCalledWith({ firstName: "Ángel José", lastName: "García López", age: "28", phone: "5512345678", department: "Urgencias", role: "tecnico" }))
+})
+it("only offers deletion for inactive accounts and requires confirmation", async () => {
+  render(<UserPermissionsView />)
+  const remove = await screen.findByRole("button", { name: "Eliminar usuario" })
+  expect(screen.getAllByRole("button", { name: "Eliminar usuario" })).toHaveLength(1)
+  fireEvent.click(remove)
+  expect(screen.getByRole("dialog", { name: "¿Eliminar usuario?" })).toBeTruthy()
+  expect(mocks.remove).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole("button", { name: "Cancelar" }))
+  expect(mocks.remove).not.toHaveBeenCalled()
+  fireEvent.click(remove)
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar eliminación" }))
+  await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith("inactive"))
+  await waitFor(() => expect(screen.queryByText("Cuenta Inactiva")).toBeNull())
+  expect(screen.getByText("Cuenta Activa")).toBeTruthy()
 })

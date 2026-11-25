@@ -11,6 +11,7 @@ type ProvisionBody = {
   accessRequestId?: number
 }
 type AuthStatusBody = { action: "set-auth-status"; profileId: string; active: boolean }
+type DeleteBody = { action: "delete-user"; profileId: string }
 type PasswordBody = { action: "change-password"; password: string }
 
 Deno.serve(async (request) => {
@@ -26,7 +27,7 @@ Deno.serve(async (request) => {
     if (userError || !userResult.user) return json(request, { error: "Sesión inválida" }, 401)
     const { data: profile } = await caller.from("profiles").select("role, active").eq("id", userResult.user.id).single()
     if (!profile?.active) return json(request, { error: "Perfil activo requerido" }, 403)
-    const body = await request.json() as ProvisionBody | AuthStatusBody | PasswordBody
+    const body = await request.json() as ProvisionBody | AuthStatusBody | PasswordBody | DeleteBody
     if (body.action === "change-password") {
       if (typeof body.password !== "string" || body.password.length < 6 || body.password.length > 12 || !/[A-Z]/.test(body.password) || !/[a-z]/.test(body.password) || !/\d/.test(body.password))
         return json(request, { error: "La contraseña debe tener entre 6 y 12 caracteres, con mayúscula, minúscula y número" }, 400)
@@ -38,6 +39,16 @@ Deno.serve(async (request) => {
       return json(request, updated)
     }
     if (profile.role !== "jefe") return json(request, { error: "Operación reservada para el rol jefe" }, 403)
+    if (body.action === "delete-user") {
+      if (!/^[0-9a-f-]{36}$/i.test(body.profileId) || body.profileId === userResult.user.id) return json(request, { error: "No puedes eliminar esta cuenta" }, 400)
+      const { data: target } = await serviceClient.from("profiles").select("id,active").eq("id", body.profileId).single()
+      if (!target || target.active) return json(request, { error: "Desactiva primero la cuenta" }, 409)
+      const { error: banError } = await serviceClient.auth.admin.updateUserById(body.profileId, { ban_duration: "876000h" })
+      if (banError) return json(request, { error: banError.message }, 400)
+      const { error: deletionError } = await caller.rpc("delete_inactive_user", { target_profile_id: body.profileId })
+      if (deletionError) return json(request, { error: deletionError.message }, 400)
+      return json(request, { deleted: true })
+    }
     if (body.action === "set-auth-status") {
       if (!/^[0-9a-f-]{36}$/i.test(body.profileId)) return json(request, { error: "Perfil inválido" }, 400)
       if (body.profileId === userResult.user.id && !body.active) return json(request, { error: "No puedes bloquear tu propia cuenta" }, 400)

@@ -3,7 +3,7 @@ import ts from "typescript"
 import { expect, it, vi } from "vitest"
 
 // Execute the actual Edge handler with isolated Auth/DB adapters; never contacts Supabase.
-function backend(role = "jefe") {
+function backend(role = "jefe", targetActive = false) {
   const profileInsert = vi.fn().mockResolvedValue({ error: null })
   const createUser = vi.fn().mockResolvedValue({ data: { user: { id: "new-user" } }, error: null })
   const updateUser = vi.fn().mockResolvedValue({ error: null })
@@ -15,7 +15,7 @@ function backend(role = "jefe") {
   const registration = { institutional_id: "02181000", full_name: "Ángel García", first_name: "Ángel", last_name: "García", age: 28, phone: null, department: "Urgencias", role: "usuario", status: "pendiente" }
   const service = {
     auth: { admin: { createUser, deleteUser: vi.fn(), updateUserById: updateUser } },
-    from: (table: string) => table === "profiles" ? { insert: profileInsert } : {
+    from: (table: string) => table === "profiles" ? { insert: profileInsert, select: () => ({ eq: () => ({ single: async () => ({ data: { id: "target", active: targetActive } }) }) }) } : {
       select: () => ({ eq: () => ({ single: async () => ({ data: registration, error: null }) }) }),
       update: () => ({ eq: () => ({ eq: async () => ({ error: null }) }) }),
     },
@@ -58,4 +58,18 @@ it("rejects normal passwords over the maximum before changing Auth", async () =>
   const api = backend("usuario")
   expect((await api.invoke({ action: "change-password", password: "Aa12345678901X" })).status).toBe(400)
   expect(api.updateUser).not.toHaveBeenCalled()
+})
+it("blocks deleting active users before calling Auth", async () => {
+  const api = backend("jefe", true)
+  expect((await api.invoke({ action: "delete-user", profileId: "12345678-1234-1234-1234-123456789abc" })).status).toBe(409)
+  expect(api.updateUser).not.toHaveBeenCalled()
+})
+it.each(["usuario", "tecnico"])("prevents %s from deleting users", async role => {
+  const api = backend(role)
+  expect((await api.invoke({ action: "delete-user", profileId: "12345678-1234-1234-1234-123456789abc" })).status).toBe(403)
+})
+it("blocks Auth access and deletes the inactive account through the guarded RPC", async () => {
+  const api = backend()
+  expect((await api.invoke({ action: "delete-user", profileId: "12345678-1234-1234-1234-123456789abc" })).status).toBe(200)
+  expect(api.updateUser).toHaveBeenCalledWith("12345678-1234-1234-1234-123456789abc", { ban_duration: "876000h" })
 })

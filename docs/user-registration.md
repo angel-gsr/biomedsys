@@ -1,5 +1,7 @@
 # Alta de usuarios
 
+El jefe puede eliminar una cuenta únicamente después de desactivarla y confirmar el nombre e ID. La migración 31 conserva el perfil como referencia histórica con `deleted_at`, lo oculta del directorio e impide su reactivación. La función administrativa bloquea Auth antes de la eliminación lógica. No borra reportes, órdenes, adjuntos ni auditoría.
+
 Actualización: 25 de noviembre de 2026. Migración `28_user_registration.sql` y función `admin-users`.
 
 - El jefe registra nombres y apellidos separados, edad (18–100 años), departamento del catálogo y teléfono opcional de exactamente 10 dígitos. Los teléfonos anteriores se conservan hasta que se editen.

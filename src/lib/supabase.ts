@@ -1042,6 +1042,7 @@ export async function listProfiles() {
   const { data, error } = await supabase
     .from("profiles")
     .select("id, institutional_id, full_name, role, department, active, must_change_password")
+    .is("deleted_at", null)
     .order("institutional_id")
 
   if (error) throw error
@@ -1951,4 +1952,14 @@ export async function listQuoteStatusHistory(quoteId: number, client: SupabaseCl
     .eq("quote_id", quoteId).order("changed_at", { ascending: false })
   if (error) throw error
   return (data || []) as QuoteStatusHistory[]
+}
+
+export async function deleteInactiveUser(profileId: string) {
+  const { data, error } = await requireSupabase(supabase).functions.invoke("admin-users", { body: { action: "delete-user", profileId } })
+  if (error) {
+    const response = (error as { context?: Response }).context
+    const details = await response?.clone?.().json().catch(() => null)
+    throw new Error(details?.error || error.message)
+  }
+  if (data?.error) throw new Error(data.error)
 }

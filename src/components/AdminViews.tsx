@@ -8,6 +8,7 @@ import { PrivateAttachmentPanel } from "./PrivateAttachmentPanel"
 import {
   createQuote,
   createAccessRequest,
+  deleteInactiveUser,
   listUserDepartments,
   listAuditLog,
   listAccessRequests,
@@ -249,6 +250,8 @@ export function UserPermissionsView() {
   const [editing, setEditing] = useState<Profile | null>(null)
   const [reason, setReason] = useState("")
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState<Profile | null>(null)
+  const [deleteError, setDeleteError] = useState("")
   const [requestOpen, setRequestOpen] = useState(false)
   const [showIdInfo, setShowIdInfo] = useState(false)
   const [requests, setRequests] = useState<AccessRequest[]>([])
@@ -376,7 +379,7 @@ export function UserPermissionsView() {
                       <td>
                         <span className={`badge badge-${profile.active ? "success" : "neutral"}`}>{profile.active ? "Activo" : "Inactivo"}</span>
                       </td>
-                      <td><button type="button" className="row-action" onClick={() => { setEditing({ ...profile }); setReason(""); setError("") }}>Editar</button></td>
+                      <td><button type="button" className="row-action" onClick={() => { setEditing({ ...profile }); setReason(""); setError("") }}>Editar</button>{!profile.active && <button type="button" className="row-action" onClick={() => { setDeleting(profile); setDeleteError("") }}>Eliminar usuario</button>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -387,6 +390,7 @@ export function UserPermissionsView() {
         )}
       </section>
       <section className="panel"><div className="panel-head"><div><h3>Solicitudes de alta</h3><p>La identidad Auth se crea únicamente mediante la función backend protegida.</p></div><UserPlus size={21} /></div><div className="table-wrap"><table><thead><tr><th>ID institucional</th><th>Nombre</th><th>Rol solicitado</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{requests.map((row) => <tr key={row.id}><td>{row.institutional_id}</td><td>{row.full_name}</td><td>{row.role}</td><td>{row.status}</td><td>{row.status === "pendiente" ? <button type="button" className="row-action" onClick={() => { setProvisioning(row); setTemporaryPassword(""); setError("") }}>Crear cuenta Auth</button> : "—"}</td></tr>)}</tbody></table></div>{requests.length === 0 && <div className="empty-state"><h3>Sin solicitudes</h3></div>}</section>
+      {deleting && <div className="modal-layer"><div className="modal" role="dialog" aria-modal="true" aria-labelledby="delete-user-title"><h2 id="delete-user-title">¿Eliminar usuario?</h2><p>{deleting.full_name} · {deleting.institutional_id}</p><p>Se eliminará del directorio y se bloqueará su acceso. Sus reportes, órdenes e historial se conservarán para mantener la trazabilidad. Esta acción no permite reactivar la cuenta.</p>{deleteError && <p role="alert" className="form-error">{deleteError}</p>}<div className="modal-footer"><Button disabled={saving} variant="secondary" onClick={() => setDeleting(null)}>Cancelar</Button><Button disabled={saving} variant="danger" onClick={async () => { setSaving(true); setDeleteError(""); try { await deleteInactiveUser(deleting.id); setProfiles(current => current.filter(p => p.id !== deleting.id)); setDeleting(null) } catch (cause) { setDeleteError(cause instanceof Error ? cause.message : "No fue posible eliminar la cuenta") } finally { setSaving(false) } }}>{saving ? "Eliminando..." : "Confirmar eliminación"}</Button></div></div></div>}
       {requestOpen && <div className="modal-layer"><form className="modal" onSubmit={submitAccessRequest}><div className="modal-head"><div><span className="eyebrow">Alta de usuario</span><h2>Datos de la nueva cuenta</h2><p>El identificador se asigna automáticamente al guardar. Después podrás establecer la contraseña temporal.</p></div></div><div className="form-grid">
         <div className="field span-2"><div style={{ display: "flex", alignItems: "center", gap: 8 }}><label htmlFor="registration-role">Rol *</label><button type="button" className="icon-btn" aria-label="Información del identificador automático" aria-expanded={showIdInfo} aria-controls="registration-id-info" onClick={() => setShowIdInfo(value => !value)}><Info size={18} /></button></div><select id="registration-role" value={request.role} onChange={event => setRequest({ ...request, role: event.target.value as Profile["role"] })}><option value="usuario">Usuario</option><option value="tecnico">Ingeniero biomédico</option><option value="jefe">Jefe / administrador</option></select>{showIdInfo && <p id="registration-id-info" role="note">ID automático: {request.role === "jefe" ? "00" : request.role === "tecnico" ? "01" : "02"} + consecutivo desde 181000. Se confirma al registrar; no es editable.</p>}</div>
         <label className="field"><span>Nombres *</span><input required minLength={2} maxLength={80} autoComplete="given-name" pattern="[\p{L}][\p{L} '.’\-]*[\p{L}]" value={request.firstName} onChange={event => setRequest({ ...request, firstName: event.target.value })} /></label>

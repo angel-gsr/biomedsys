@@ -527,10 +527,12 @@ function ReportTray({
   setView,
   openReport,
   onOpenTechnovigilance,
+  onOpenOrder,
 }: {
   role: Role
   setView: (v: View) => void
   openReport: () => void
+  onOpenOrder: (id: number) => void
   onOpenTechnovigilance: (id: number) => void
 }) {
   const [reports, setReports] =
@@ -706,7 +708,7 @@ function ReportTray({
                 </div>
                 {role === "jefe" && <ReportWorkflowEditor report={report} technicians={technicians} onCreated={() => listReports().then(setReports).catch(() => undefined)} />}
                 {role !== "jefe" && <><Badge>{report.priority}</Badge><Badge>{report.status}</Badge></>}
-                {role === "jefe" && <Button variant="secondary" onClick={() => setView("orden")}>Ver órdenes</Button>}
+                {role !== "usuario" && report.maintenance_id && <Button variant="secondary" onClick={() => onOpenOrder(report.maintenance_id!)}>Ver orden</Button>}
                 <button type="button" className="icon-btn" aria-label={role === "usuario" ? `Ver reporte ${report.report_number}` : `Abrir Tecnovigilancia de ${report.report_number}`} onClick={() => role === "usuario" ? setPreviewId(report.id) : onOpenTechnovigilance(report.id)}><ChevronRight size={18} /></button>
               </article>
             ))}
@@ -1080,6 +1082,8 @@ export default function App() {
   )
 
   const [reportOpen, setReportOpen] = useState(false)
+  const [requestedOrderId, setRequestedOrderId] = useState<number | null>(null)
+  useEffect(() => { if (view !== "orden") setRequestedOrderId(null) }, [view])
   const [technovigilanceReportId, setTechnovigilanceReportId] = useState<number | null>(null)
 
   const [loadingSession, setLoadingSession] = useState(true)
@@ -1229,7 +1233,7 @@ export default function App() {
               }}
             />
           )}
-          {view === "orden" && <ServiceOrdersView role={role} />}
+          {view === "orden" && <ServiceOrdersView role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView("reportes") }} />}
           {view === "calendario" && <GeneralCalendar role={role} onMaintenance={() => setView("orden")} />}
           {view === "mantenimiento" && <MaintenanceView role={role} />}
           {view === "avisos" && <NoticesView />}
@@ -1247,6 +1251,7 @@ export default function App() {
               role={role}
               setView={setView}
               openReport={() => setReportOpen(true)}
+              onOpenOrder={id => { setRequestedOrderId(id); setView("orden") }}
               onOpenTechnovigilance={id => { setTechnovigilanceReportId(id); setView("tecnovigilancia") }}
             />
           )}
