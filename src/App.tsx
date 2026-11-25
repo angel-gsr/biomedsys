@@ -661,7 +661,7 @@ function ReportTray({
                     <span>Acción inicial: {report.action_taken || "No registrada"}</span>
                   </details>
                 </div>
-                {role === "jefe" && (report.maintenance_id ? <div className="report-workflow-editor"><span className="badge badge-success">Orden vinculada</span><span className="badge badge-success">{report.status}</span></div> : <Button variant="secondary" onClick={() => onAssignOrder(report.id)}>Clasificar y crear orden</Button>)}
+                {role === "jefe" && (report.maintenance_id ? <div className="report-workflow-editor"><span className="badge badge-success">Orden vinculada</span><Badge>{report.status}</Badge></div> : <Button variant="secondary" onClick={() => onAssignOrder(report.id)}>Clasificar y crear orden</Button>)}
                 {role !== "jefe" && <><Badge>{report.priority}</Badge><Badge>{report.status}</Badge></>}
                 {role !== "usuario" && report.maintenance_id && <Button variant="secondary" onClick={() => onOpenOrder(report.maintenance_id!)}>Ver orden</Button>}
                 <button type="button" className="icon-btn" aria-label={role === "usuario" ? `Ver reporte ${report.report_number}` : `Abrir Tecnovigilancia de ${report.report_number}`} onClick={() => role === "usuario" ? setPreviewId(report.id) : onOpenTechnovigilance(report.id)}><ChevronRight size={18} /></button>
