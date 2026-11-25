@@ -1,4 +1,5 @@
 import { t } from "../lib/i18n"
+import { EquipmentUseRequest } from "./EquipmentUseRequest"
 import { EquipmentQrScanner } from "./EquipmentQrScanner";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
@@ -187,7 +188,7 @@ export function Inventory({
     <>
       <PageIntro
         title={role === "usuario" ? t("Consultar equipo") : t("Inventario de activos")}
-        action={role === "jefe" && configured ? <InventoryEquipmentManager onChanged={() => setReloadToken((value) => value + 1)} /> : undefined}
+        action={configured && role === "usuario" ? <EquipmentUseRequest/> : role === "jefe" && configured ? <InventoryEquipmentManager onChanged={() => setReloadToken((value) => value + 1)} /> : undefined}
         description={role === "usuario"
           ? t("Consulta disponibilidad, identificación y ubicación sin exponer datos técnicos restringidos.")
           : t("Consulta los equipos médicos, su riesgo y la información técnica validada.")}

@@ -635,6 +635,14 @@ Object.assign(dictionary,{
  "Ver orden que bloquea el horario":"View the order blocking this time slot",
  "Volver a Mantenimiento":"Back to Maintenance",
 })
+Object.assign(dictionary,{
+ "Solicitar equipo":"Request equipment","Ubicación de uso":"Usage location","Registrar solicitud":"Submit request","Cerrar solicitud":"Close request",
+ "Solicitud registrada. Consulta el horario en Calendario → Uso de equipo.":"Request registered. Check Calendar → Equipment use for the schedule.",
+ "Tu cuenta se registra como solicitante. El horario se reserva si el equipo está operativo y no coincide con otro uso o mantenimiento. No incluyas datos de pacientes.":"Your account is recorded as the requester. The time slot is reserved if the equipment is operational and does not overlap another use or maintenance. Do not include patient data.",
+ "El equipo no está operativo y no puede reservarse.":"This equipment is not operational and cannot be reserved.",
+ "No fue posible registrar la solicitud.":"Unable to register the request.","Cancelar solicitud":"Cancel request",
+ "¿Cancelar esta solicitud y liberar el equipo?":"Cancel this request and release the equipment?","No fue posible cancelar la solicitud.":"Unable to cancel the request.",
+})
 export function t(value:string):string {
  if(preferences().language!=="en")return value
  const exact=dictionary[value];if(exact)return exact

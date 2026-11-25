@@ -1,13 +1,27 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { calendarEventsOverlap, eventOnDay, localDateKey, type CalendarEvent } from "../lib/generalCalendar"
-const services = vi.hoisted(() => ({ listGeneralCalendar: vi.fn(), generalCalendarOptions: vi.fn(), saveOrganizedEvent: vi.fn().mockResolvedValue(undefined), cancelOrganizedEvent: vi.fn() }))
+const services = vi.hoisted(() => ({ listGeneralCalendar: vi.fn(), generalCalendarOptions: vi.fn(), saveOrganizedEvent: vi.fn().mockResolvedValue(undefined), cancelOrganizedEvent: vi.fn(),cancelEquipmentUse:vi.fn().mockResolvedValue(undefined) }))
 vi.mock("../lib/generalCalendar", async (original) => ({ ...(await original<typeof import("../lib/generalCalendar")>()), ...services }))
 import { GeneralCalendar } from "./GeneralCalendar"
 afterEach(cleanup)
 const now = new Date(), day = localDateKey(now)
 const sample = (kind: CalendarEvent["kind"], start = `${day}T10:00:00`, end: string | null = `${day}T12:00:00`): CalendarEvent => ({ event_key: kind, kind, title: `${kind} de prueba`, starts_at: start, ends_at: end, location_id: 1, location_name: "Quirófano 1", equipment_ids: ["asset"], status: "programado", blocks_resources: true })
 describe("general calendar", () => {
+  it("lets the requester cancel their own equipment-use entry and refreshes the agenda",async()=>{
+    const booking={...sample("uso_equipo"),event_key:"reserva:9",can_cancel:true,responsible_name:"Solicitante de prueba"}
+    services.listGeneralCalendar.mockResolvedValue([booking]);services.generalCalendarOptions.mockResolvedValue({locations:[],equipment:[],programs:[],technicians:[]})
+    const confirm=vi.spyOn(window,"confirm").mockReturnValue(true)
+    try{
+      render(<GeneralCalendar role="usuario"/>);await screen.findByText("uso_equipo de prueba")
+      fireEvent.click(screen.getByRole("button",{name:"Ver evento"}))
+      expect(screen.getByRole("dialog").textContent).toContain("Solicitante de prueba")
+      services.listGeneralCalendar.mockResolvedValue([])
+      fireEvent.click(screen.getByRole("button",{name:"Cancelar solicitud"}))
+      await waitFor(()=>expect(services.cancelEquipmentUse).toHaveBeenCalledWith(9))
+      await waitFor(()=>expect(screen.queryByText("uso_equipo de prueba")).toBeNull())
+    }finally{confirm.mockRestore()}
+  })
   it("filters with the colored buttons and refreshes completion and cancellation from the source",async()=>{
     const maintenance=sample("mantenimiento",`${day}T10:00:00`,null)
     services.listGeneralCalendar.mockResolvedValue([maintenance,sample("cirugia")]);services.generalCalendarOptions.mockResolvedValue({locations:[],equipment:[],programs:[],technicians:[]})
