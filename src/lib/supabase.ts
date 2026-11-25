@@ -1,3 +1,4 @@
+import { tabAuthOptions } from "./tabSession"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 export type Role = "jefe" | "tecnico" | "usuario"
@@ -438,7 +439,7 @@ export const isBusinessCompletionEnabled =
   import.meta.env.VITE_BUSINESS_COMPLETION_ENABLED === "true"
 
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, { auth: tabAuthOptions })
   : null
 
 export function authEmailForInstitutionalId(institutionalId: string) {
@@ -1962,4 +1963,10 @@ export async function deleteInactiveUser(profileId: string) {
     throw new Error(details?.error || error.message)
   }
   if (data?.error) throw new Error(data.error)
+}
+
+export async function listUserPresence() {
+  const { data, error } = await requireSupabase(supabase).rpc("list_user_presence")
+  if (error) throw error
+  return (data || []) as { profile_id: string; online: boolean }[]
 }

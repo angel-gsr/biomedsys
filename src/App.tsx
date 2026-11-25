@@ -1,3 +1,4 @@
+import { UserPresence } from "./components/UserPresence"
 import { HospitalAlertHub } from "./components/HospitalAlertHub"
 import { IncidentPhotos } from "./components/IncidentPhotos"
 import { formatIncidentLabel } from "./lib/incidentLabels"
@@ -1193,12 +1194,13 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <UserPresence profileId={profile.id} />
       <Sidebar
         profile={profile}
         view={view}
         setView={setView}
         onLogout={() => {
-          void supabase?.auth.signOut()
+          void supabase?.auth.signOut({ scope: "local" })
           setProfile(null)
         }}
         onProfile={() => setView("perfil")}
@@ -1257,7 +1259,7 @@ export default function App() {
           )}
         </main>
       </div>
-      <BottomNav role={role} view={view} setView={setView} onLogout={() => { void supabase?.auth.signOut(); setProfile(null) }} />
+      <BottomNav role={role} view={view} setView={setView} onLogout={() => { void supabase?.auth.signOut({ scope: "local" }); setProfile(null) }} />
       {reportOpen && <ReportModal role={role} onClose={() => setReportOpen(false)} />}
       {(profile.must_change_password || passwordChangePending) && <PasswordChangeGate onStart={() => setPasswordChangePending(true)} onCompleted={async () => {
         const result = await supabase?.auth.signOut({ scope: "local" })

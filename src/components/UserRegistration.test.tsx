@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({ create: vi.fn().mockResolvedValue(undefined), 
 vi.mock("../lib/supabase", async original => ({
   ...(await original<typeof import("../lib/supabase")>()),
   isOperationalCompletionEnabled: true,
+  listUserPresence: vi.fn().mockResolvedValue([{ profile_id: "active", online: false }]),
   listProfiles: vi.fn().mockResolvedValue([{ id: "inactive", institutional_id: "02181000", full_name: "Cuenta Inactiva", active: false, role: "usuario" }, { id: "active", institutional_id: "02181001", full_name: "Cuenta Activa", active: true, role: "usuario" }]),
   listAccessRequests: vi.fn().mockResolvedValue([]),
   listUserDepartments: vi.fn().mockResolvedValue(["Urgencias", "CEYE"]),
@@ -44,4 +45,8 @@ it("only offers deletion for inactive accounts and requires confirmation", async
   await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith("inactive"))
   await waitFor(() => expect(screen.queryByText("Cuenta Inactiva")).toBeNull())
   expect(screen.getByText("Cuenta Activa")).toBeTruthy()
+  expect(screen.getByText("Habilitado")).toBeTruthy()
+  // A disconnected but enabled user cannot be deleted.
+  expect(screen.getByText("Inactivo")).toBeTruthy()
+  expect(screen.queryByRole("button", { name: "Eliminar usuario" })).toBeNull()
 })

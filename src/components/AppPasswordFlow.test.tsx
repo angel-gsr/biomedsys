@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from "vitest"
 const state = vi.hoisted(() => ({ getCurrentProfile: vi.fn(), changeOwnPassword: vi.fn(), signOut: vi.fn(), authChanged: null as null | ((event: string) => void) }))
 vi.mock("../lib/supabase", async (original) => ({ ...(await original<typeof import("../lib/supabase")>()), getCurrentProfile: state.getCurrentProfile, changeOwnPassword: state.changeOwnPassword, supabase: { auth: { onAuthStateChange: (callback: (event: string) => void) => { state.authChanged = callback; return { data: { subscription: { unsubscribe: vi.fn() } } } }, signOut: state.signOut } } }))
 vi.mock("./DashboardViews", () => ({ Dashboard: () => <div>Dashboard de prueba</div> }))
+vi.mock("./UserPresence", () => ({ UserPresence: () => null }))
 vi.mock("./HospitalAlertHub", () => ({ HospitalAlertHub: () => null }))
 import App from "../App"
 afterEach(cleanup)

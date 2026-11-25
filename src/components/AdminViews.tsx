@@ -10,6 +10,7 @@ import {
   createAccessRequest,
   deleteInactiveUser,
   listUserDepartments,
+  listUserPresence,
   listAuditLog,
   listAccessRequests,
   listQuoteItems,
@@ -86,7 +87,7 @@ export function QuotationsView() {
                     <th>Proveedor</th>
                     <th>Equipo</th>
                     <th>Monto</th>
-                    <th>Estado</th>
+                    <th>Conexión</th><th>Acceso</th>
                     {isBusinessCompletionEnabled && <th>Detalle</th>}
                   </tr>
                 </thead>
@@ -250,6 +251,14 @@ export function UserPermissionsView() {
   const [editing, setEditing] = useState<Profile | null>(null)
   const [reason, setReason] = useState("")
   const [saving, setSaving] = useState(false)
+  const [presence, setPresence] = useState<Record<string, boolean>>({})
+  const [presenceError, setPresenceError] = useState(false)
+  useEffect(() => {
+    let mounted = true
+    const load = () => { listUserPresence().then(rows => { if (mounted) { setPresence(Object.fromEntries(rows.map(row => [row.profile_id,row.online]))); setPresenceError(false) } }).catch(() => { if (mounted) setPresenceError(true) }) }
+    load(); const timer = window.setInterval(load,15000); window.addEventListener("focus",load)
+    return () => { mounted=false; clearInterval(timer); window.removeEventListener("focus",load) }
+  }, [])
   const [deleting, setDeleting] = useState<Profile | null>(null)
   const [deleteError, setDeleteError] = useState("")
   const [requestOpen, setRequestOpen] = useState(false)
@@ -294,7 +303,7 @@ export function UserPermissionsView() {
       if (previous && previous.active !== updated.active) {
         try { await syncAuthStatus(updated.id, updated.active) }
         catch (cause) {
-          setError(`El perfil quedó ${updated.active ? "activo" : "inactivo"} y RLS ya aplica, pero Auth no pudo sincronizarse: ${cause instanceof Error ? cause.message : "error no identificado"}`)
+          setError(`El perfil quedó ${updated.active ? "habilitado" : "inhabilitado"} y RLS ya aplica, pero Auth no pudo sincronizarse: ${cause instanceof Error ? cause.message : "error no identificado"}`)
           return
         }
       }
@@ -352,7 +361,7 @@ export function UserPermissionsView() {
             <div className="filter-bar">
               <label className="search-box"><Search size={18} /><input aria-label="Buscar usuario" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, ID o departamento..." /></label>
               <label className="inventory-select"><span>Rol</span><select value={role} onChange={(event) => setRole(event.target.value)}><option value="">Todos</option><option value="usuario">Usuario</option><option value="tecnico">Técnico</option><option value="jefe">Jefe</option></select></label>
-              <label className="inventory-select"><span>Estado</span><select value={active} onChange={(event) => setActive(event.target.value)}><option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option></select></label>
+              <label className="inventory-select"><span>Acceso</span><select value={active} onChange={(event) => setActive(event.target.value)}><option value="">Todos</option><option value="true">Habilitados</option><option value="false">Inhabilitados</option></select></label>
             </div>
             <div className="table-wrap">
               <table>
@@ -362,7 +371,7 @@ export function UserPermissionsView() {
                     <th>Nombre</th>
                     <th>Rol</th>
                     <th>Departamento</th>
-                    <th>Estado</th>
+                    <th>Conexión</th><th>Acceso</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -377,7 +386,8 @@ export function UserPermissionsView() {
                       <td>{profile.role}</td>
                       <td>{profile.department || "—"}</td>
                       <td>
-                        <span className={`badge badge-${profile.active ? "success" : "neutral"}`}>{profile.active ? "Activo" : "Inactivo"}</span>
+                        <span className={`badge badge-${presence[profile.id] && profile.active ? "success" : "neutral"}`}>{presenceError ? "Sin conexión al estado" : presence[profile.id] && profile.active ? "Activo" : "Inactivo"}</span>
+                      </td><td><span className={`badge badge-${profile.active ? "success" : "neutral"}`}>{profile.active ? "Habilitado" : "Inhabilitado"}</span>
                       </td>
                       <td><button type="button" className="row-action" onClick={() => { setEditing({ ...profile }); setReason(""); setError("") }}>Editar</button>{!profile.active && <button type="button" className="row-action" onClick={() => { setDeleting(profile); setDeleteError("") }}>Eliminar usuario</button>}</td>
                     </tr>
@@ -389,8 +399,8 @@ export function UserPermissionsView() {
           </>
         )}
       </section>
-      <section className="panel"><div className="panel-head"><div><h3>Solicitudes de alta</h3><p>La identidad Auth se crea únicamente mediante la función backend protegida.</p></div><UserPlus size={21} /></div><div className="table-wrap"><table><thead><tr><th>ID institucional</th><th>Nombre</th><th>Rol solicitado</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{requests.map((row) => <tr key={row.id}><td>{row.institutional_id}</td><td>{row.full_name}</td><td>{row.role}</td><td>{row.status}</td><td>{row.status === "pendiente" ? <button type="button" className="row-action" onClick={() => { setProvisioning(row); setTemporaryPassword(""); setError("") }}>Crear cuenta Auth</button> : "—"}</td></tr>)}</tbody></table></div>{requests.length === 0 && <div className="empty-state"><h3>Sin solicitudes</h3></div>}</section>
-      {deleting && <div className="modal-layer"><div className="modal" role="dialog" aria-modal="true" aria-labelledby="delete-user-title"><h2 id="delete-user-title">¿Eliminar usuario?</h2><p>{deleting.full_name} · {deleting.institutional_id}</p><p>Se eliminará del directorio y se bloqueará su acceso. Sus reportes, órdenes e historial se conservarán para mantener la trazabilidad. Esta acción no permite reactivar la cuenta.</p>{deleteError && <p role="alert" className="form-error">{deleteError}</p>}<div className="modal-footer"><Button disabled={saving} variant="secondary" onClick={() => setDeleting(null)}>Cancelar</Button><Button disabled={saving} variant="danger" onClick={async () => { setSaving(true); setDeleteError(""); try { await deleteInactiveUser(deleting.id); setProfiles(current => current.filter(p => p.id !== deleting.id)); setDeleting(null) } catch (cause) { setDeleteError(cause instanceof Error ? cause.message : "No fue posible eliminar la cuenta") } finally { setSaving(false) } }}>{saving ? "Eliminando..." : "Confirmar eliminación"}</Button></div></div></div>}
+      <section className="panel"><div className="panel-head"><div><h3>Solicitudes de alta</h3><p>La identidad Auth se crea únicamente mediante la función backend protegida.</p></div><UserPlus size={21} /></div><div className="table-wrap"><table><thead><tr><th>ID institucional</th><th>Nombre</th><th>Rol solicitado</th><th>Conexión</th><th>Acceso</th><th>Acción</th></tr></thead><tbody>{requests.map((row) => <tr key={row.id}><td>{row.institutional_id}</td><td>{row.full_name}</td><td>{row.role}</td><td>{row.status}</td><td>{row.status === "pendiente" ? <button type="button" className="row-action" onClick={() => { setProvisioning(row); setTemporaryPassword(""); setError("") }}>Crear cuenta Auth</button> : "—"}</td></tr>)}</tbody></table></div>{requests.length === 0 && <div className="empty-state"><h3>Sin solicitudes</h3></div>}</section>
+      {deleting && <div className="modal-layer"><div className="modal" role="dialog" aria-modal="true" aria-labelledby="delete-user-title"><h2 id="delete-user-title">¿Eliminar usuario?</h2><p>{deleting.full_name} · {deleting.institutional_id}</p><p>La cuenta inhabilitada se eliminará del directorio y se bloqueará su acceso. Sus reportes, órdenes e historial se conservarán para mantener la trazabilidad. Esta acción no permite reactivar la cuenta.</p>{deleteError && <p role="alert" className="form-error">{deleteError}</p>}<div className="modal-footer"><Button disabled={saving} variant="secondary" onClick={() => setDeleting(null)}>Cancelar</Button><Button disabled={saving} variant="danger" onClick={async () => { setSaving(true); setDeleteError(""); try { await deleteInactiveUser(deleting.id); setProfiles(current => current.filter(p => p.id !== deleting.id)); setDeleting(null) } catch (cause) { setDeleteError(cause instanceof Error ? cause.message : "No fue posible eliminar la cuenta") } finally { setSaving(false) } }}>{saving ? "Eliminando..." : "Confirmar eliminación"}</Button></div></div></div>}
       {requestOpen && <div className="modal-layer"><form className="modal" onSubmit={submitAccessRequest}><div className="modal-head"><div><span className="eyebrow">Alta de usuario</span><h2>Datos de la nueva cuenta</h2><p>El identificador se asigna automáticamente al guardar. Después podrás establecer la contraseña temporal.</p></div></div><div className="form-grid">
         <div className="field span-2"><div style={{ display: "flex", alignItems: "center", gap: 8 }}><label htmlFor="registration-role">Rol *</label><button type="button" className="icon-btn" aria-label="Información del identificador automático" aria-expanded={showIdInfo} aria-controls="registration-id-info" onClick={() => setShowIdInfo(value => !value)}><Info size={18} /></button></div><select id="registration-role" value={request.role} onChange={event => setRequest({ ...request, role: event.target.value as Profile["role"] })}><option value="usuario">Usuario</option><option value="tecnico">Ingeniero biomédico</option><option value="jefe">Jefe / administrador</option></select>{showIdInfo && <p id="registration-id-info" role="note">ID automático: {request.role === "jefe" ? "00" : request.role === "tecnico" ? "01" : "02"} + consecutivo desde 181000. Se confirma al registrar; no es editable.</p>}</div>
         <label className="field"><span>Nombres *</span><input required minLength={2} maxLength={80} autoComplete="given-name" pattern="[\p{L}][\p{L} '.’\-]*[\p{L}]" value={request.firstName} onChange={event => setRequest({ ...request, firstName: event.target.value })} /></label>
@@ -400,7 +410,7 @@ export function UserPermissionsView() {
         <label className="field span-2"><span>Departamento *</span><select required value={request.department} onChange={event => setRequest({ ...request, department: event.target.value })}><option value="">Selecciona un departamento</option>{departments.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
       </div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-footer"><Button variant="secondary" onClick={() => setRequestOpen(false)}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? "Guardando..." : "Registrar usuario"}</Button></div></form></div>}
       {provisioning && <div className="modal-layer"><form className="modal" onSubmit={submitProvision}><div className="modal-head"><div><span className="eyebrow">Backend protegido</span><h2>Crear cuenta {provisioning.institutional_id}</h2><p>La contraseña temporal se envía directamente a la función y no se almacena en React ni PostgreSQL.</p></div></div><label className="field"><span>Contraseña temporal *</span><input required type="password" minLength={6} maxLength={12} autoComplete="new-password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} /><small>Entre 6 y 12 caracteres, con mayúscula, minúscula y número.</small></label>{error && <p className="form-error">{error}</p>}<div className="modal-footer"><Button variant="secondary" onClick={() => { setProvisioning(null); setTemporaryPassword("") }}>Cancelar</Button><Button type="submit">{saving ? "Creando..." : "Crear cuenta"}</Button></div></form></div>}
-      {editing && <div className="modal-layer"><div className="modal"><div className="modal-head"><div><span className="eyebrow">Perfil institucional</span><h2>{editing.full_name}</h2><p>{editing.institutional_id}</p></div></div><div className="form-grid"><label className="field span-2"><span>Nombre completo</span><input value={editing.full_name} onChange={(event) => setEditing({ ...editing, full_name: event.target.value })} /></label><label className="field"><span>Departamento</span><select required value={editing.department || ""} onChange={(event) => setEditing({ ...editing, department: event.target.value || null })}><option value="">Selecciona un departamento</option>{departments.map(name => <option key={name} value={name}>{name}</option>)}</select></label><label className="field"><span>Rol</span><select value={editing.role} onChange={(event) => setEditing({ ...editing, role: event.target.value as Profile["role"] })}><option value="usuario">Usuario</option><option value="tecnico">Técnico</option><option value="jefe">Jefe</option></select></label><label className="field"><span>Estado</span><select value={String(editing.active)} onChange={(event) => setEditing({ ...editing, active: event.target.value === "true" })}><option value="true">Activo</option><option value="false">Inactivo</option></select></label><label className="field span-2"><span>Motivo del cambio *</span><textarea required value={reason} onChange={(event) => setReason(event.target.value)} /></label></div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-footer"><Button variant="secondary" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={saveProfile}>{saving ? "Guardando..." : "Guardar cambios"}</Button></div></div></div>}
+      {editing && <div className="modal-layer"><div className="modal"><div className="modal-head"><div><span className="eyebrow">Perfil institucional</span><h2>{editing.full_name}</h2><p>{editing.institutional_id}</p></div></div><div className="form-grid"><label className="field span-2"><span>Nombre completo</span><input value={editing.full_name} onChange={(event) => setEditing({ ...editing, full_name: event.target.value })} /></label><label className="field"><span>Departamento</span><select required value={editing.department || ""} onChange={(event) => setEditing({ ...editing, department: event.target.value || null })}><option value="">Selecciona un departamento</option>{departments.map(name => <option key={name} value={name}>{name}</option>)}</select></label><label className="field"><span>Rol</span><select value={editing.role} onChange={(event) => setEditing({ ...editing, role: event.target.value as Profile["role"] })}><option value="usuario">Usuario</option><option value="tecnico">Técnico</option><option value="jefe">Jefe</option></select></label><label className="field"><span>Acceso a la cuenta</span><select value={String(editing.active)} onChange={(event) => setEditing({ ...editing, active: event.target.value === "true" })}><option value="true">Habilitado</option><option value="false">Inhabilitado</option></select></label><label className="field span-2"><span>Motivo del cambio *</span><textarea required value={reason} onChange={(event) => setReason(event.target.value)} /></label></div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-footer"><Button variant="secondary" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={saveProfile}>{saving ? "Guardando..." : "Guardar cambios"}</Button></div></div></div>}
     </>
   )
 }

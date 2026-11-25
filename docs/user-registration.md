@@ -1,5 +1,9 @@
 # Alta de usuarios
 
+La migración 32 separa presencia y permiso: «Activo/Inactivo» refleja conexión reciente (heartbeat cada 30 segundos, vencimiento a los 90 segundos; el directorio consulta cada 15 segundos). «Habilitado/Inhabilitado» controla acceso y eliminación. Un usuario desconectado y habilitado no se puede eliminar. La presencia se calcula por múltiples sesiones; cerrar una no desconecta las demás.
+
+La autenticación ahora guarda credenciales en `sessionStorage`, con canal y bloqueo separados por documento. Permite distintas cuentas por pestaña; cerrar sesión usa alcance `local`. Recargar mantiene la sesión y cerrar la pestaña borra su almacenamiento. Las sesiones antiguas de `localStorage` no se importan: después de actualizar es necesario iniciar sesión nuevamente. Duplicar una pestaña puede heredar su sesión inicial por comportamiento del navegador; para cuentas independientes se debe iniciar sesión por separado.
+
 El jefe puede eliminar una cuenta únicamente después de desactivarla y confirmar el nombre e ID. La migración 31 conserva el perfil como referencia histórica con `deleted_at`, lo oculta del directorio e impide su reactivación. La función administrativa bloquea Auth antes de la eliminación lógica. No borra reportes, órdenes, adjuntos ni auditoría.
 
 Actualización: 25 de noviembre de 2026. Migración `28_user_registration.sql` y función `admin-users`.
