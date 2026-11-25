@@ -1,3 +1,4 @@
+import { MaintenancePlanner } from "./MaintenancePlanner"
 import { t } from "../lib/i18n"
 import { ServiceOrderDocument } from "./ServiceOrderDocument"
 import { FilePicker } from "./FilePicker"
@@ -123,6 +124,7 @@ function useMaintenanceOverview() {
 
 export function MaintenanceView({ role }: { role: Role }) {
   const state = useMaintenanceOverview()
+  const [showPlanner,setShowPlanner]=useState(false)
   const counts = useMemo(
     () =>
       state.maintenances.reduce<Record<string, number>>((result, item) => {
@@ -149,9 +151,11 @@ export function MaintenanceView({ role }: { role: Role }) {
   return (
     <>
       <PageIntro
+        action={role === "jefe" ? <Button icon={CalendarDays} onClick={()=>setShowPlanner(true)}>{t("Programar mantenimiento")}</Button> : undefined}
         title={t("Mantenimiento")}
         description={t("Órdenes y actividades realmente registradas y visibles para tu sesión.")}
       />
+      {showPlanner && <MaintenancePlanner onClose={()=>setShowPlanner(false)} onSaved={()=>{setShowPlanner(false);state.retry()}}/>}
       <section className="maintenance-catalog">
         {state.catalog.map((item) => (
           <article className="panel maintenance-type" key={item.code}>

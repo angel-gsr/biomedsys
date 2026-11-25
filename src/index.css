@@ -620,7 +620,7 @@ td small { color: var(--text-secondary, #8293a2); margin-top: 3px; font-size: 8p
   .kpi-card strong { font-size: 20px; }
   .dashboard-grid { display: block; }
   .dashboard-grid > .panel { margin-bottom: 12px; }
-  .chart-panel { display: none; }
+  .chart-panel { display: block; }
   .table-wrap table { min-width: 760px; }
   .orders-panel .panel-head { padding-inline: 14px; }
   .tech-summary { grid-template-columns: 1fr; }
@@ -975,3 +975,19 @@ td small { color: var(--text-secondary, #8293a2); margin-top: 3px; font-size: 8p
 .dashboard-queue.has-recent > .panel-head { grid-column:1/-1; }
 .dashboard-queue.has-recent > .dashboard-recent { border-left:1px solid var(--line); }
 @media(max-width:900px){.dashboard-queue.has-recent{display:block}.dashboard-queue.has-recent > .dashboard-recent{border-left:0}}
+
+/* Portal cards must not mix their tint with white in dark mode. */
+[data-theme="dark"] .hospital-code-grid .hospital-code-card { background:color-mix(in srgb,var(--hospital-code-tint) 12%,#182a3c);color:#edf4fb; }
+[data-theme="dark"] .hospital-code-grid .hospital-code-card strong { color:#edf4fb; }
+[data-theme="dark"] .hospital-code-grid .hospital-code-card > span:last-child > span { color:#dbe7f2; }
+[data-theme="dark"] .hospital-code-grid .hospital-code-card small { color:#c3d3e2; }
+[data-theme="dark"] .personal-notice-list article.notification-hospital { background:color-mix(in srgb,var(--notice-color) 10%,#182a3c); }
+[data-theme="dark"] .personal-notice-list article.notification-standard { background:#182a3c; }
+[data-theme="dark"] .personal-notice-list :is(.notification-content strong,.notification-content p,.notification-content small,.notification-kind) { color:#dce9f5; }
+[data-theme="dark"] .personal-notice-list .notification-actions button { background:#21374b;color:#a9d7ff; }
+.calendar-type.type-evento,.calendar-dot.type-evento { background:#e4e7fa;color:#4338a5; }
+[data-theme="dark"] .calendar-type.type-evento,[data-theme="dark"] .calendar-dot.type-evento { background:#37345f;color:#e0ddff; }
+.calendar-audience { border:1px solid var(--line);border-radius:12px;padding:14px; }
+.calendar-audience .table-actions label { display:flex;align-items:center;gap:8px;min-height:44px; }
+.calendar-audience input[type="checkbox"] { width:20px;min-height:20px;height:20px;padding:0;accent-color:var(--primary); }
+.event-details p { margin-block:14px;overflow-wrap:anywhere; }

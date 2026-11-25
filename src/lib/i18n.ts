@@ -619,6 +619,17 @@ Object.assign(dictionary,{
  "Reportes, asignaciones, mantenimientos y cambios persistidos.":"Reports, assignments, maintenance and saved changes.",
  "Foto de perfil (opcional)":"Profile photo (optional)","Impartido por":"Provided by","No hay archivos vinculados.":"No linked files.",
 })
+Object.assign(dictionary,{
+ "Organizar evento":"Organize event","Evento":"Event","Dirigido a":"Audience","Jefes":"Managers","Usuarios":"Users","Ingenieros biomédicos":"Biomedical engineers",
+ "Responsable:":"Responsible:","Programar mantenimiento":"Schedule maintenance","Volver al calendario":"Back to calendar","Edad":"Age",
+ "El jefe organizador también puede consultar el evento.":"The organizing manager can also view the event.",
+ "El instructor y el jefe también pueden consultar la capacitación.":"The instructor and manager can also view the training.",
+ "Se crea una orden preventiva. El equipo, responsable y horario aparecerán en el calendario de todos los perfiles.":"A preventive order is created. Equipment, assigned engineer and schedule will appear in every profile’s calendar.",
+ "Este equipo no tiene una rutina preventiva vinculada.":"This equipment has no linked preventive routine.",
+ "Mantenimientos, capacitaciones y eventos dirigidos a tu perfil en una sola agenda.":"Maintenance, training and events for your profile in one calendar.",
+ "Revisa la separación sugerida del nombre y completa solo los datos que conozcas.":"Review the suggested name split and complete only the information you know.",
+ "Departamento actual":"Current department",
+})
 export function t(value:string):string {
  if(preferences().language!=="en")return value
  const exact=dictionary[value];if(exact)return exact

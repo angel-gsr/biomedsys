@@ -153,6 +153,8 @@ export function TrainingForm({
   const [recurrence, setRecurrence] = useState("unica")
 
   const [scheduledAt, setScheduledAt] = useState("")
+  const [scheduledEndAt,setScheduledEndAt]=useState("")
+  const [audience,setAudience]=useState<Role[]>(["usuario"])
 
   const [location, setLocation] = useState("")
 
@@ -177,6 +179,8 @@ export function TrainingForm({
           purpose,
           recurrence,
           scheduledAt,
+          scheduledEndAt,
+          calendarAudience:audience,
           location,
           description,
           equipmentId,
@@ -242,7 +246,8 @@ export function TrainingForm({
           />
         </label>
         <label className="field">
-          <span>{t("Ubicación")}</span>
+          <span>{t("Fin *")}</span><input required type="datetime-local" min={scheduledAt} value={scheduledEndAt} onChange={e=>setScheduledEndAt(e.target.value)}/></label>
+        <label className="field"><span>{t("Ubicación")}</span>
           <input
             value={location}
             onChange={(event) => setLocation(event.target.value)}
@@ -256,12 +261,13 @@ export function TrainingForm({
             onChange={(event) => setDescription(event.target.value)}
           />
         </label>
+        <fieldset className="field span-2 calendar-audience"><legend>{t("Dirigido a")}</legend><div className="table-actions">{(["jefe","tecnico","usuario"] as Role[]).map(value=><label key={value}><input type="checkbox" checked={audience.includes(value)} onChange={e=>setAudience(e.target.checked?[...audience,value]:audience.filter(item=>item!==value))}/> {t(({jefe:"Jefes",tecnico:"Ingenieros biomédicos",usuario:"Usuarios"})[value])}</label>)}</div><small>{t("El instructor y el jefe también pueden consultar la capacitación.")}</small></fieldset>
         {isBusinessCompletionEnabled && <label className="field span-2"><span>{t("Equipo relacionado")}</span><select value={equipmentId} onChange={(event) => setEquipmentId(event.target.value)}><option value="">{t("Sin equipo específico")}</option>{equipment.map((row) => <option key={row.id} value={row.id}>{row.inventory_code} · {row.equipment_type}</option>)}</select></label>}
       </div>
       {error && <p className="form-error">{error}</p>}
       <div className="form-footer">
         <Button variant="secondary" onClick={onCancel}>{t("Cancelar")}</Button>
-        <Button type="submit" disabled={saving || (role === "jefe" && !instructorId)}>{t("Guardar capacitación")}</Button>
+        <Button type="submit" disabled={saving || !audience.length || (role === "jefe" && !instructorId)}>{t("Guardar capacitación")}</Button>
       </div>
     </form>
   )

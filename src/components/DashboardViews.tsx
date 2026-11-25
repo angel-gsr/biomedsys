@@ -200,7 +200,6 @@ function ManagerContent({
           </div>
         </div>
       )}
-      <RealOrdersTable data={data} setView={setView} onOpenOrder={onOpenOrder} onOpenReport={onOpenReport} />
       <div className="dashboard-grid">
         <section className="panel chart-panel">
           <div className="panel-head">
@@ -255,6 +254,7 @@ function ManagerContent({
           </div>
         </section>
       </div>
+      <RealOrdersTable data={data} setView={setView} onOpenOrder={onOpenOrder} onOpenReport={onOpenReport} />
     </>
   )
 }

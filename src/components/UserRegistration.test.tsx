@@ -14,6 +14,13 @@ vi.mock("../lib/supabase", async original => ({
 }))
 import { UserPermissionsView } from "./AdminViews"
 afterEach(() => { cleanup(); vi.clearAllMocks() })
+it("prefills legacy names and preserves missing age instead of inventing personal data",async()=>{
+ render(<UserPermissionsView/>);const row=(await screen.findByText("Cuenta Inactiva")).closest("tr")!
+ fireEvent.click(within(row).getByRole("button",{name:"Editar"}))
+ expect((screen.getByLabelText("Nombres *") as HTMLInputElement).value).toBe("Cuenta")
+ expect((screen.getByLabelText("Apellidos *") as HTMLInputElement).value).toBe("Inactiva")
+ expect((screen.getByLabelText("Edad") as HTMLInputElement).value).toBe("")
+})
 it("registers separated personal data with a catalogue and without a client identifier", async () => {
   render(<UserPermissionsView />)
   fireEvent.click(screen.getByRole("button", { name: "Alta de usuario" }))

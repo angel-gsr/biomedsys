@@ -232,6 +232,7 @@ const navigation: Record<Role, {
     { label: "Inicio", view: "dashboard", icon: LayoutDashboard },
 
     { label: "Mis reportes", view: "reportes", icon: ClipboardList },
+    { label: "Calendario", view: "calendario", icon: CalendarDays },
 
     { label: "Solicitud de equipo", view: "inventario", icon: Search },
 
@@ -1006,6 +1007,7 @@ function MobileNavigationMenu({ role, view, onClose, onNavigate, onLogout }: { r
 }
 
 export default function App() {
+  const initialEquipmentLink = useRef(new URLSearchParams(window.location.search).get("equipment"))
   const displayPreferences = usePreferences()
   useEffect(() => { const apply = () => { document.documentElement.dataset.theme=themeAt(new Date(),displayPreferences.theme); document.documentElement.lang=displayPreferences.language }; apply(); const timer=window.setInterval(apply,60000); window.addEventListener("focus",apply); return()=>{clearInterval(timer);window.removeEventListener("focus",apply)} },[displayPreferences])
 
@@ -1041,7 +1043,8 @@ export default function App() {
           if (mounted && currentRequest === refreshId) setProfile(currentProfile)
         })
         .catch(() => {
-          if (mounted && currentRequest === refreshId) setProfile(null)
+          // A transient focus/network error must not discard open forms.
+          if (mounted && currentRequest === refreshId) setLoginNotice("No fue posible verificar la conexión. Intenta nuevamente.")
         })
         .finally(() => {
           if (mounted && currentRequest === refreshId) setLoadingSession(false)
@@ -1074,8 +1077,12 @@ export default function App() {
 
   useEffect(() => {
     if (!profile) return
-    const equipmentId = new URLSearchParams(window.location.search).get("equipment")
+    const equipmentId = initialEquipmentLink.current
     if (equipmentId) {
+      initialEquipmentLink.current = null
+      const cleanUrl = new URL(window.location.href)
+      cleanUrl.searchParams.delete("equipment")
+      window.history.replaceState({}, "", cleanUrl)
       setSelectedEquipmentId(equipmentId)
       setView("equipo")
     }
@@ -1170,7 +1177,7 @@ export default function App() {
               onSelectEquipment={(equipmentId) => {
                 setSelectedEquipmentId(equipmentId)
                 const url = new URL(window.location.href)
-                url.searchParams.set("equipment", equipmentId)
+                url.searchParams.delete("equipment")
                 window.history.replaceState({}, "", url)
                 setView("equipo")
               }}
@@ -1188,8 +1195,8 @@ export default function App() {
               }}
             />
           )}
-          {view === "orden" && (orderReportId !== null && role === "jefe" ? <ServiceOrderAssignment backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : "Volver a Mesa de ayuda"} key={orderReportId} reportId={orderReportId} onBack={() => { setOrderReportId(null); setView(orderReturnView) }} onConfirmed={id => { setRequestedOrderId(id); setOrderReportId(null) }} /> : <ServiceOrdersView backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : "Volver a Mesa de ayuda"} role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView(orderReturnView) }} />)}
-          {view === "calendario" && <GeneralCalendar role={role} />}
+          {view === "orden" && (orderReportId !== null && role === "jefe" ? <ServiceOrderAssignment backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : "Volver a Mesa de ayuda"} key={orderReportId} reportId={orderReportId} onBack={() => { setOrderReportId(null); setView(orderReturnView) }} onConfirmed={id => { setRequestedOrderId(id); setOrderReportId(null) }} /> : <ServiceOrdersView backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : "Volver a Mesa de ayuda"} role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView(orderReturnView) }} />)}
+          {view === "calendario" && <GeneralCalendar role={role} onMaintenance={id=>{setRequestedOrderId(id);setOrderReportId(null);setOrderReturnView("calendario");setView("orden")}} />}
           {view === "mantenimiento" && <MaintenanceView role={role} />}
           {view === "avisos" && <NoticesView />}
           {view === "capacitaciones" && <TrainingCalendar role={role} />}

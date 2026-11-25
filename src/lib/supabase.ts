@@ -995,6 +995,8 @@ export async function createTraining(input: {
   purpose: string
   recurrence: string
   scheduledAt: string
+  scheduledEndAt?: string
+  calendarAudience?: Role[]
   location: string
   description: string
   instructorId?: string
@@ -1015,7 +1017,9 @@ export async function createTraining(input: {
 
       recurrence: input.recurrence,
 
-      scheduled_at: input.scheduledAt,
+      scheduled_at: new Date(input.scheduledAt).toISOString(),
+      scheduled_end_at: input.scheduledEndAt ? new Date(input.scheduledEndAt).toISOString() : null,
+      calendar_audience: input.calendarAudience || ["usuario"],
 
       location: input.location || null,
 
