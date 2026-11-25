@@ -515,6 +515,8 @@ export async function getCurrentProfile() {
 }
 
 export type CreateReportInput = {
+  operatorOutcome?: string
+  potentialHarm?: boolean
   incidentOptionId?: number | null
   incidentLabel?: string
   equipmentId: string | null
@@ -577,6 +579,8 @@ export async function createReport(
       observations: input.description || null,
 
       patient_outcome: input.patientOutcome?.trim() || "No aplica",
+      operator_outcome: input.operatorOutcome?.trim() || "No aplica",
+      potential_harm: input.potentialHarm || false,
 
       action_taken: input.actionTaken?.trim() || "No aplica",
       priority: input.priority || "Ordinaria",
@@ -592,6 +596,8 @@ export async function createReport(
 }
 
 export type ReportSummary = {
+  operator_outcome?: string
+  potential_harm?: boolean
   reporter_snapshot?: {full_name:string;institutional_id:string;department:string|null}
   maintenance_number?:string|null
   observations?: string | null
@@ -637,7 +643,7 @@ export type ReportSummary = {
 }
 
 const reportSummarySelection =
-  "id, report_number, reporter_id, equipment_id, maintenance_id, equipment_identifier, description, service, priority, status, created_at, event_date, event_type, location, manufacturer, model_serial, patient_outcome, action_taken, equipment_snapshot, edited_at, incident_option_id, incident_label, observations"
+  "id, report_number, reporter_id, equipment_id, maintenance_id, equipment_identifier, description, service, priority, status, created_at, event_date, event_type, location, manufacturer, model_serial, patient_outcome, operator_outcome, potential_harm, action_taken, equipment_snapshot, edited_at, incident_option_id, incident_label, observations"
 
 export async function listReports(client: SupabaseClient | null = supabase) {
   const configuredClient = requireSupabase(client)

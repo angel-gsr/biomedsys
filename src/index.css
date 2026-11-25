@@ -1034,6 +1034,12 @@ td small { color: var(--text-secondary, #8293a2); margin-top: 3px; font-size: 8p
 .service-order-pdf .table-actions { margin-block:14px; }
 .maintenance-detail-row .service-order-grid { white-space:normal; }
 .service-order-section dd { white-space:pre-wrap;overflow-wrap:anywhere; }
+.report-safety-signal { border:1px solid var(--line);border-radius:10px;padding:14px; }
+.report-safety-signal > span:last-child { display:flex;align-items:flex-start;gap:12px;line-height:1.5; }
+.report-safety-signal input[type="checkbox"] { width:20px;min-height:20px;height:20px;flex-shrink:0;accent-color:var(--primary); }
+.tv-document { padding:18px;margin-block:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft); }
+.tv-document p { margin-block:12px;line-height:1.6; }
+.tv-document .table-actions { margin-block:14px; }
 .generated-report-document .table-actions { margin-block:16px; }
 .success-modal:has(.generated-report-document) { width:min(960px,calc(100vw - 24px));max-width:960px;text-align:left; }
 @media(max-width:600px){.corrective-queue-list article { grid-template-columns:minmax(0,1fr) auto; }.corrective-queue-list article > .btn { grid-column:1 / -1;width:100%; }}

@@ -1,10 +1,12 @@
 import { t } from "../lib/i18n"
 import { useEffect, useRef, useState } from "react"
-import { listReports, type ReportSummary, type Role } from "../lib/supabase"
+import { type ReportSummary, type Role } from "../lib/supabase"
 import { listTechnovigilanceHolidays, saveTechnovigilanceHoliday, removeTechnovigilanceHoliday } from "../lib/reportManagement"
 import { getMovementLocations, getReportEquipmentIdentity, listTechnovigilanceReviews, moveTechnovigilanceEquipment, saveTechnovigilanceReview, type TechnovigilanceReview } from "../lib/reportManagement"
 import { PageIntro, Button } from "./ui"
 import { ReportPreview } from "./ReportPreview"
+import {hasAdverseOutcome,listTechnovigilanceCandidates,needsTechnovigilance} from "../lib/technovigilance"
+import {TechnovigilanceDocument} from "./TechnovigilanceDocument"
 
 export function TechnovigilanceView({ role, requestedReportId = null }: { role: Role; requestedReportId?: number | null }) {
   const [reports, setReports] = useState<ReportSummary[]>([])
@@ -17,7 +19,7 @@ export function TechnovigilanceView({ role, requestedReportId = null }: { role: 
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   function load() {
-    return Promise.all([listReports(), listTechnovigilanceReviews()]).then(([rows, cases]) => { setReports(rows); setReviews(cases); setError("") }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "No fue posible sincronizar los incidentes.")).finally(() => setLoading(false))
+    return Promise.all([listTechnovigilanceCandidates(), listTechnovigilanceReviews()]).then(([rows, cases]) => { setReports(rows.filter(needsTechnovigilance)); setReviews(cases); setError("") }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "No fue posible sincronizar los incidentes.")).finally(() => setLoading(false))
   }
   useEffect(() => {
     let active = true
@@ -31,7 +33,7 @@ export function TechnovigilanceView({ role, requestedReportId = null }: { role: 
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(new Date())
   const filtered = reports.filter((row) => [row.report_number, row.equipment_identifier, row.description, row.service].join(" ").toLocaleLowerCase("es-MX").includes(search.toLocaleLowerCase("es-MX")))
   return <>
-    <PageIntro title={t("Tecnovigilancia")} description={t("Bandeja biomédica de incidentes, ubicación actual del equipo y seguimiento documental.")} action={<Button variant="secondary" onClick={() => void load()}>{"Sincronizar"}</Button>} />
+    <PageIntro title={t("Tecnovigilancia")} description={t("Casos especiales derivados de reportes con prioridad alta o crítica, daño al paciente u operador o riesgo de daño moderado o grave.")} action={<Button variant="secondary" onClick={() => void load()}>{"Sincronizar"}</Button>} />
     <section className="panel tv-guidance"><p><strong>{t("Acta interna:")}</strong>{" "}{t("meta de 10 días para catastrófico/alto, 15 para medio y 30 para bajo, desde el registro del reporte.")}</p><p><strong>{t("Notificación NOM-240-SSA1-2012, 12.3:")}</strong>{" "}{t("amenaza grave de salud pública: 2 días hábiles; muerte o deterioro grave: 10 días naturales; otros incidentes notificables: 30 días naturales, desde su confirmación. Son plazos distintos de la meta interna.")}</p><p>{t("Para días hábiles se excluyen fines de semana y las fechas del calendario institucional. Valida los días inhábiles oficiales con el responsable de tecnovigilancia. Guardar aquí no envía una notificación a COFEPRIS.")}</p><a href="https://sidof.segob.gob.mx/notas/docFuente/5275834" target="_blank" rel="noreferrer">{t("Consultar norma oficial")}</a></section>
     {error && <p className="form-error" role="alert">{error}</p>}
     {role === "jefe" && <HolidayCalendar onChanged={() => void load()} />}
@@ -43,6 +45,7 @@ export function TechnovigilanceView({ role, requestedReportId = null }: { role: 
         return <tr key={row.id}><td><strong>{row.report_number}</strong><small>{row.equipment_identifier} · {row.service}</small></td><td>{row.event_type}<small>{row.description}</small></td><td><span className={internalLate ? "badge badge-danger" : "badge badge-neutral"}>{review?.legal_record_completed_on ? t("Acta registrada") : review ? `${internalLate ? "Vencida · " : ""}${review.internal_due_on}` : t("Sin clasificar")}</span></td><td><span className={regulatoryLate ? "badge badge-danger" : "badge badge-neutral"}>{review?.notified_on ? t("Notificación registrada") : review?.regulatory_due_on ? `${regulatoryLate ? "Vencida · " : ""}${review.regulatory_due_on}` : t("Pendiente / no aplica")}</span></td><td><div className="table-actions"><button type="button" className="row-action" onClick={() => setSelected(row.id)}>{t("Gestionar")}</button><button type="button" className="row-action" onClick={() => setPreview(row.id)}>{t("Ver reporte / PDF")}</button></div></td></tr>
       })}</tbody></table></div>}
     </section>
+    {!loading && requestedReportId!==null && !report && <p className="panel tv-guidance" role="status">{t("Este reporte no cumple los criterios de Tecnovigilancia. Consulta su atención en Mesa de ayuda.")}</p>}
     {report && <div ref={editor} tabIndex={-1} className="tv-editor-anchor"><ReviewEditor key={report.id} report={report} existing={reviews.find((item) => item.report_id === report.id)} onSaved={() => void load()} /></div>}
     {preview !== null && <ReportPreview reportId={preview} onClose={() => setPreview(null)} onChanged={() => void load()} />}
   </>
@@ -65,7 +68,8 @@ function HolidayCalendar({ onChanged }: { onChanged: () => void }) {
 }
 
 function ReviewEditor({ report, existing, onSaved }: { report: ReportSummary; existing?: TechnovigilanceReview; onSaved: () => void }) {
-  const [form, setForm] = useState<Partial<TechnovigilanceReview>>(existing || { failure_type: report.event_type, regulatory_case: "pendiente" })
+  const [form, setForm] = useState<Partial<TechnovigilanceReview>>({ failure_type: report.event_type, regulatory_case: "pendiente",event_classification:hasAdverseOutcome(report.patient_outcome)||hasAdverseOutcome(report.operator_outcome)?"incidente_adverso":"incidente_adverso_potencial",affected_person:hasAdverseOutcome(report.patient_outcome)?hasAdverseOutcome(report.operator_outcome)?"ambos":"paciente":hasAdverseOutcome(report.operator_outcome)?"operador":undefined,...existing })
+  const [saved,setSaved]=useState(existing),[dirty,setDirty]=useState(false)
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
   const [busy, setBusy] = useState(false)
@@ -80,15 +84,19 @@ function ReviewEditor({ report, existing, onSaved }: { report: ReportSummary; ex
     if (report.equipment_id) Promise.all([getMovementLocations(), getReportEquipmentIdentity(report.equipment_id)]).then(([rows, identity]) => { if (active) { setCatalog(rows); setCurrentLocation([identity.hospital_area, identity.location].filter(Boolean).join(" · ")) } }).catch((cause: unknown) => { if (active) setMovementError(cause instanceof Error ? cause.message : "No fue posible consultar la ubicación.") })
     return () => { active = false }
   }, [report.equipment_id])
-  function update(key: keyof TechnovigilanceReview, value: string) { setForm((old) => ({ ...old, [key]: value })) }
+  function update(key: keyof TechnovigilanceReview, value: string) { setDirty(true);setForm((old) => ({ ...old, [key]: value })) }
   async function save(event: React.FormEvent) {
     event.preventDefault(); setBusy(true); setError(""); setMessage("")
-    try { await saveTechnovigilanceReview(report.id, form); setMessage("Seguimiento guardado y auditado."); onSaved() }
+    try { const result=await saveTechnovigilanceReview(report.id, form);setSaved(result);setForm(result);setDirty(false); setMessage("Seguimiento guardado y auditado."); onSaved() }
     catch (cause) { setError(cause instanceof Error ? cause.message : "No fue posible guardar.") }
     finally { setBusy(false) }
   }
   return <section className="panel tv-editor"><div className="panel-head"><div><h3>{t("Gestión de")}{" "}{report.report_number}</h3><p>{t("Las observaciones técnicas no modifican el incidente original.")}</p></div></div>
     <form className="training-form" onSubmit={save}><fieldset disabled={busy} className="report-edit-fields"><div className="form-grid">
+      <label className="field"><span>{t("Clasificación del caso especial")}</span><select required value={form.event_classification || ""} onChange={e=>update("event_classification",e.target.value)}><option value="" disabled>{t("Seleccionar")}</option><option value="incidente_adverso">{t("Incidente adverso · daño ocurrido")}</option><option value="incidente_adverso_potencial">{t("Incidente adverso potencial · riesgo de daño")}</option></select></label>
+      <label className="field"><span>{t("Persona afectada o en riesgo")}</span><select required value={form.affected_person || ""} onChange={e=>update("affected_person",e.target.value)}><option value="" disabled>{t("Seleccionar")}</option><option value="paciente">{t("Paciente")}</option><option value="operador">{t("Operador")}</option><option value="ambos">{t("Paciente y operador")}</option></select></label>
+      <label className="field span-2"><span>{t("Daño ocurrido o consecuencias potenciales")}</span><textarea required maxLength={8000} value={form.impact_description || ""} onChange={e=>update("impact_description",e.target.value)} /></label>
+      <label className="field span-2"><span>{t("Medidas de seguridad y acciones preventivas")}</span><textarea required maxLength={8000} value={form.safety_actions || ""} onChange={e=>update("safety_actions",e.target.value)} /></label>
       <label className="field"><span>{t("Riesgo para meta interna")}</span><select required value={form.internal_risk || ""} onChange={(e) => update("internal_risk", e.target.value)}><option value="" disabled>{t("Clasifica el incidente")}</option><option value="catastrofico">{t("Catastrófico · 10 días")}</option><option value="alto">{t("Alto · 10 días")}</option><option value="medio">{t("Medio · 15 días")}</option><option value="bajo">{t("Bajo · 30 días")}</option></select></label>
       <label className="field"><span>{t("Tipo de falla / incidente")}</span><input required value={form.failure_type || ""} onChange={(e) => update("failure_type", e.target.value)} /></label>
       <label className="field"><span>{t("Supuesto de notificación NOM-240")}</span><select value={form.regulatory_case} onChange={(e) => update("regulatory_case", e.target.value)}><option value="pendiente">{t("Pendiente de evaluación")}</option><option value="amenaza_publica">{t("Amenaza grave de salud pública · 2 días hábiles")}</option><option value="muerte_deterioro_grave">{t("Muerte / deterioro grave · 10 días naturales")}</option><option value="otro_notificable">{t("Otro incidente notificable · 30 días naturales")}</option><option value="no_notificable">{t("No notificable, justificar en notas")}</option></select></label>
@@ -99,7 +107,7 @@ function ReviewEditor({ report, existing, onSaved }: { report: ReportSummary; ex
       <label className="field"><span>{t("Notificado el")}</span><input type="date" value={form.notified_on || ""} onChange={(e) => update("notified_on", e.target.value)} /></label>
       <label className="field span-2"><span>{t("Notas y justificación")}</span><textarea required={form.regulatory_case === "no_notificable"} value={form.notes || ""} onChange={(e) => update("notes", e.target.value)} /></label>
     </div><Button type="submit">{busy ? t("Guardando...") : t("Guardar seguimiento")}</Button></fieldset></form>
-    {error && <p className="form-error" role="alert">{error}</p>}{message && <p role="status">{message}</p>}
+    {error && <p className="form-error" role="alert">{error}</p>}{message && <p role="status">{message}</p>}<TechnovigilanceDocument reportId={report.id} disabled={dirty || !saved?.event_classification || !saved?.affected_person || !saved?.impact_description || !saved?.safety_actions}/>
     {report.equipment_id && <form className="training-form" onSubmit={async (event) => {
       event.preventDefault(); setBusy(true); setMovementError("")
       try { await moveTechnovigilanceEquipment(report.equipment_id!, Number(area), location ? Number(location) : null, reason); const identity = await getReportEquipmentIdentity(report.equipment_id!); setCurrentLocation([identity.hospital_area, identity.location].filter(Boolean).join(" · ")); setReason(""); setMessage("Ubicación del inventario actualizada. El reporte conserva la ubicación registrada originalmente."); window.dispatchEvent(new Event("biomedgest:inventory-changed")) }

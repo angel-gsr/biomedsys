@@ -9,6 +9,7 @@ vi.mock("../lib/reportManagement", () => ({
   listTechnovigilanceHolidays: vi.fn().mockResolvedValue([]), saveTechnovigilanceHoliday: vi.fn(), removeTechnovigilanceHoliday: vi.fn(),
   getReportPreview: vi.fn(), editReportIncident: vi.fn(), createReportPdf: vi.fn(), remainingEditSeconds: vi.fn(),
 }))
+vi.mock("../lib/technovigilance",async original=>({...await original<typeof import("../lib/technovigilance")>(),listTechnovigilanceCandidates:vi.fn().mockResolvedValue([{id:10,report_number:"REP-000010",equipment_id:"asset",equipment_identifier:"EQ-000001",event_type:"Falla",description:"No enciende",service:"Urgencias",priority:"Alta"},{id:11,report_number:"REP-000011",priority:"Ordinaria",event_type:"Falla",patient_outcome:"Sin lesión"}])}))
 import { TechnovigilanceView } from "./TechnovigilanceView"
 afterEach(cleanup)
 
@@ -26,6 +27,9 @@ it("lets the technician classify the case and relocate the actual equipment with
   fireEvent.change(screen.getByLabelText("Riesgo para meta interna"), { target: { value: "alto" } })
   fireEvent.change(screen.getByLabelText("Supuesto de notificación NOM-240"), { target: { value: "muerte_deterioro_grave" } })
   fireEvent.change(screen.getByLabelText("Fecha de confirmación"), { target: { value: "2026-11-09" } })
+  fireEvent.change(screen.getByLabelText("Persona afectada o en riesgo"),{target:{value:"paciente"}})
+  fireEvent.change(screen.getByLabelText("Daño ocurrido o consecuencias potenciales"),{target:{value:"Riesgo grave durante su uso"}})
+  fireEvent.change(screen.getByLabelText("Medidas de seguridad y acciones preventivas"),{target:{value:"Equipo retirado y evaluación"}})
   fireEvent.click(screen.getByRole("button", { name: "Guardar seguimiento" }))
   await waitFor(() => expect(services.saveTechnovigilanceReview).toHaveBeenCalledWith(10, expect.objectContaining({ internal_risk: "alto", regulatory_case: "muerte_deterioro_grave", confirmed_on: "2026-11-09" })))
   await screen.findByText("Seguimiento guardado y auditado.")
@@ -35,4 +39,12 @@ it("lets the technician classify the case and relocate the actual equipment with
   fireEvent.click(screen.getByRole("button", { name: "Actualizar ubicación" }))
   await waitFor(() => expect(services.moveTechnovigilanceEquipment).toHaveBeenCalledWith("asset", 1, 2, "Retiro para evaluación"))
   expect(screen.queryByText(/Calendario de días inhábiles/)).toBeNull()
+})
+
+it("excludes ordinary failures and refuses direct navigation to their special form",async()=>{
+ render(<TechnovigilanceView role="tecnico" requestedReportId={11}/>)
+ await screen.findByRole("button",{name:"Gestionar"})
+ expect(screen.queryByText("REP-000011")).toBeNull()
+ expect(screen.queryByRole("heading",{name:"Gestión de REP-000011"})).toBeNull()
+ expect(screen.getByText("Este reporte no cumple los criterios de Tecnovigilancia. Consulta su atención en Mesa de ayuda.")).toBeTruthy()
 })

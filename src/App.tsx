@@ -8,6 +8,7 @@ import { HospitalAlertHub } from "./components/HospitalAlertHub"
 import { IncidentPhotos } from "./components/IncidentPhotos"
 import { formatIncidentLabel } from "./lib/incidentLabels"
 import { CorrectiveOrderQueue } from "./components/CorrectiveOrderQueue"
+import { needsTechnovigilance } from "./lib/technovigilance"
 import { GeneratedReportDocument } from "./components/GeneratedReportDocument"
 import { GeneralCalendar } from "./components/GeneralCalendar"
 import { EquipmentQrScanner } from "./components/EquipmentQrScanner"
@@ -656,7 +657,7 @@ function ReportTray({
                 {role !== "jefe" && <><Badge>{report.priority}</Badge><Badge>{report.status}</Badge></>}
                 {role === "jefe" && report.maintenance_id && ["Recibido","Clasificado"].includes(report.status) && <Button variant="secondary" onClick={()=>onAssignOrder(report.id)}>{t("Asignar ingeniero")}</Button>}
                 {role !== "usuario" && report.maintenance_id && <Button variant="secondary" onClick={() => onOpenOrder(report.maintenance_id!)}>{t("Ver orden")}</Button>}
-                <button type="button" className="icon-btn" aria-label={role === "usuario" ? `Ver reporte ${report.report_number}` : `Abrir Tecnovigilancia de ${report.report_number}`} onClick={() => role === "usuario" ? setPreviewId(report.id) : onOpenTechnovigilance(report.id)}><ChevronRight size={18} /></button>
+                <button type="button" className="icon-btn" aria-label={role === "usuario" || !needsTechnovigilance(report) ? `Ver reporte ${report.report_number}` : `Abrir Tecnovigilancia de ${report.report_number}`} onClick={() => role === "usuario" || !needsTechnovigilance(report) ? setPreviewId(report.id) : onOpenTechnovigilance(report.id)}><ChevronRight size={18} /></button>
               </article>
             ))}
           </div>
@@ -705,6 +706,8 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
     description: "",
 
     patientOutcome: "No aplica",
+    operatorOutcome: "No aplica",
+    potentialHarm: false,
 
     actionTaken: "No aplica",
     priority: "Ordinaria",
@@ -917,11 +920,14 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
 
               <option value={"Sin lesión"}>{t("Sin lesión")}</option>
               <option value={"Lesión temporal"}>{t("Lesión temporal")}</option>
+              <option value="Lesión moderada">{t("Lesión moderada")}</option>
               <option value={"Lesión grave"}>{t("Lesión grave")}</option>
               <option value={"Fallecimiento"}>{t("Fallecimiento")}</option>
               <option value={"No aplica"}>{t("No aplica")}</option>
             </select>
           </label>
+          <label className="field"><span>{t("Resultado para el operador")}</span><select value={form.operatorOutcome || "No aplica"} onChange={event=>updateField("operatorOutcome",event.target.value)}>{["No aplica","Sin lesión","Lesión temporal","Lesión moderada","Lesión grave","Fallecimiento"].map(value=><option key={value} value={value}>{t(value)}</option>)}</select></label>
+          <label className="field span-2 report-safety-signal"><span>{t("Riesgo de daño")}</span><span><input type="checkbox" checked={Boolean(form.potentialHarm)} onChange={event=>setForm(current=>({...current,potentialHarm:event.target.checked}))}/>{t("La falla pudo causar daño moderado o grave al paciente u operador")}</span></label>
           <label className="field"><span>{t("Acción tomada")}</span><select value={form.actionTaken} onChange={(event) => updateField("actionTaken",event.target.value)}><option value={"Equipo aislado y retirado de uso"}>{t("Equipo aislado y retirado de uso")}</option><option value={"Se informó a Ingeniería Biomédica"}>{t("Se informó a Ingeniería Biomédica")}</option><option value={"No aplica"}>{t("No aplica")}</option></select></label>
         </div>
         {error && (

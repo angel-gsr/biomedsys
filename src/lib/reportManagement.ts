@@ -7,8 +7,14 @@ export type ReportEquipmentIdentity = {
 export type ReportPreviewData = {
   report: ReportSummary; server_now: string; can_edit: boolean; editable_until: string
 }
-export type IncidentChanges = Pick<ReportSummary, "event_date" | "event_type" | "description" | "patient_outcome" | "action_taken" | "incident_option_id" | "incident_label" | "observations">
+export type IncidentChanges = Pick<ReportSummary, "event_date" | "event_type" | "description" | "patient_outcome" | "operator_outcome" | "potential_harm" | "action_taken" | "incident_option_id" | "incident_label" | "observations">
 export type TechnovigilanceReview = {
+  event_classification?: "incidente_adverso" | "incidente_adverso_potencial"
+  affected_person?: "paciente" | "operador" | "ambos"
+  impact_description?: string|null
+  safety_actions?: string|null
+  reviewed_by?: string
+  updated_at?: string
   report_id: number; internal_risk: "catastrofico" | "alto" | "medio" | "bajo";
   failure_type: string; confirmed_on: string | null;
   regulatory_case: "pendiente" | "amenaza_publica" | "muerte_deterioro_grave" | "otro_notificable" | "no_notificable";

@@ -1,5 +1,9 @@
 import type { MaintenanceSummary } from "./supabase"
 export type ServiceOrderPdfOptions = {
+  title?: string
+  subtitle?: string
+  footerNote?: string
+  compact?: boolean
   final?: boolean
   signature?: string | null
   issuedAt?: string
@@ -56,9 +60,10 @@ export async function buildServiceOrderPdf(
     pdf.setFont("helvetica", "bold")
     pdf.setTextColor(255, 255, 255)
     pdf.text(
-      options.final
-        ? "ORDEN DE SERVICIO · INFORME TÉCNICO FINAL"
-        : "ORDEN DE SERVICIO · ATENCIÓN PROGRAMADA",
+      options.title ||
+        (options.final
+          ? "ORDEN DE SERVICIO · INFORME TÉCNICO FINAL"
+          : "ORDEN DE SERVICIO · ATENCIÓN PROGRAMADA"),
       18,
       44,
     )
@@ -68,9 +73,10 @@ export async function buildServiceOrderPdf(
     pdf.setFont("helvetica", "normal")
     pdf.setFontSize(8)
     pdf.text(
-      options.final
-        ? `Documento ${options.documentId || "final"}`
-        : "Seguimiento pendiente / en elaboración",
+      options.subtitle ||
+        (options.final
+          ? `Documento ${options.documentId || "final"}`
+          : "Seguimiento pendiente / en elaboración"),
       196,
       57,
       { align: "right" },
@@ -97,7 +103,7 @@ export async function buildServiceOrderPdf(
     pdf.setFont("helvetica", "bold")
     pdf.setFontSize(9)
     pdf.text(section.title.toLocaleUpperCase("es-MX"), 18, y + 5.5)
-    y += 14
+    y += options.compact?10:14
     if (
       section.title !== "Seguimiento técnico" &&
       section.fields.every(([, value]) => !value || value.length < 1000)
@@ -113,7 +119,7 @@ export async function buildServiceOrderPdf(
               80,
             ) as string[],
         )
-        const height = 7 + Math.max(...lines.map((value) => value.length)) * 4.5
+        const height = (options.compact?4.5:7) + Math.max(...lines.map((value) => value.length)) * 4.5
         room(height)
         pair.forEach(([label], column) => {
           const x = 18 + column * 90
@@ -189,21 +195,24 @@ export async function buildServiceOrderPdf(
       287,
     )
     pdf.text(
-      options.final
-        ? item.validated_at
-          ? "Cierre validado por jefatura."
-          : "Informe técnico final. Validación administrativa pendiente."
-        : "Documento inicial de la orden; el seguimiento corresponde al ingeniero asignado.",
+      options.footerNote ||
+        (options.final
+          ? item.validated_at
+            ? "Cierre validado por jefatura."
+            : "Informe técnico final. Validación administrativa pendiente."
+          : "Documento inicial de la orden; el seguimiento corresponde al ingeniero asignado."),
       14,
       292,
     )
   }
   pdf.setProperties({
-    title: `Orden ${item.maintenance_number}${
-      options.final ? " · Informe final" : ""
-    }`,
+    title:
+      options.title ||
+      `Orden ${item.maintenance_number}${
+        options.final ? " · Informe final" : ""
+      }`,
     author: "BioMedGest",
-    subject: "Orden de servicio de equipo médico",
+    subject: options.title || "Orden de servicio de equipo médico",
   })
   return pdf.output("blob")
 }

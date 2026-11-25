@@ -122,6 +122,8 @@ export async function incidentReportPdf(report: ReportSummary) {
       report.action_taken || "No aplica",
     ].join(" · "),
   )
+  field("RESULTADO PARA EL OPERADOR",report.operator_outcome || "No aplica")
+  field("RIESGO DE DAÑO MODERADO O GRAVE",report.potential_harm?"Sí":"No")
   section("REGISTRO Y SEGUIMIENTO")
   field(
     "AUTOR / ID INSTITUCIONAL / DEPARTAMENTO",
