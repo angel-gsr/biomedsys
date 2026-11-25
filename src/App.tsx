@@ -7,6 +7,8 @@ import { UserPresence } from "./components/UserPresence"
 import { HospitalAlertHub } from "./components/HospitalAlertHub"
 import { IncidentPhotos } from "./components/IncidentPhotos"
 import { formatIncidentLabel } from "./lib/incidentLabels"
+import { CorrectiveOrderQueue } from "./components/CorrectiveOrderQueue"
+import { GeneratedReportDocument } from "./components/GeneratedReportDocument"
 import { GeneralCalendar } from "./components/GeneralCalendar"
 import { EquipmentQrScanner } from "./components/EquipmentQrScanner"
 import { DocumentsBrowser } from "./components/DocumentsBrowser"
@@ -99,7 +101,7 @@ const roleMeta = {
 
   tecnico: { label: "Ingeniero biomédico", short: "Ingeniero", initials: "JR" },
 
-  usuario: { label: "Enfermería / Médico", short: "Clínico", initials: "LM" },
+  usuario: { label: "Usuario", short: "Usuario", initials: "LM" },
 }
 
 const statusTone: Record<string, string> = {
@@ -235,6 +237,7 @@ const navigation: Record<Role, {
     { label: "Calendario", view: "calendario", icon: CalendarDays },
 
     { label: "Solicitud de equipo", view: "inventario", icon: Search },
+    { label: "Documentos", view: "documentos", icon: FileText },
 
     { label: "Avisos", view: "avisos", icon: Bell },
   ],
@@ -393,7 +396,7 @@ export function Sidebar({
         <ProfileAvatar profile={profile} />
         <span>
           <strong>{profile.full_name}</strong>
-          <small>{t(roleMeta[role].label)}</small>
+          <small>{role === "usuario" ? profile.department || t("Usuario") : t(roleMeta[role].label)}</small>
         </span>
         </button>
         <button type="button" className="icon-btn" aria-label={t("Cerrar sesión")} title={t("Cerrar sesión")} onClick={onLogout}><LogOut size={17} /></button>
@@ -431,7 +434,7 @@ function AppHeader({ profile, title, onNotifications }: { profile: Profile; titl
           <ProfileAvatar profile={profile} />
           <span>
             <strong>{profile.full_name}</strong>
-            <small>{t(roleMeta[role].short)}</small>
+            <small>{role === "usuario" ? profile.department || t("Usuario") : t(roleMeta[role].short)}</small>
           </span>
         </div>
       </div>
@@ -561,6 +564,7 @@ function ReportTray({
           </Button>
         }
       />
+      {role !== "usuario" && <CorrectiveOrderQueue role={role} onOpenOrder={onOpenOrder} onAssignReport={onAssignOrder} onChanged={()=>{void listReports().then(setReports).catch(()=>undefined)}}/>}
       <section className="panel orders-panel">
         <div className="filter-bar">
           <label className="search-box">
@@ -650,6 +654,7 @@ function ReportTray({
                 </div>
                 {role === "jefe" && (report.maintenance_id ? <div className="report-workflow-editor"><span className="badge badge-success">{t("Orden vinculada")}</span><Badge>{report.status}</Badge></div> : <Button variant="secondary" onClick={() => onAssignOrder(report.id)}>{t("Clasificar y crear orden")}</Button>)}
                 {role !== "jefe" && <><Badge>{report.priority}</Badge><Badge>{report.status}</Badge></>}
+                {role === "jefe" && report.maintenance_id && ["Recibido","Clasificado"].includes(report.status) && <Button variant="secondary" onClick={()=>onAssignOrder(report.id)}>{t("Asignar ingeniero")}</Button>}
                 {role !== "usuario" && report.maintenance_id && <Button variant="secondary" onClick={() => onOpenOrder(report.maintenance_id!)}>{t("Ver orden")}</Button>}
                 <button type="button" className="icon-btn" aria-label={role === "usuario" ? `Ver reporte ${report.report_number}` : `Abrir Tecnovigilancia de ${report.report_number}`} onClick={() => role === "usuario" ? setPreviewId(report.id) : onOpenTechnovigilance(report.id)}><ChevronRight size={18} /></button>
               </article>
@@ -760,8 +765,8 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
       const createdNumber = await createReport(form)
       setReportNumber(createdNumber)
       window.dispatchEvent(new Event("biomedgest:reports-changed"))
-      if (isOperationalCompletionEnabled) {
-        try { const id = await getReportIdByNumber(createdNumber); setReportId(id); if (photos.length) await savePhotos(id, photos) }
+      {
+        try { const id = await getReportIdByNumber(createdNumber); setReportId(id); if (isOperationalCompletionEnabled && photos.length) await savePhotos(id, photos) }
         catch { setUploadError("El reporte se guardó, pero no fue posible habilitar su evidencia en esta sesión.") }
       }
       setSent(true)
@@ -789,6 +794,7 @@ export function ReportModal({ onClose, role }: { onClose: () => void; role: Role
           {photos.length > 0 && <IncidentPhotos files={photos} onChange={setPhotos} disabled={uploading} />}
           {photos.length > 0 && <button type="button" className="btn btn-primary" disabled={uploading} onClick={() => void retryPhotos()}>{uploading ? t("Guardando fotos...") : t("Reintentar guardar fotos")}</button>}
           {uploadError && <p className="form-error" role="alert">{uploadError}</p>}
+          {reportId && <GeneratedReportDocument reportId={reportId}/>}
           <Button onClick={onClose}>{t("Entendido")}</Button>
         </div>
       </div>
@@ -1195,7 +1201,7 @@ export default function App() {
               }}
             />
           )}
-          {view === "orden" && (orderReportId !== null && role === "jefe" ? <ServiceOrderAssignment backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : orderReturnView === "mantenimiento" ? "Volver a Mantenimiento" : "Volver a Mesa de ayuda"} key={orderReportId} reportId={orderReportId} onBack={() => { setOrderReportId(null); setView(orderReturnView) }} onConfirmed={id => { setRequestedOrderId(id); setOrderReportId(null) }} /> : <ServiceOrdersView backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : orderReturnView === "mantenimiento" ? "Volver a Mantenimiento" : "Volver a Mesa de ayuda"} role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView(orderReturnView) }} />)}
+          {view === "orden" && (orderReportId !== null && role === "jefe" ? <ServiceOrderAssignment backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : orderReturnView === "mantenimiento" ? "Volver a Mantenimiento" : "Volver a Mesa de ayuda"} key={orderReportId} reportId={orderReportId} onBack={() => { setOrderReportId(null); setView(orderReturnView) }} onConfirmed={id => { setRequestedOrderId(id); setOrderReportId(null) }} /> : <ServiceOrdersView backLabel={orderReturnView === "dashboard" ? "Volver a Resumen" : orderReturnView === "calendario" ? "Volver al calendario" : orderReturnView === "mantenimiento" ? "Volver a Mantenimiento" : "Volver a Mesa de ayuda"} role={role} requestedOrderId={requestedOrderId} onOpenOrder={id=>{setRequestedOrderId(id);setOrderReportId(null)}} onAssignReport={id=>{setOrderReportId(id);setOrderReturnView("reportes")}} onBack={() => { setRequestedOrderId(null); setView(orderReturnView) }} />)}
           {view === "calendario" && <GeneralCalendar role={role} onMaintenance={id=>{setRequestedOrderId(id);setOrderReportId(null);setOrderReturnView("calendario");setView("orden")}} />}
           {view === "mantenimiento" && <MaintenanceView role={role} onOpenOrder={id=>{setOrderReturnView("mantenimiento");setRequestedOrderId(id);setOrderReportId(null);setView("orden")}} />}
           {view === "avisos" && <NoticesView />}

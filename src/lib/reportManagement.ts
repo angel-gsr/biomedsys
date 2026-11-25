@@ -74,31 +74,6 @@ export function remainingEditSeconds(preview: ReportPreviewData, elapsedMs: numb
 }
 
 export async function createReportPdf(report: ReportSummary) {
-  const { jsPDF } = await import("jspdf")
-  const pdf = new jsPDF()
-  let y = 20
-  const field = (label: string, value: string | null | undefined) => {
-    const lines = pdf.splitTextToSize(`${label}: ${value || "No registrado"}`, 175) as string[]
-    for (const line of lines) { if (y > 277) { pdf.addPage(); y = 20 } pdf.text(line, 18, y); y += 6 }
-    y += 3
-  }
-  pdf.setFontSize(16); pdf.text("BioMedGest - Reporte de incidente", 18, y); y += 12
-  pdf.setFontSize(10)
-  field("Folio", report.report_number)
-  field("Creado", report.created_at)
-  field("Última corrección", report.edited_at)
-  field("Equipo", report.equipment_snapshot?.equipment_type)
-  field("Inventario", report.equipment_identifier)
-  field("Fabricante", report.manufacturer)
-  field("Modelo", report.equipment_snapshot?.model)
-  field("Serie", report.equipment_snapshot?.serial_number)
-  field("Modelo / serie registrado", report.model_serial)
-  field("Área", report.service); field("Ubicación al reportar", report.location)
-  field("Fecha del evento", report.event_date); field("Tipo", report.event_type)
-  field("Incidente del equipo", report.incident_label)
-  field("Descripción", report.description); field("Resultado para el paciente", report.patient_outcome)
-  field("Observaciones", report.observations)
-  field("Acción tomada", report.action_taken); field("Prioridad", report.priority); field("Estado", report.status)
-  field("Control de edición", "Correcciones del autor permitidas durante 10 minutos desde el registro. Este PDF refleja el estado consultado.")
-  return pdf.output("blob")
+  const {incidentReportPdf}=await import("./incidentReportPdf")
+  return incidentReportPdf(report)
 }

@@ -1,5 +1,6 @@
 import { t } from "../lib/i18n"
 import { EquipmentUseRequest } from "./EquipmentUseRequest"
+import { EquipmentReferenceImage } from "./EquipmentReferenceImage"
 import { EquipmentQrScanner } from "./EquipmentQrScanner";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
@@ -248,14 +249,14 @@ export function Inventory({
                     {visibleEquipment.map((item) => (
                       <tr key={item.id} onClick={() => onSelectEquipment(item.id)}>
                         <td><strong className="order-id">{item.inventory_code}</strong></td>
-                        <td><strong>{item.equipment_type}</strong></td>
+                        <td><div className="equipment-visual-cell"><EquipmentReferenceImage type={item.equipment_type} manufacturer={item.manufacturer} model={item.model} compact/><strong>{item.equipment_type}</strong></div></td>
                         <td><strong>{item.manufacturer}</strong><small>{item.model}</small></td>
                         <td><strong>{item.hospital_area || "Sin área"}</strong><small>{item.location || "Sin ubicación específica"}</small></td>
                         {capabilities.canViewRisk && (
                           <td><Badge tone={riskTone(item.current_risk_category)}>{item.current_risk_category ? riskLabels[item.current_risk_category] : t("Sin evaluación")}</Badge></td>
                         )}
                         <td><Badge tone={statusTone(item.status)}>{statusLabels[item.status]}</Badge></td>
-                        <td><div className="table-actions"><button type="button" className="row-action" aria-label={`Abrir ficha ${item.inventory_code}`}>{t("Ver ficha")}</button>{role === "jefe" && <InventoryEquipmentManager equipmentId={item.id} onChanged={() => setReloadToken((value) => value + 1)} />}</div></td>
+                        <td><div className="table-actions"><button type="button" className="row-action" aria-label={`Abrir ficha ${item.inventory_code}`}>{t("Ver ficha")}</button>{role === "usuario" && <EquipmentUseRequest equipment={item} compact/>}{role === "jefe" && <InventoryEquipmentManager equipmentId={item.id} onChanged={() => setReloadToken((value) => value + 1)} />}</div></td>
                       </tr>
                     ))}
                   </tbody>
@@ -304,6 +305,7 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
   }
   return (
     <>
+      {role === "usuario" && <div className="equipment-loan-shortcut"><EquipmentUseRequest equipment={equipment}/></div>}
       <section className="equipment-head">
         <div className="equipment-icon"><MonitorCog size={28} /></div>
         <div className="equipment-title">
@@ -320,7 +322,7 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
       {restricted && (
         <div className="inventory-access-note">
           <ShieldCheck size={20} />
-          <div><strong>{t("Ficha clínica limitada")}</strong><span>{t("Los datos técnicos, riesgos, manuales y rutinas están disponibles únicamente para Ingeniería Clínica.")}</span></div>
+          <div><strong>{t("Ficha de consulta")}</strong><span>{t("Consulta la identificación, ubicación y documentos del equipo. Las evaluaciones de riesgo y el expediente técnico corresponden a Ingeniería Biomédica.")}</span></div>
         </div>
       )}
 
@@ -332,7 +334,7 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
               {[
                 ["Fabricante", equipment.manufacturer],
                 ["Modelo", equipment.model],
-                ["Número de serie", equipment.serial_number || "Restringido o no registrado"],
+                ["Número de serie", equipment.serial_number || "No registrado"],
                 ["No. de inventario", equipment.inventory_code],
                 ["Tipo de equipo", equipment.equipment_type],
                 ["Estado", statusLabels[equipment.status]],
@@ -350,20 +352,6 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
             </div>
           </div>
 
-          {!restricted && (
-            <>
-              <InventoryEnrichmentDetails data={bundle.enrichment} />
-              <div className="detail-section">
-                <h3>{t("Evaluación de riesgo")}</h3>
-                {!currentRisk ? <p className="detail-empty">{t("No existe una evaluación de riesgo visible.")}</p> : (
-                  <div className="risk-summary">
-                    <Badge tone={riskTone(currentRisk.category)}>{riskLabels[currentRisk.category]}</Badge>
-                    <strong>{currentRisk.total_score}{" "}{t("puntos")}</strong>
-                    <span>{t("Función")}{" "}{currentRisk.function_score}{" "}{t("· Aplicación clínica")}{" "}{currentRisk.clinical_application_score}{" "}{t("· Mantenimiento")}{" "}{currentRisk.maintenance_requirement_score}</span>
-                    <small>{currentRisk.methodology_name} · {currentRisk.methodology_version}</small>
-                  </div>
-                )}
-              </div>
               <div className="detail-section">
                 <h3>{t("Manuales y documentos")}</h3>
                 {documents.length === 0 ? <p className="detail-empty">{t("No hay documentos vinculados.")}</p> : (
@@ -378,6 +366,21 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
                         </article>
                       );
                     })}
+                  </div>
+                )}
+              </div>
+
+          {!restricted && (
+            <>
+              <InventoryEnrichmentDetails data={bundle.enrichment} />
+              <div className="detail-section">
+                <h3>{t("Evaluación de riesgo")}</h3>
+                {!currentRisk ? <p className="detail-empty">{t("No existe una evaluación de riesgo visible.")}</p> : (
+                  <div className="risk-summary">
+                    <Badge tone={riskTone(currentRisk.category)}>{riskLabels[currentRisk.category]}</Badge>
+                    <strong>{currentRisk.total_score}{" "}{t("puntos")}</strong>
+                    <span>{t("Función")}{" "}{currentRisk.function_score}{" "}{t("· Aplicación clínica")}{" "}{currentRisk.clinical_application_score}{" "}{t("· Mantenimiento")}{" "}{currentRisk.maintenance_requirement_score}</span>
+                    <small>{currentRisk.methodology_name} · {currentRisk.methodology_version}</small>
                   </div>
                 )}
               </div>
@@ -401,15 +404,16 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
         </section>
 
         <aside className="detail-aside">
+          <EquipmentReferenceImage type={equipment.equipment_type} manufacturer={equipment.manufacturer} model={equipment.model}/>
           <EquipmentQr equipmentId={equipment.id} inventoryCode={equipment.inventory_code} />
-          {isOperationalCompletionEnabled && role !== "usuario" && <PrivateAttachmentPanel relation={{ equipmentId: equipment.id }} title={t("Archivos privados del equipo")} />}
+          {isOperationalCompletionEnabled && <PrivateAttachmentPanel readOnly={role === "usuario"} relation={{ equipmentId: equipment.id }} title={t(role === "usuario"?"Archivos del equipo":"Archivos privados del equipo")} />}
           {isBusinessCompletionEnabled && role !== "usuario" && <EquipmentTimeline equipmentId={equipment.id} />}
           <section className="panel inventory-summary-card">
-            <h3>{t("Resumen técnico")}</h3>
-            <div><span>{t("Nivel de riesgo")}</span><strong>{equipment.current_risk_category ? riskLabels[equipment.current_risk_category] : t("No visible")}</strong></div>
-            <div><span>{t("Puntuación")}</span><strong>{equipment.current_risk_score ?? "—"}</strong></div>
-            <div><span>{t("Documentos")}</span><strong>{restricted ? t("Restringidos") : documents.length}</strong></div>
-            <div><span>{t("Rutinas")}</span><strong>{restricted ? t("Restringidas") : programs.length}</strong></div>
+            <h3>{t(restricted?"Resumen del equipo":"Resumen técnico")}</h3>
+            {!restricted && <><div><span>{t("Nivel de riesgo")}</span><strong>{equipment.current_risk_category ? riskLabels[equipment.current_risk_category] : t("No visible")}</strong></div>
+            <div><span>{t("Puntuación")}</span><strong>{equipment.current_risk_score ?? "—"}</strong></div></>}
+            <div><span>{t("Documentos")}</span><strong>{documents.length}</strong></div>
+            {!restricted && <div><span>{t("Rutinas")}</span><strong>{programs.length}</strong></div>}
           </section>
           {role === "jefe" && pendingIssues.length > 0 && (
             <section className="panel inventory-issues-card">

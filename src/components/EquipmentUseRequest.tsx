@@ -8,13 +8,13 @@ import {Button} from "./ui"
 import {EquipmentReportSelector} from "./EquipmentReportSelector"
 import {EquipmentQrScanner} from "./EquipmentQrScanner"
 
-export function EquipmentUseRequest(){
+export function EquipmentUseRequest({equipment,compact=false}:{equipment?:EquipmentInventoryDetail;compact?:boolean}){
  const [open,setOpen]=useState(false),[notice,setNotice]=useState("")
  const [bookingId,setBookingId]=useState<number|null>(null)
- return <><Button className="loan-request-button" icon={CalendarPlus} onClick={()=>{setNotice("");setOpen(true)}}>{t("Solicitar equipo")}</Button>{notice && <p role="status">{notice}</p>}{open && <RequestForm onClose={()=>setOpen(false)} onSaved={id=>{setOpen(false);if(Number.isSafeInteger(id)&&id>0)setBookingId(id);setNotice(t("Solicitud registrada. Consulta el horario en Calendario → Uso de equipo."));window.dispatchEvent(new Event("biomedgest:operations-changed"))}}/>}{bookingId && <div className="modal-layer"><div className="modal loan-voucher-modal" role="dialog" aria-modal="true" aria-label={t("Vale de préstamo")}><LoanVoucher bookingId={bookingId} onClose={()=>setBookingId(null)}/></div></div>}</>
+ return <div className="equipment-request-action" onClick={event=>event.stopPropagation()}><Button variant={compact?"secondary":"primary"} className={compact?"equipment-request-shortcut":"loan-request-button"} icon={CalendarPlus} onClick={()=>{setNotice("");setOpen(true)}}>{t(compact?"Solicitar":"Solicitar equipo")}</Button>{notice && <p role="status">{notice}</p>}{open && <RequestForm initialEquipment={equipment} onClose={()=>setOpen(false)} onSaved={id=>{setOpen(false);if(Number.isSafeInteger(id)&&id>0)setBookingId(id);setNotice(t("Solicitud registrada. Consulta el horario en Calendario → Uso de equipo."));window.dispatchEvent(new Event("biomedgest:operations-changed"))}}/>}{bookingId && <div className="modal-layer"><div className="modal loan-voucher-modal" role="dialog" aria-modal="true" aria-label={t("Vale de préstamo")}><LoanVoucher bookingId={bookingId} onClose={()=>setBookingId(null)}/></div></div>}</div>
 }
-function RequestForm({onClose,onSaved}:{onClose:()=>void;onSaved:(id:number)=>void}){
- const [equipment,setEquipment]=useState<EquipmentInventoryDetail|null>(null),[query,setQuery]=useState("")
+function RequestForm({onClose,onSaved,initialEquipment}:{onClose:()=>void;onSaved:(id:number)=>void;initialEquipment?:EquipmentInventoryDetail}){
+ const [equipment,setEquipment]=useState<EquipmentInventoryDetail|null>(initialEquipment||null),[query,setQuery]=useState(initialEquipment?.inventory_code||"")
  const [start,setStart]=useState(""),[end,setEnd]=useState(""),[location,setLocation]=useState("")
  const [error,setError]=useState(""),[busy,setBusy]=useState(false)
  function select(item:EquipmentInventoryDetail){setEquipment(item);setQuery(item.inventory_code);setError("")}

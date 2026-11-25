@@ -89,6 +89,15 @@ function api(overrides: Partial<InventoryApi> = {}): InventoryApi {
 }
 
 describe("inventario", () => {
+  it("opens a prefilled request from the row without navigating to the equipment record",async()=>{
+    const select=vi.fn()
+    render(<Inventory role="usuario" onSelectEquipment={select} api={api()} configured/>)
+    fireEvent.click(await screen.findByRole("button",{name:"Solicitar"}))
+    expect(select).not.toHaveBeenCalled()
+    expect(screen.getByRole("dialog",{name:"Solicitar equipo"})).toBeTruthy()
+    expect((screen.getByRole("combobox",{name:"Buscar equipo registrado"}) as HTMLInputElement).value).toBe(equipment.inventory_code)
+    expect(screen.getByText(/Serie: SERIE-1/)).toBeTruthy()
+  })
   it("muestra configuración pendiente y no consulta datos", () => {
     const inventoryApi = api()
     render(
@@ -241,7 +250,7 @@ describe("ficha de equipo", () => {
     const restrictedBundle = {
       ...bundle,
       risks: [],
-      documents: [],
+      documents: bundle.documents,
       programs: [],
       issues: [],
       restricted: true,
@@ -255,7 +264,10 @@ describe("ficha de equipo", () => {
         configured
       />,
     )
-    expect(await screen.findByText("Ficha clínica limitada")).toBeTruthy()
+    expect(await screen.findByText("Ficha de consulta")).toBeTruthy()
+    expect(screen.getByText("SERIE-1")).toBeTruthy()
+    expect(screen.getByRole("heading",{name:"Manuales y documentos"})).toBeTruthy()
+    expect(screen.getByRole("button",{name:"Solicitar equipo"})).toBeTruthy()
     expect(screen.queryByText("Evaluación de riesgo")).toBeNull()
     expect(screen.queryByText("Incidencias pendientes")).toBeNull()
   })

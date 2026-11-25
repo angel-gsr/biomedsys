@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getInventoryCapabilities,
+  getEquipmentInventoryBundle,
   listEquipmentInventory,
   type EquipmentDirectoryItem,
   type EquipmentInventoryDetail,
@@ -16,6 +17,7 @@ const directoryItem: EquipmentDirectoryItem = {
   hospital_area: "Urgencias",
   location: "Cubículo 1",
   status: "operativo",
+  serial_number: "SERIE-1",
 };
 
 const inventoryItem: EquipmentInventoryDetail = {
@@ -30,6 +32,18 @@ const inventoryItem: EquipmentInventoryDetail = {
 };
 
 describe("consultas de inventario", () => {
+  it("loads clinical serials and manuals without querying private technical tables",async()=>{
+    const docs=[{id:1,title:"Manual de usuario",url:"https://example.com/manual.pdf",document_type:"manual_usuario",review_status:"pendiente"}]
+    const rpc=vi.fn().mockImplementation(async(name:string)=>({data:name==="search_clinical_equipment"?[directoryItem]:docs,error:null}))
+    const from=vi.fn(),client={rpc,from} as unknown as SupabaseClient
+    const result=await getEquipmentInventoryBundle(directoryItem.id,"usuario",client)
+    expect(result.equipment.serial_number).toBe("SERIE-1")
+    expect(result.documents).toEqual(docs)
+    expect(result.risks).toEqual([])
+    expect(result.restricted).toBe(true)
+    expect(rpc).toHaveBeenCalledWith("list_clinical_equipment_documents",{target_equipment_id:directoryItem.id})
+    expect(from).not.toHaveBeenCalled()
+  })
   it("usa el directorio limitado para usuario y filtra el área sin solicitar datos técnicos", async () => {
     const rpc = vi.fn().mockResolvedValue({ data: [directoryItem], error: null });
     const client = { rpc } as unknown as SupabaseClient;
@@ -40,9 +54,9 @@ describe("consultas de inventario", () => {
       client,
     );
 
-    expect(rpc).toHaveBeenCalledWith("search_equipment_directory", { search_term: "monitor" });
+    expect(rpc).toHaveBeenCalledWith("search_clinical_equipment", { search_term: "monitor" });
     expect(result).toHaveLength(1);
-    expect(result[0].serial_number).toBeNull();
+    expect(result[0].serial_number).toBe("SERIE-1");
     expect(result[0].current_risk_category).toBeNull();
   });
 
@@ -74,7 +88,7 @@ describe("permisos del inventario", () => {
     expect(getInventoryCapabilities("usuario")).toEqual({
       canViewFullDetail: false,
       canViewRisk: false,
-      canViewDocuments: false,
+      canViewDocuments: true,
       canViewPrograms: false,
       canViewIssues: false,
     });

@@ -107,6 +107,7 @@ export type EquipmentDirectoryItem = {
   location: string | null
 
   status: EquipmentStatus
+  serial_number?: string | null
 }
 
 export type EquipmentInventoryDetail = EquipmentDirectoryItem & {
@@ -421,7 +422,7 @@ export function getInventoryCapabilities(role: Role): InventoryCapabilities {
 
     canViewRisk: isBiomedicalStaff,
 
-    canViewDocuments: isBiomedicalStaff,
+    canViewDocuments: true,
 
     canViewPrograms: isBiomedicalStaff,
 
@@ -591,6 +592,8 @@ export async function createReport(
 }
 
 export type ReportSummary = {
+  reporter_snapshot?: {full_name:string;institutional_id:string;department:string|null}
+  maintenance_number?:string|null
   observations?: string | null
   incident_option_id?: number | null
   incident_label?: string | null
@@ -925,8 +928,13 @@ export async function updateAssignedMaintenanceStatus(
   return data as MaintenanceSummary
 }
 
-export async function listDocumentLibrary() {
+export async function listDocumentLibrary(role: Role = "jefe") {
   const configuredClient = requireSupabase()
+  if(role === "usuario") {
+    const {data,error}=await configuredClient.rpc("list_clinical_equipment_documents",{target_equipment_id:null})
+    if(error)throw error
+    return (data || []) as DocumentLibraryItem[]
+  }
 
   const { data, error } = await configuredClient
 
@@ -1267,7 +1275,7 @@ export async function searchEquipmentDirectory(
   const configuredClient = requireSupabase(client)
 
   const { data, error } = await configuredClient.rpc(
-    "search_equipment_directory",
+    "search_clinical_equipment",
     {
       search_term: searchTerm.trim() || null,
     },
@@ -1303,7 +1311,7 @@ export async function listEquipmentInventory(
       .map<EquipmentInventoryDetail>((item) => ({
         ...item,
 
-        serial_number: null,
+        serial_number: item.serial_number || null,
 
         manufacture_year: null,
 
@@ -1387,11 +1395,14 @@ export async function getEquipmentInventoryBundle(
     if (!item)
       throw new Error("Equipo no encontrado o sin permisos para consultarlo.")
 
+    const {data: documents,error: documentError}=await configuredClient.rpc("list_clinical_equipment_documents",{target_equipment_id:equipmentId})
+    if(documentError)throw documentError
+
     return {
       equipment: {
         ...item,
 
-        serial_number: null,
+        serial_number: item.serial_number || null,
 
         manufacture_year: null,
 
@@ -1408,7 +1419,7 @@ export async function getEquipmentInventoryBundle(
 
       risks: [],
 
-      documents: [],
+      documents: (documents || []) as EquipmentDocument[],
 
       programs: [],
 

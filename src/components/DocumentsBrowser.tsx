@@ -1,3 +1,4 @@
+import { PrivateAttachmentPanel } from "./PrivateAttachmentPanel"
 import { t } from "../lib/i18n"
 import { useEffect, useState } from "react"
 import { ExternalLink, FileText, Search } from "lucide-react"
@@ -32,7 +33,7 @@ export function DocumentsBrowser({ role }: { role: Role }) {
     let active = true
     setLoading(true)
     setError("")
-    Promise.all([listDocumentLibrary(), listEquipmentInventory(role)])
+    Promise.all([listDocumentLibrary(role), listEquipmentInventory(role)])
       .then(([docs, assets]) => { if (active) { setDocuments(docs); setEquipment(assets) } })
       .catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "No fue posible consultar los documentos.") })
       .finally(() => { if (active) setLoading(false) })
@@ -63,6 +64,7 @@ export function DocumentsBrowser({ role }: { role: Role }) {
       <section className="panel" aria-live="polite">
         <div className="panel-head"><div><h3>{selected ? `Documentos de ${selected.inventory_code}` : t("Documentos del equipo")}</h3><p>{selected ? `${selected.equipment_type} · ${selected.hospital_area || "Sin área"} · ${selected.location || "Sin ubicación específica"}` : t("Selecciona un equipo de la lista anterior.")}</p></div><FileText size={21} /></div>
         {selected && (selectedDocuments.length ? <div className="document-list">{selectedDocuments.map((doc) => { const href = documentUrl(doc.url); return <article key={doc.id}><FileText size={20} /><div><strong>{doc.title || (doc.document_type === "manual_usuario" ? "Manual de usuario" : doc.document_type === "manual_servicio" ? "Manual de servicio" : "Documento")}</strong><span>{doc.document_type.replace(/_/g, " ")} · {doc.review_status}</span></div>{href ? <a href={href} target="_blank" rel="noreferrer">{t("Abrir documento")}{" "}<ExternalLink size={14} /></a> : <span className="badge badge-warning">{t("Enlace por revisar")}</span>}</article> })}</div> : <div className="empty-state"><h3>{t("Este equipo no tiene documentos vinculados")}</h3></div>)}
+        {selected && <PrivateAttachmentPanel relation={{equipmentId:selected.id}} title={t("Archivos del equipo")} readOnly/>}
         {selected && selectedDocuments.length > 0 && <p className="document-link-note">{t("Los documentos abren enlaces externos; su disponibilidad depende del sitio de origen.")}</p>}
       </section>
     </>}

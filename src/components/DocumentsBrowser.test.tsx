@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../lib/supabase", () => ({
+  listPrivateAttachments:vi.fn().mockResolvedValue([]),
   listEquipmentInventory: vi.fn().mockResolvedValue([
     { id: "a", inventory_code: "EQ-001", equipment_type: "Máquina de anestesia", manufacturer: "Marca", model: "A1", hospital_area: "Quirófano", location: "Sala 1", serial_number: "SER001" },
     { id: "b", inventory_code: "EQ-002", equipment_type: "Autoclave", manufacturer: "Marca", model: "B2", hospital_area: "CEYE", location: null, serial_number: "SER002" },

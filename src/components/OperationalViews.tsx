@@ -1,3 +1,4 @@
+import { CorrectiveOrderQueue } from "./CorrectiveOrderQueue"
 import { MaintenancePlanner } from "./MaintenancePlanner"
 import { t } from "../lib/i18n"
 import { ServiceOrderDocument } from "./ServiceOrderDocument"
@@ -191,14 +192,14 @@ export function MaintenanceView({ role, onOpenOrder }: { role: Role; onOpenOrder
   )
 }
 
-export function ServiceOrdersView({ role, requestedOrderId = null, onBack, backLabel = "Volver a Mesa de ayuda" }: { role: Role; requestedOrderId?: number | null; onBack?: () => void; backLabel?: string }) {
+export function ServiceOrdersView({ role, requestedOrderId = null, onBack, onOpenOrder, onAssignReport, backLabel = "Volver a Mesa de ayuda" }: { role: Role; requestedOrderId?: number | null; onBack?: () => void; onOpenOrder?: (id:number)=>void; onAssignReport?: (id:number)=>void; backLabel?: string }) {
   const state = useMaintenanceOverview()
   if (state.loading)
     return <Loading label={t("Consultando órdenes de servicio...")} />
   if (state.error) return <Failure error={state.error} retry={state.retry} />
   if (requestedOrderId !== null) {
     const item = state.maintenances.find(order => order.id === requestedOrderId)
-    return <><Button variant="secondary" icon={ArrowLeft} onClick={onBack}>{t(backLabel)}</Button>{!item ? <section className="panel"><h2>{t("Orden no disponible")}</h2><p>{t("No se encontró la orden o no tienes acceso a ella.")}</p></section> : <><PageIntro title={`Orden ${item.maintenance_number}`} description={t("Orden de servicio confirmada · Vista de consulta")} /><ReadOnlyServiceOrder key={item.id} item={item} /></>}</>
+    return <><Button variant="secondary" icon={ArrowLeft} onClick={onBack}>{t(backLabel)}</Button>{!item ? <section className="panel"><h2>{t("Orden no disponible")}</h2><p>{t("No se encontró la orden o no tienes acceso a ella.")}</p></section> : <><PageIntro title={`Orden ${item.maintenance_number}`} description={t(role === "tecnico" ? "Orden de servicio asignada · Atención del incidente" : "Orden de servicio confirmada · Vista de consulta")} />{role === "tecnico" ? <section className="panel orders-panel"><MaintenanceTable key={item.id} initialExpandedId={item.id} items={[item]} role={role} onChanged={state.retry}/></section> : <ReadOnlyServiceOrder key={item.id} item={item} />}</>}</>
   }
   return (
     <>
@@ -206,6 +207,7 @@ export function ServiceOrdersView({ role, requestedOrderId = null, onBack, backL
         title={t("Órdenes de servicio")}
         description={t("Mantenimientos creados en Supabase; los formularios técnicos detallados se habilitarán cuando exista una orden seleccionada.")}
       />
+      <CorrectiveOrderQueue role={role} onOpenOrder={id=>{state.retry();onOpenOrder?.(id)}} onAssignReport={onAssignReport}/>
       <section className="panel orders-panel">
         <MaintenanceTable items={state.maintenances} role={role} onChanged={state.retry} />
       </section>
@@ -260,8 +262,8 @@ function MaintenanceStatusEditor({ item, role, onChanged }: { item: MaintenanceS
   )
 }
 
-function MaintenanceTable({ items, role, onChanged }: { items: MaintenanceSummary[]; role: Role; onChanged: () => void }) {
-  const [expanded, setExpanded] = useState<number | null>(null)
+function MaintenanceTable({ items, role, onChanged, initialExpandedId=null }: { items: MaintenanceSummary[]; role: Role; onChanged: () => void; initialExpandedId?:number|null }) {
+  const [expanded, setExpanded] = useState<number | null>(initialExpandedId)
   if (items.length === 0)
     return (
       <div className="empty-state">

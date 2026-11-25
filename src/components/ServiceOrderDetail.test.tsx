@@ -11,7 +11,7 @@ import { ServiceOrdersView } from "./OperationalViews"
 afterEach(cleanup)
 it("opens only the requested confirmed order in read-only mode with PDF and a return arrow", async () => {
   const back = vi.fn()
-  render(<ServiceOrdersView role="tecnico" requestedOrderId={1} onBack={back} />)
+  render(<ServiceOrdersView role="jefe" requestedOrderId={1} onBack={back} />)
   expect(await screen.findByRole("heading", { name: "Orden MC-000001" })).toBeTruthy()
   expect(screen.queryByText("MC-000002")).toBeNull()
   expect(screen.queryByLabelText("Estado de MC-000001")).toBeNull()
@@ -24,4 +24,10 @@ it("keeps the return action when an order is unavailable", async () => {
   render(<ServiceOrdersView role="jefe" requestedOrderId={999} onBack={vi.fn()} />)
   expect(await screen.findByRole("heading", { name: "Orden no disponible" })).toBeTruthy()
   expect(screen.getByRole("button", { name: "Volver a Mesa de ayuda" })).toBeTruthy()
+})
+it("opens the technician's assigned order with its maintenance actions expanded",async()=>{
+ render(<ServiceOrdersView role="tecnico" requestedOrderId={1} onBack={vi.fn()}/>)
+ await screen.findByRole("heading",{name:"Orden MC-000001"})
+ expect(screen.getByLabelText("Estado de MC-000001")).toBeTruthy()
+ expect(screen.getByRole("button",{name:"Ocultar"})).toBeTruthy()
 })

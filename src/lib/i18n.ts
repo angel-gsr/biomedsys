@@ -650,6 +650,22 @@ Object.assign(dictionary,{
  "Firma dibujada opcional: usa el dedo, lápiz o mouse. También puedes dejar los espacios vacíos y firmar en papel. Descarga el PDF para conservar las firmas.":"Optional drawn signature: use your finger, pen or mouse. You can also leave the spaces blank and sign on paper. Download the PDF to keep the signatures.",
  "Usa el botón Solicitar equipo para reservar un horario y generar tu vale de préstamo en PDF.":"Use Request equipment to reserve a time slot and generate your loan voucher as a PDF.",
 })
+Object.assign(dictionary,{
+ "Solicitar":"Request","Ficha de consulta":"Equipment reference","Resumen del equipo":"Equipment summary","Referencia visual":"Visual reference",
+ "Imagen de referencia":"Reference image","Imagen de referencia no disponible":"Reference image unavailable",
+ "Imagen ilustrativa del tipo de equipo; el modelo puede variar.":"Illustrative equipment reference; the model may differ.",
+ "Créditos de la imagen":"Image credits","Ver imagen original":"View original image","Copia optimizada para visualización.":"Copy optimized for display.",
+ "Imagen enlazada desde el sitio del fabricante.":"Image linked from the manufacturer’s website.",
+ "Consulta la identificación, ubicación y documentos del equipo. Las evaluaciones de riesgo y el expediente técnico corresponden a Ingeniería Biomédica.":"View equipment identification, location and linked documents. Risk assessments and technical records are managed by Biomedical Engineering.",
+})
+Object.assign(dictionary,{
+ "Órdenes correctivas disponibles":"Available corrective orders","Cada falla genera una orden. Solo un biomédico puede tomarla; el jefe también puede asignarla.":"Each new fault creates an order. Only one biomedical engineer can claim it; a manager can also assign it.",
+ "No hay órdenes correctivas pendientes de asignación.":"No corrective orders await assignment.","Tomar orden":"Claim order","Tomando orden...":"Claiming order...","Asignar ingeniero":"Assign engineer","Asignar desde Mesa de ayuda":"Assign from Help desk","Actualizar":"Refresh",
+ "Documento del reporte":"Report document","Descargar reporte PDF":"Download report PDF","Documento PDF del reporte":"Report PDF document","Reintentar PDF":"Retry PDF",
+ "Fotografía de referencia del modelo. No corresponde a la unidad física del hospital.":"Reference photograph of the model, not the hospital’s physical asset.","No hay fotografía verificada de este modelo":"No verified photograph available for this model","Fotografía enlazada desde su sitio de origen.":"Photograph linked from its source website.","Archivos del equipo":"Equipment files",
+ "Al confirmar se asignará la orden del incidente al ingeniero seleccionado. Después podrás consultarla y descargar su PDF.":"Confirm to assign the incident order to the selected engineer. You can then view it and download its PDF.",
+})
+Object.assign(dictionary,{"Orden de servicio asignada · Atención del incidente":"Assigned service order · Incident response"})
 export function t(value:string):string {
  if(preferences().language!=="en")return value
  const exact=dictionary[value];if(exact)return exact
