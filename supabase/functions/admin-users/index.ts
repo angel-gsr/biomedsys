@@ -78,7 +78,7 @@ Deno.serve(async (request) => {
     if (createError || !created.user) return json(request, { error: createError?.message || "No fue posible crear Auth" }, 400)
     const { error: profileError } = await serviceClient.from("profiles").insert({
       id: created.user.id, institutional_id: body.institutionalId, full_name: body.fullName.trim(),
-      first_name: registration.first_name, last_name: registration.last_name, age: registration.age, phone: registration.phone,
+      avatar_path: registration.avatar_path || null, first_name: registration.first_name, last_name: registration.last_name, age: registration.age, phone: registration.phone,
       role: body.role, department: body.department?.trim() || null, active: true, must_change_password: true,
     })
     if (profileError) {
