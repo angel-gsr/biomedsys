@@ -78,12 +78,20 @@ describe("completion RPC clients", () => {
     expect(invoke).toHaveBeenCalledWith("admin-users", { body: { action: "set-auth-status", profileId: "profile-1", active: false } })
   })
 
-  it("updates Auth before clearing the temporary-password flag", async () => {
-    const updateUser = vi.fn().mockResolvedValue({ error: null })
-    const rpc = vi.fn().mockResolvedValue({ data: { id: "user-1", must_change_password: false }, error: null })
-    const client = { auth: { updateUser }, rpc } as unknown as SupabaseClient
-    await changeOwnPassword("NuevaClave1234", client)
-    expect(updateUser).toHaveBeenCalledWith({ password: "NuevaClave1234" })
-    expect(rpc).toHaveBeenCalledWith("complete_password_change")
+  it("changes passwords through the validated backend", async () => {
+    const invoke = vi.fn().mockResolvedValue({ data: { id: "user-1", must_change_password: false }, error: null })
+    const client = { functions: { invoke } } as unknown as SupabaseClient
+    await changeOwnPassword("NuevaClave12", client)
+    expect(invoke).toHaveBeenCalledWith("admin-users", { body: { action: "change-password", password: "NuevaClave12" } })
+  })
+  it.each(["12345", "1234567890123"])("rejects password length outside 6–12 before backend: %s", async password => {
+    const invoke = vi.fn()
+    await expect(changeOwnPassword(password, { functions: { invoke } } as unknown as SupabaseClient)).rejects.toThrow("6 y 12")
+    expect(invoke).not.toHaveBeenCalled()
+  })
+  it.each(["Aa1234", "Aa1234567890"])("accepts boundary length %s", async password => {
+    const invoke = vi.fn().mockResolvedValue({ data: {}, error: null })
+    await changeOwnPassword(password, { functions: { invoke } } as unknown as SupabaseClient)
+    expect(invoke).toHaveBeenCalledOnce()
   })
 })

@@ -11,6 +11,7 @@ type ProvisionBody = {
   accessRequestId?: number
 }
 type AuthStatusBody = { action: "set-auth-status"; profileId: string; active: boolean }
+type PasswordBody = { action: "change-password"; password: string }
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(request) })
@@ -24,9 +25,18 @@ Deno.serve(async (request) => {
     const { data: userResult, error: userError } = await caller.auth.getUser()
     if (userError || !userResult.user) return json(request, { error: "Sesión inválida" }, 401)
     const { data: profile } = await caller.from("profiles").select("role, active").eq("id", userResult.user.id).single()
-    if (!profile?.active || profile.role !== "jefe") return json(request, { error: "Operación reservada para el rol jefe" }, 403)
-
-    const body = await request.json() as ProvisionBody | AuthStatusBody
+    if (!profile?.active) return json(request, { error: "Perfil activo requerido" }, 403)
+    const body = await request.json() as ProvisionBody | AuthStatusBody | PasswordBody
+    if (body.action === "change-password") {
+      if (typeof body.password !== "string" || body.password.length < 6 || body.password.length > 12 || !/[A-Z]/.test(body.password) || !/[a-z]/.test(body.password) || !/\d/.test(body.password))
+        return json(request, { error: "La contraseña debe tener entre 6 y 12 caracteres, con mayúscula, minúscula y número" }, 400)
+      const { error: passwordError } = await caller.auth.updateUser({ password: body.password })
+      if (passwordError) return json(request, { error: passwordError.message }, 400)
+      const { data: updated, error: completionError } = await caller.rpc("complete_password_change")
+      if (completionError) return json(request, { error: completionError.message }, 400)
+      return json(request, updated)
+    }
+    if (profile.role !== "jefe") return json(request, { error: "Operación reservada para el rol jefe" }, 403)
     if (body.action === "set-auth-status") {
       if (!/^[0-9a-f-]{36}$/i.test(body.profileId)) return json(request, { error: "Perfil inválido" }, 400)
       if (body.profileId === userResult.user.id && !body.active) return json(request, { error: "No puedes bloquear tu propia cuenta" }, 400)
@@ -37,15 +47,17 @@ Deno.serve(async (request) => {
       return json(request, { id: body.profileId, active: body.active })
     }
     if (body.action !== "provision") return json(request, { error: "Acción no soportada" }, 400)
-    const prefixes = { jefe: "00", tecnico: "01", usuario: "02" }
-    if (!/^(00|01|02)\d{6}$/.test(body.institutionalId) || !body.institutionalId.startsWith(prefixes[body.role]))
-      return json(request, { error: "ID institucional incompatible con el rol" }, 400)
-    if (body.fullName.trim().length < 3) return json(request, { error: "Nombre inválido" }, 400)
-    if (body.temporaryPassword.length < 12 || !/[A-Z]/.test(body.temporaryPassword) || !/[a-z]/.test(body.temporaryPassword) || !/\d/.test(body.temporaryPassword))
-      return json(request, { error: "La contraseña temporal debe tener al menos 12 caracteres, mayúscula, minúscula y número" }, 400)
-
-    const { data: duplicate } = await serviceClient.from("profiles").select("id").eq("institutional_id", body.institutionalId).maybeSingle()
-    if (duplicate) return json(request, { error: "El ID institucional ya existe" }, 409)
+    if (!Number.isSafeInteger(body.accessRequestId)) return json(request, { error: "Selecciona una solicitud registrada" }, 400)
+    const { data: registration, error: registrationError } = await serviceClient.from("user_access_requests").select("*").eq("id", body.accessRequestId).single()
+    if (registrationError || !registration || registration.status !== "pendiente") return json(request, { error: "Solicitud no disponible" }, 409)
+    if (!registration.first_name || !registration.last_name || !registration.age) return json(request, { error: "Registra una nueva solicitud con los datos personales completos" }, 400)
+    if (typeof body.temporaryPassword !== "string" || body.temporaryPassword.length < 6 || body.temporaryPassword.length > 12 || !/[A-Z]/.test(body.temporaryPassword) || !/[a-z]/.test(body.temporaryPassword) || !/\d/.test(body.temporaryPassword))
+      return json(request, { error: "La contraseña temporal debe tener entre 6 y 12 caracteres, con mayúscula, minúscula y número" }, 400)
+    // Identity, role and department come exclusively from the validated database record.
+    body.institutionalId = registration.institutional_id
+    body.fullName = registration.full_name
+    body.role = registration.role
+    body.department = registration.department
     const email = `${body.institutionalId}@biomedgest.local`
     const { data: created, error: createError } = await serviceClient.auth.admin.createUser({
       email, password: body.temporaryPassword, email_confirm: true,
@@ -54,6 +66,7 @@ Deno.serve(async (request) => {
     if (createError || !created.user) return json(request, { error: createError?.message || "No fue posible crear Auth" }, 400)
     const { error: profileError } = await serviceClient.from("profiles").insert({
       id: created.user.id, institutional_id: body.institutionalId, full_name: body.fullName.trim(),
+      first_name: registration.first_name, last_name: registration.last_name, age: registration.age, phone: registration.phone,
       role: body.role, department: body.department?.trim() || null, active: true, must_change_password: true,
     })
     if (profileError) {

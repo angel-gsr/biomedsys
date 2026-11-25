@@ -64,7 +64,7 @@ export type ProfileChange = {
   previous_active: boolean; new_active: boolean; reason: string; changed_at: string
 }
 
-export type AccessRequest = { id: number; institutional_id: string; full_name: string; role: Role; department: string | null; status: string; created_at: string }
+export type AccessRequest = { id: number; institutional_id: string; full_name: string; first_name?: string; last_name?: string; age?: number; phone?: string | null; role: Role; department: string | null; status: string; created_at: string }
 
 export type Quote = {
   id: number
@@ -1193,9 +1193,17 @@ export async function saveQuoteItems(
   return data as Quote
 }
 
+export async function listUserDepartments() {
+  const { data, error } = await requireSupabase(supabase).from("user_departments").select("name").order("name")
+  if (error) throw error
+  return (data || []).map(row => row.name as string)
+}
+
 export async function createAccessRequest(input: {
-  institutionalId: string
-  fullName: string
+  firstName: string
+  lastName: string
+  age: string
+  phone: string
   role: Role
   department: string
 }) {
@@ -1204,8 +1212,10 @@ export async function createAccessRequest(input: {
   const { error } = await supabase
     .from("user_access_requests")
     .insert({
-      institutional_id: input.institutionalId,
-      full_name: input.fullName,
+      first_name: input.firstName.trim(),
+      last_name: input.lastName.trim(),
+      age: Number(input.age),
+      phone: input.phone.trim() || null,
       role: input.role,
       department: input.department || null,
     })
@@ -1216,7 +1226,7 @@ export async function createAccessRequest(input: {
 export async function listAccessRequests(client: SupabaseClient | null = supabase) {
   const configuredClient = requireSupabase(client)
   const { data, error } = await configuredClient.from("user_access_requests")
-    .select("id, institutional_id, full_name, role, department, status, created_at")
+    .select("id, institutional_id, full_name, first_name, last_name, age, phone, role, department, status, created_at")
     .order("created_at", { ascending: false })
   if (error) throw error
   return (data || []) as AccessRequest[]
@@ -1900,12 +1910,11 @@ export async function syncAuthStatus(profileId: string, active: boolean, client:
 
 export async function changeOwnPassword(password: string, client: SupabaseClient | null = supabase) {
   const configuredClient = requireSupabase(client)
-  if (password.length < 12 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password))
-    throw new Error("La contraseña debe tener al menos 12 caracteres, mayúscula, minúscula y número.")
-  const { error: authError } = await configuredClient.auth.updateUser({ password })
-  if (authError) throw authError
-  const { data, error } = await configuredClient.rpc("complete_password_change")
+  if (password.length < 6 || password.length > 12 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password))
+    throw new Error("La contraseña debe tener entre 6 y 12 caracteres, con mayúscula, minúscula y número.")
+  const { data, error } = await configuredClient.functions.invoke("admin-users", { body: { action: "change-password", password } })
   if (error) throw error
+  if (data?.error) throw new Error(data.error)
   return data as Profile
 }
 
