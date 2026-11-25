@@ -17,3 +17,10 @@ it("rejects active image formats and oversized originals before decoding",async(
  await expect(resizeProfilePhoto(new File([new Uint8Array(10*1024*1024+1)],"big.jpg",{type:"image/jpeg"}))).rejects.toThrow("10 MB")
  expect(decode).not.toHaveBeenCalled()
 })
+it("falls back to JPEG when the browser cannot encode WebP",async()=>{
+ vi.stubGlobal("createImageBitmap",vi.fn().mockResolvedValue({width:400,height:400,close:vi.fn()}))
+ vi.spyOn(HTMLCanvasElement.prototype,"getContext").mockReturnValue({drawImage:vi.fn()} as unknown as CanvasRenderingContext2D)
+ vi.spyOn(HTMLCanvasElement.prototype,"toBlob").mockImplementation((callback,type)=>callback(new Blob(["thumbnail"],{type:type==="image/webp"?"image/png":"image/jpeg"})))
+ const image=await resizeProfilePhoto(new File(["source"],"photo.png",{type:"image/png"}))
+ expect(image.type).toBe("image/jpeg");expect(image.name).toBe("perfil.jpg");expect(image.size).toBeLessThanOrEqual(avatarLimit)
+})

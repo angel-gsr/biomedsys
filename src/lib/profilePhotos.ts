@@ -9,9 +9,11 @@ export async function resizeProfilePhoto(file: File): Promise<File> {
   const canvas=document.createElement("canvas");canvas.width=192;canvas.height=192
   const ctx=canvas.getContext("2d");if(!ctx)throw new Error("No fue posible procesar la imagen.")
   const side=Math.min(bitmap.width,bitmap.height);ctx.drawImage(bitmap,(bitmap.width-side)/2,(bitmap.height-side)/2,side,side,0,0,192,192)
-  for(const quality of [.75,.55,.35]) {
-   const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/webp",quality))
-   if(blob && blob.size<=avatarLimit && ["image/webp","image/jpeg"].includes(blob.type))return new File([blob],blob.type==="image/webp"?"perfil.webp":"perfil.jpg",{type:blob.type})
+  for(const format of ["image/webp","image/jpeg"]) {
+   for(const quality of [.75,.55,.35]) {
+    const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,format,quality))
+    if(blob && blob.size<=avatarLimit && blob.type===format)return new File([blob],format==="image/webp"?"perfil.webp":"perfil.jpg",{type:blob.type})
+   }
   }
   throw new Error("No fue posible reducir la imagen a 64 KB.")
  }finally{bitmap.close()}
