@@ -14,7 +14,7 @@ function backend(role = "jefe") {
   }
   const registration = { institutional_id: "02181000", full_name: "Ángel García", first_name: "Ángel", last_name: "García", age: 28, phone: null, department: "Urgencias", role: "usuario", status: "pendiente" }
   const service = {
-    auth: { admin: { createUser, deleteUser: vi.fn() } },
+    auth: { admin: { createUser, deleteUser: vi.fn(), updateUserById: updateUser } },
     from: (table: string) => table === "profiles" ? { insert: profileInsert } : {
       select: () => ({ eq: () => ({ single: async () => ({ data: registration, error: null }) }) }),
       update: () => ({ eq: () => ({ eq: async () => ({ error: null }) }) }),
@@ -52,7 +52,7 @@ it.each(["Aa123", "Aa12345678901X", "123456"])("rejects invalid temporary passwo
 it.each(["jefe", "tecnico", "usuario"])("allows own password change for %s", async role => {
   const api = backend(role)
   expect((await api.invoke({ action: "change-password", password: "Aa1234" })).status).toBe(200)
-  expect(api.updateUser).toHaveBeenCalledWith({ password: "Aa1234" })
+  expect(api.updateUser).toHaveBeenCalledWith("caller", { password: "Aa1234" })
 })
 it("rejects normal passwords over the maximum before changing Auth", async () => {
   const api = backend("usuario")

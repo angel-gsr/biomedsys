@@ -84,6 +84,10 @@ describe("completion RPC clients", () => {
     await changeOwnPassword("NuevaClave12", client)
     expect(invoke).toHaveBeenCalledWith("admin-users", { body: { action: "change-password", password: "NuevaClave12" } })
   })
+  it("shows the backend explanation when password change fails", async () => {
+    const invoke = vi.fn().mockResolvedValue({ data: null, error: { context: new Response(JSON.stringify({ error: "Sesión inválida; inicia sesión nuevamente" }), { status: 401 }) } })
+    await expect(changeOwnPassword("Aa1234", { functions: { invoke } } as unknown as SupabaseClient)).rejects.toThrow("Sesión inválida")
+  })
   it.each(["12345", "1234567890123"])("rejects password length outside 6–12 before backend: %s", async password => {
     const invoke = vi.fn()
     await expect(changeOwnPassword(password, { functions: { invoke } } as unknown as SupabaseClient)).rejects.toThrow("6 y 12")

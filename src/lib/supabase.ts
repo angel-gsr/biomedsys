@@ -1913,7 +1913,14 @@ export async function changeOwnPassword(password: string, client: SupabaseClient
   if (password.length < 6 || password.length > 12 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password))
     throw new Error("La contraseña debe tener entre 6 y 12 caracteres, con mayúscula, minúscula y número.")
   const { data, error } = await configuredClient.functions.invoke("admin-users", { body: { action: "change-password", password } })
-  if (error) throw error
+  if (error) {
+    const response = (error as { context?: Response }).context
+    if (response?.clone) {
+      const details = await response.clone().json().catch(() => null)
+      if (typeof details?.error === "string") throw new Error(details.error)
+    }
+    throw error
+  }
   if (data?.error) throw new Error(data.error)
   return data as Profile
 }

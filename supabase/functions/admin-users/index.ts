@@ -30,7 +30,8 @@ Deno.serve(async (request) => {
     if (body.action === "change-password") {
       if (typeof body.password !== "string" || body.password.length < 6 || body.password.length > 12 || !/[A-Z]/.test(body.password) || !/[a-z]/.test(body.password) || !/\d/.test(body.password))
         return json(request, { error: "La contraseña debe tener entre 6 y 12 caracteres, con mayúscula, minúscula y número" }, 400)
-      const { error: passwordError } = await caller.auth.updateUser({ password: body.password })
+      // getUser above verifies the JWT; never accept the target user from the body.
+      const { error: passwordError } = await serviceClient.auth.admin.updateUserById(userResult.user.id, { password: body.password })
       if (passwordError) return json(request, { error: passwordError.message }, 400)
       const { data: updated, error: completionError } = await caller.rpc("complete_password_change")
       if (completionError) return json(request, { error: completionError.message }, 400)
