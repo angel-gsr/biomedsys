@@ -9,13 +9,14 @@ vi.mock("../lib/supabase", async original => ({ ...(await original<typeof import
 }))
 import { ServiceOrdersView } from "./OperationalViews"
 afterEach(cleanup)
-it("opens only the requested order with its actions and a return arrow", async () => {
+it("opens only the requested confirmed order in read-only mode with PDF and a return arrow", async () => {
   const back = vi.fn()
   render(<ServiceOrdersView role="tecnico" requestedOrderId={1} onBack={back} />)
   expect(await screen.findByRole("heading", { name: "Orden MC-000001" })).toBeTruthy()
   expect(screen.queryByText("MC-000002")).toBeNull()
-  expect(screen.getByLabelText("Estado de MC-000001")).toBeTruthy()
-  expect(screen.getByText("Técnico: Ingeniero Demo")).toBeTruthy()
+  expect(screen.queryByLabelText("Estado de MC-000001")).toBeNull()
+  expect(screen.getByText("Ingeniero Demo")).toBeTruthy()
+  expect(screen.getByRole("button", { name: "Descargar PDF" })).toBeTruthy()
   fireEvent.click(screen.getByRole("button", { name: "Volver a Mesa de ayuda" }))
   expect(back).toHaveBeenCalledOnce()
 })

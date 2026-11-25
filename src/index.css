@@ -888,3 +888,12 @@ td small { color: #8293a2; margin-top: 3px; font-size: 8px; }
   .personal-notice-list .notification-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr; }
   .personal-notice-list .notification-actions button { width: 100%; }
 }
+
+.service-order-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.service-order-section { min-width: 0; margin: 0; padding: 24px; }
+.service-order-section h3 { margin: 0 0 18px; padding-bottom: 12px; border-bottom: 1px solid #d7e4ef; }
+.service-order-section dl { margin: 0; display: grid; gap: 14px; }
+.service-order-section dt { color: #627b90; font-size: .85rem; margin-bottom: 4px; }
+.service-order-section dd { margin: 0; color: #173650; overflow-wrap: anywhere; white-space: pre-wrap; }
+.service-order-toolbar { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 18px; }
+@media(max-width: 700px) { .service-order-grid { grid-template-columns: minmax(0,1fr); } .service-order-section { padding: 18px; } }

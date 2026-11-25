@@ -1,3 +1,4 @@
+import { ServiceOrderAssignment } from "./components/ServiceOrderAssignment"
 import { UserPresence } from "./components/UserPresence"
 import { HospitalAlertHub } from "./components/HospitalAlertHub"
 import { IncidentPhotos } from "./components/IncidentPhotos"
@@ -480,59 +481,18 @@ function PageIntro({
   )
 }
 
-function ReportWorkflowEditor({ report, technicians, onCreated }: { report: ReportSummary; technicians: Profile[]; onCreated: () => void }) {
-  const [priority, setPriority] = useState<"critica" | "alta" | "ordinaria">(
-    report.priority === "Crítica" ? "critica" : report.priority === "Alta" ? "alta" : "ordinaria",
-  )
-  const [assignedTo, setAssignedTo] = useState("")
-  const [scheduledAt, setScheduledAt] = useState(() => {
-    const now = new Date()
-    return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
-  })
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState("")
-
-  async function save() {
-    if (!assignedTo || !scheduledAt) {
-      setError("Selecciona un técnico activo y la fecha de atención.")
-      return
-    }
-    setSaving(true)
-    setError("")
-    try {
-      await createCorrectiveOrderFromReport(report.id, assignedTo, priority, new Date(scheduledAt).toISOString())
-      onCreated()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No fue posible crear la orden correctiva.")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (report.maintenance_id)
-    return <div className="report-workflow-editor"><Badge>Orden vinculada</Badge><Badge>{report.status}</Badge></div>
-
-  return (
-    <div className="report-workflow-editor">
-      <label><span>Prioridad</span><select aria-label={`Prioridad de ${report.report_number}`} value={priority} onChange={(event) => setPriority(event.target.value as typeof priority)}><option value="critica">Crítica</option><option value="alta">Alta</option><option value="ordinaria">Ordinaria</option></select></label>
-      <label><span>Técnico</span><select aria-label={`Técnico de ${report.report_number}`} value={assignedTo} onChange={(event) => setAssignedTo(event.target.value)}><option value="">Seleccionar</option>{technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.full_name}</option>)}</select></label>
-      <label><span>Atención</span><input aria-label={`Fecha de atención de ${report.report_number}`} type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} /></label>
-      <button type="button" className="row-action" disabled={saving || technicians.length === 0} onClick={save}>{saving ? "Creando..." : "Clasificar y crear orden"}</button>
-      {error && <small className="form-error" role="alert">{error}</small>}
-    </div>
-  )
-}
-
 function ReportTray({
   role,
   setView,
   openReport,
   onOpenTechnovigilance,
   onOpenOrder,
+  onAssignOrder,
 }: {
   role: Role
   setView: (v: View) => void
   openReport: () => void
+  onAssignOrder: (id: number) => void
   onOpenOrder: (id: number) => void
   onOpenTechnovigilance: (id: number) => void
 }) {
@@ -540,7 +500,7 @@ function ReportTray({
     useState<Awaited<ReturnType<typeof listReports>>>([])
   const [previewId, setPreviewId] = useState<number | null>(null)
 
-  const [technicians, setTechnicians] = useState<Profile[]>([])
+
 
   const [error, setError] = useState("")
 
@@ -556,14 +516,8 @@ function ReportTray({
     const load = () => {
       setLoading(true)
       setError("")
-      Promise.all([
-        listReports(),
-        role === "jefe" ? listActiveTechnicians() : Promise.resolve([]),
-      ])
-        .then(([reportRows, technicianRows]) => {
-          setReports(reportRows)
-          setTechnicians(technicianRows)
-        })
+      listReports()
+        .then(setReports)
         .catch((reportError) => {
           setError(
             reportError instanceof Error
@@ -707,7 +661,7 @@ function ReportTray({
                     <span>Acción inicial: {report.action_taken || "No registrada"}</span>
                   </details>
                 </div>
-                {role === "jefe" && <ReportWorkflowEditor report={report} technicians={technicians} onCreated={() => listReports().then(setReports).catch(() => undefined)} />}
+                {role === "jefe" && (report.maintenance_id ? <div className="report-workflow-editor"><span className="badge badge-success">Orden vinculada</span><span className="badge badge-success">{report.status}</span></div> : <Button variant="secondary" onClick={() => onAssignOrder(report.id)}>Clasificar y crear orden</Button>)}
                 {role !== "jefe" && <><Badge>{report.priority}</Badge><Badge>{report.status}</Badge></>}
                 {role !== "usuario" && report.maintenance_id && <Button variant="secondary" onClick={() => onOpenOrder(report.maintenance_id!)}>Ver orden</Button>}
                 <button type="button" className="icon-btn" aria-label={role === "usuario" ? `Ver reporte ${report.report_number}` : `Abrir Tecnovigilancia de ${report.report_number}`} onClick={() => role === "usuario" ? setPreviewId(report.id) : onOpenTechnovigilance(report.id)}><ChevronRight size={18} /></button>
@@ -1083,6 +1037,8 @@ export default function App() {
   )
 
   const [reportOpen, setReportOpen] = useState(false)
+  const [orderReportId, setOrderReportId] = useState<number | null>(null)
+  useEffect(() => { if (view !== "orden") setOrderReportId(null) }, [view])
   const [requestedOrderId, setRequestedOrderId] = useState<number | null>(null)
   useEffect(() => { if (view !== "orden") setRequestedOrderId(null) }, [view])
   const [technovigilanceReportId, setTechnovigilanceReportId] = useState<number | null>(null)
@@ -1235,7 +1191,7 @@ export default function App() {
               }}
             />
           )}
-          {view === "orden" && <ServiceOrdersView role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView("reportes") }} />}
+          {view === "orden" && (orderReportId !== null && role === "jefe" ? <ServiceOrderAssignment key={orderReportId} reportId={orderReportId} onBack={() => { setOrderReportId(null); setView("reportes") }} onConfirmed={id => { setRequestedOrderId(id); setOrderReportId(null) }} /> : <ServiceOrdersView role={role} requestedOrderId={requestedOrderId} onBack={() => { setRequestedOrderId(null); setView("reportes") }} />)}
           {view === "calendario" && <GeneralCalendar role={role} onMaintenance={() => setView("orden")} />}
           {view === "mantenimiento" && <MaintenanceView role={role} />}
           {view === "avisos" && <NoticesView />}
@@ -1253,6 +1209,7 @@ export default function App() {
               role={role}
               setView={setView}
               openReport={() => setReportOpen(true)}
+              onAssignOrder={id => { setOrderReportId(id); setRequestedOrderId(null); setView("orden") }}
               onOpenOrder={id => { setRequestedOrderId(id); setView("orden") }}
               onOpenTechnovigilance={id => { setTechnovigilanceReportId(id); setView("tecnovigilancia") }}
             />

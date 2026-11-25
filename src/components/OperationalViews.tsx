@@ -1,3 +1,4 @@
+import { ServiceOrderDocument } from "./ServiceOrderDocument"
 import { FilePicker } from "./FilePicker"
 import { Fragment, useEffect, useMemo, useState } from "react"
 import {
@@ -13,6 +14,8 @@ import {
   deletePrivateAttachment,
   isOperationalCompletionEnabled,
   listMaintenanceOverview,
+  listReports,
+  type ReportSummary,
   saveCorrectiveIntervention,
   savePreventiveIntervention,
   uploadPrivateAttachment,
@@ -195,7 +198,7 @@ export function ServiceOrdersView({ role, requestedOrderId = null, onBack }: { r
   if (state.error) return <Failure error={state.error} retry={state.retry} />
   if (requestedOrderId !== null) {
     const item = state.maintenances.find(order => order.id === requestedOrderId)
-    return <><Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Volver a Mesa de ayuda</Button>{!item ? <section className="panel"><h2>Orden no disponible</h2><p>No se encontró la orden o no tienes acceso a ella.</p></section> : <><PageIntro title={`Orden ${item.maintenance_number}`} description={`${item.equipment_identifier || "Equipo vinculado"} · ${item.maintenance_code} · ${item.status.replace(/_/g," ")}`} /><section className="panel"><p>Prioridad: {item.priority || "Sin registrar"}</p><p>Programación: {formatDate(item.scheduled_at)}</p><p>Técnico: {item.assigned_to_name || "Sin asignar"}</p><MaintenanceStatusEditor key={`${item.id}-${item.status}`} item={item} role={role} onChanged={state.retry} /><CorrectiveWorkflowPanel key={item.id} item={item} role={role} onChanged={state.retry} /></section></>}</>
+    return <><Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Volver a Mesa de ayuda</Button>{!item ? <section className="panel"><h2>Orden no disponible</h2><p>No se encontró la orden o no tienes acceso a ella.</p></section> : <><PageIntro title={`Orden ${item.maintenance_number}`} description="Orden de servicio confirmada · Vista de consulta" /><ReadOnlyServiceOrder key={item.id} item={item} /></>}</>
   }
   return (
     <>
@@ -208,6 +211,15 @@ export function ServiceOrdersView({ role, requestedOrderId = null, onBack }: { r
       </section>
     </>
   )
+}
+
+function ReadOnlyServiceOrder({ item }: { item: MaintenanceSummary }) {
+  const [report,setReport]=useState<ReportSummary | null>(null)
+  const [loading,setLoading]=useState(Boolean(item.source_report_id)),[error,setError]=useState("")
+  useEffect(()=>{let active=true;if(!item.source_report_id)return;listReports().then(rows=>{if(active){const found=rows.find(r=>r.id===item.source_report_id);if(!found)throw new Error("No fue posible consultar el incidente vinculado");setReport(found)}}).catch(cause=>{if(active)setError(cause.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[item.source_report_id])
+  if(loading)return <p>Cargando datos del incidente...</p>
+  if(error)return <p role="alert" className="form-error">{error}</p>
+  return <ServiceOrderDocument item={item} report={report} />
 }
 
 function MaintenanceStatusEditor({ item, role, onChanged }: { item: MaintenanceSummary; role: Role; onChanged: () => void }) {
