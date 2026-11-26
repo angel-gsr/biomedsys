@@ -1,5 +1,5 @@
 import { PreferencesPanel } from "./components/PreferencesPanel"
-import { usePreferences, themeAt } from "./lib/preferences"
+import { usePreferences, themeAt, setPreferenceUser } from "./lib/preferences"
 import { t } from "./lib/i18n"
 import { ProfileAvatar } from "./components/ProfileAvatar"
 import { ServiceOrderAssignment } from "./components/ServiceOrderAssignment"
@@ -1023,7 +1023,8 @@ export default function App() {
   const displayPreferences = usePreferences()
   useEffect(() => { const apply = () => { document.documentElement.dataset.theme=themeAt(new Date(),displayPreferences.theme); document.documentElement.lang=displayPreferences.language }; apply(); const timer=window.setInterval(apply,60000); window.addEventListener("focus",apply); return()=>{clearInterval(timer);window.removeEventListener("focus",apply)} },[displayPreferences])
 
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, updateProfile] = useState<Profile | null>(null)
+  const setProfile=(value:Profile|null)=>{setPreferenceUser(value?.id||null);updateProfile(value)}
   const [passwordChangePending, setPasswordChangePending] = useState(false)
   const [loginNotice, setLoginNotice] = useState("")
 
