@@ -31,6 +31,7 @@ import {
 } from "../lib/supabase";
 import { EquipmentDocumentsPanel } from "./EquipmentDocumentsPanel";
 import { EquipmentIncidentHistory } from "./EquipmentIncidentHistory";
+import {EquipmentMaintenanceDates} from "./EquipmentMaintenanceDates";
 import { InventoryEnrichmentDetails } from "./InventoryEnrichmentDetails";
 import { InventoryEquipmentManager } from "./InventoryEquipmentManager";
 
@@ -332,6 +333,7 @@ function DetailContent({ bundle, role, onChanged }: { bundle: EquipmentInventory
             </div>
           </div>
 
+          <EquipmentMaintenanceDates equipmentId={equipment.id}/>
           <EquipmentDocumentsPanel equipmentId={equipment.id} documents={documents} role={role} onChanged={onChanged}/>
 
           {!restricted && (

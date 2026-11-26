@@ -8,6 +8,14 @@ afterEach(cleanup)
 const now = new Date(), day = localDateKey(now)
 const sample = (kind: CalendarEvent["kind"], start = `${day}T10:00:00`, end: string | null = `${day}T12:00:00`): CalendarEvent => ({ event_key: kind, kind, title: `${kind} de prueba`, starts_at: start, ends_at: end, location_id: 1, location_name: "Quirófano 1", equipment_ids: ["asset"], status: "programado", blocks_resources: true })
 describe("general calendar", () => {
+  it("shows a date-only forecast without inventing a time, reservation or service-order action",async()=>{
+    const planned={...sample("mantenimiento"),event_key:"preventivo:asset:1",title:"Fecha preventiva prevista",all_day:true,schedule_date:day,planned_only:true,blocks_resources:false,status:"pendiente_programacion",responsible_name:null}
+    services.listGeneralCalendar.mockResolvedValue([planned]);services.generalCalendarOptions.mockResolvedValue({locations:[],equipment:[],programs:[],technicians:[]})
+    const open=vi.fn();render(<GeneralCalendar role="jefe" onMaintenance={open}/>);await screen.findByText('Fecha preventiva prevista');expect(screen.getByText(/Horario por definir/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button',{name:'Ver evento'}));expect(screen.queryByRole('button',{name:'Ver orden'})).toBeNull();expect(open).not.toHaveBeenCalled()
+    expect(eventOnDay({...planned,starts_at:'2027-01-02T06:00:00Z',ends_at:'2027-01-03T06:00:00Z',schedule_date:'2027-01-02'},'2027-01-02')).toBe(true)
+    expect(eventOnDay({...planned,schedule_date:'2027-01-02'},'2027-01-03')).toBe(false)
+  })
   it("lets the requester cancel their own equipment-use entry and refreshes the agenda",async()=>{
     const booking={...sample("uso_equipo"),event_key:"reserva:9",can_cancel:true,responsible_name:"Solicitante de prueba"}
     services.listGeneralCalendar.mockResolvedValue([booking]);services.generalCalendarOptions.mockResolvedValue({locations:[],equipment:[],programs:[],technicians:[]})

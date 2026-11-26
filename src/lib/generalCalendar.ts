@@ -1,6 +1,6 @@
 import { supabase, type Role } from "./supabase"
 export type CalendarKind = "cirugia" | "mantenimiento" | "capacitacion" | "uso_equipo" | "evento"
-export type CalendarEvent = { event_key: string; kind: CalendarKind; title: string; starts_at: string; ends_at: string | null; location_id: number | null; location_name: string | null; equipment_ids: string[]; status: string; blocks_resources: boolean; responsible_name?: string | null; description?: string | null; audience?: Role[] | null; can_cancel?: boolean; can_view_loan?: boolean }
+export type CalendarEvent = { all_day?:boolean; schedule_date?:string; planned_only?:boolean; event_key: string; kind: CalendarKind; title: string; starts_at: string; ends_at: string | null; location_id: number | null; location_name: string | null; equipment_ids: string[]; status: string; blocks_resources: boolean; responsible_name?: string | null; description?: string | null; audience?: Role[] | null; can_cancel?: boolean; can_view_loan?: boolean }
 export type CalendarOptions = { locations: { id: number; name: string }[]; equipment: { id: string; name: string }[]; programs: { equipment_id: string; id: number; name: string }[]; technicians: { id: string; name: string }[] }
 export const calendarKindLabels: Record<CalendarKind, string> = { cirugia: "Cirugía", mantenimiento: "Mantenimiento", capacitacion: "Capacitación", uso_equipo: "Uso de equipo", evento: "Evento" }
 function client() { if (!supabase) throw new Error("Supabase no está configurado"); return supabase }
@@ -44,6 +44,7 @@ export function calendarEventsOverlap(a: Pick<CalendarEvent, "starts_at" | "ends
 }
 export function localDateKey(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` }
 export function eventOnDay(event: CalendarEvent, day: string) {
+  if(event.all_day && event.schedule_date)return event.schedule_date===day
   const start = new Date(`${day}T00:00:00`), end = new Date(start)
   end.setDate(end.getDate() + 1)
   return event.ends_at ? Date.parse(event.starts_at) < end.getTime() && Date.parse(event.ends_at) > start.getTime() : localDateKey(new Date(event.starts_at)) === day

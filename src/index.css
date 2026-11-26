@@ -1069,6 +1069,13 @@ td small { color: var(--text-secondary, #8293a2); margin-top: 3px; font-size: 8p
 .purchase-summary dd { margin:0;white-space:nowrap; }
 .purchase-document > p { margin-block:12px; }
 .purchase-document .table-actions { margin-block:16px; }
+.equipment-maintenance-dates h3 { display:flex;align-items:center;gap:10px; }
+.equipment-maintenance-dates article { margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft); }
+.equipment-maintenance-dates h4 { margin-bottom:16px; }
+.equipment-maintenance-dates dt { font-size:12px;color:var(--text-secondary);margin-bottom:8px; }
+.equipment-maintenance-dates dd { margin:0;line-height:1.6; }
+.equipment-maintenance-dates p { margin-block:12px;white-space:pre-wrap;line-height:1.6; }
+.equipment-maintenance-dates small { display:block;margin-top:14px;line-height:1.6; }
 @media(max-width:600px){.purchase-form,.purchase-document { padding:16px; }.purchase-item { padding:12px; }.purchase-item-head { flex-wrap:wrap; }.purchase-document .table-actions .btn { flex:1 1 auto; }.purchase-summary dl > div { flex-wrap:wrap; }}
 @media(max-width:600px){.equipment-incident-list article { grid-template-columns:minmax(0,1fr) auto; }.equipment-incident-list article > .btn { grid-column:1 / -1; }.equipment-documents-panel .table-actions .btn { flex:1 1 auto; }.equipment-documents-panel .attachment-panel { padding:12px; }}
 .generated-report-document .table-actions { margin-block:16px; }
